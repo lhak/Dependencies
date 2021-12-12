@@ -1,7 +1,25 @@
+/*
+ * Process Hacker -
+ *   Local Inter-process Communication support functions
+ *
+ * This file is part of Process Hacker.
+ *
+ * Process Hacker is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Process Hacker is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Process Hacker.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef _NTLPCAPI_H
 #define _NTLPCAPI_H
-
-// Local Inter-process Communication
 
 #define PORT_CONNECT 0x0001
 #define PORT_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0x1)
@@ -486,7 +504,7 @@ typedef struct _ALPC_HANDLE_ATTR
 } ALPC_HANDLE_ATTR, *PALPC_HANDLE_ATTR;
 
 #define ALPC_SECFLG_CREATE_HANDLE 0x20000 // dbg
-
+#define ALPC_SECFLG_NOSECTIONHANDLE 0x40000
 // private
 typedef struct _ALPC_SECURITY_ATTR
 {
@@ -521,8 +539,9 @@ typedef enum _ALPC_PORT_INFORMATION_CLASS
     AlpcUnregisterCompletionListInformation, // s: VOID
     AlpcAdjustCompletionListConcurrencyCountInformation, // s: in ULONG
     AlpcRegisterCallbackInformation, // kernel-mode only
-    AlpcCompletionListRundownInformation, // s: VOID
-    AlpcWaitForPortReferences
+    AlpcCompletionListRundownInformation, // s: VOID // 10
+    AlpcWaitForPortReferences,
+    AlpcServerSessionInformation // q: ALPC_SERVER_SESSION_INFORMATION // since 19H2
 } ALPC_PORT_INFORMATION_CLASS;
 
 // private
@@ -573,6 +592,13 @@ typedef struct _ALPC_PORT_COMPLETION_LIST_INFORMATION
     ULONG ConcurrencyCount;
     ULONG AttributeFlags;
 } ALPC_PORT_COMPLETION_LIST_INFORMATION, *PALPC_PORT_COMPLETION_LIST_INFORMATION;
+
+// private
+typedef struct _ALPC_SERVER_SESSION_INFORMATION
+{
+    ULONG SessionId;
+    ULONG ProcessId;
+} ALPC_SERVER_SESSION_INFORMATION, *PALPC_SERVER_SESSION_INFORMATION;
 
 // private
 typedef enum _ALPC_MESSAGE_INFORMATION_CLASS
@@ -879,6 +905,10 @@ NTAPI
 AlpcGetHeaderSize(
     _In_ ULONG Flags
     );
+
+#define ALPC_ATTRFLG_ALLOCATEDATTR 0x20000000
+#define ALPC_ATTRFLG_VALIDATTR 0x40000000
+#define ALPC_ATTRFLG_KEEPRUNNINGATTR 0x60000000
 
 NTSYSAPI
 NTSTATUS

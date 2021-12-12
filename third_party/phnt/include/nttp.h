@@ -1,3 +1,23 @@
+/*
+ * Process Hacker -
+ *   Thread Pool support functions
+ *
+ * This file is part of Process Hacker.
+ *
+ * Process Hacker is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Process Hacker is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Process Hacker.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef _NTTP_H
 #define _NTTP_H
 
@@ -46,7 +66,7 @@ VOID
 NTAPI
 TpSetPoolMaxThreads(
     _Inout_ PTP_POOL Pool,
-    _In_ LONG MaxThreads
+    _In_ ULONG MaxThreads
     );
 
 // private
@@ -55,7 +75,7 @@ NTSTATUS
 NTAPI
 TpSetPoolMinThreads(
     _Inout_ PTP_POOL Pool,
-    _In_ LONG MinThreads
+    _In_ ULONG MinThreads
     );
 
 #if (PHNT_VERSION >= PHNT_WIN7)
@@ -123,7 +143,7 @@ NTAPI
 TpCallbackReleaseSemaphoreOnCompletion(
     _Inout_ PTP_CALLBACK_INSTANCE Instance,
     _In_ HANDLE Semaphore,
-    _In_ LONG ReleaseCount
+    _In_ ULONG ReleaseCount
     );
 
 // winbase:ReleaseMutexWhenCallbackReturns
@@ -244,9 +264,22 @@ NTAPI
 TpSetTimer(
     _Inout_ PTP_TIMER Timer,
     _In_opt_ PLARGE_INTEGER DueTime,
-    _In_ LONG Period,
-    _In_opt_ LONG WindowLength
+    _In_ ULONG Period,
+    _In_opt_ ULONG WindowLength
     );
+
+#if (PHNT_VERSION >= PHNT_WIN8)
+// winbase:SetThreadpoolTimerEx
+NTSYSAPI
+NTSTATUS
+NTAPI
+TpSetTimerEx(
+    _Inout_ PTP_TIMER Timer,
+    _In_opt_ PLARGE_INTEGER DueTime,
+    _In_ ULONG Period,
+    _In_opt_ ULONG WindowLength
+    );
+#endif
 
 // winbase:IsThreadpoolTimerSet
 NTSYSAPI
@@ -294,6 +327,19 @@ TpSetWait(
     _In_opt_ HANDLE Handle,
     _In_opt_ PLARGE_INTEGER Timeout
     );
+
+#if (PHNT_VERSION >= PHNT_WIN8)
+// winbase:SetThreadpoolWaitEx
+NTSYSAPI
+NTSTATUS
+NTAPI
+TpSetWaitEx(
+    _Inout_ PTP_WAIT Wait,
+    _In_opt_ HANDLE Handle,
+    _In_opt_ PLARGE_INTEGER Timeout,
+    _In_opt_ PVOID Reserved
+    );
+#endif
 
 // winbase:WaitForThreadpoolWaitCallbacks
 NTSYSAPI

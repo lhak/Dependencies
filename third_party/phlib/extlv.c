@@ -28,9 +28,6 @@
  */
 
 #include <ph.h>
-
-#include <windowsx.h>
-
 #include <guisup.h>
 
 #define PH_MAX_COMPARE_FUNCTIONS 16
@@ -38,6 +35,7 @@
 typedef struct _PH_EXTLV_CONTEXT
 {
     HWND Handle;
+    WNDPROC OldWndProc;
     PVOID Context;
 
     // Sorting
@@ -66,9 +64,7 @@ LRESULT CALLBACK PhpExtendedListViewWndProc(
     _In_ HWND hwnd,
     _In_ UINT uMsg,
     _In_ WPARAM wParam,
-    _In_ LPARAM lParam,
-    _In_ UINT_PTR uIdSubclass,
-    _In_ ULONG_PTR dwRefData
+    _In_ LPARAM lParam
     );
 
 INT PhpExtendedListViewCompareFunc(
@@ -109,48 +105,62 @@ VOID PhSetExtendedListView(
     _In_ HWND hWnd
     )
 {
+    PhSetExtendedListViewEx(hWnd, 0, AscendingSortOrder);
+}
+
+VOID PhSetExtendedListViewEx(
+    _In_ HWND WindowHandle,
+    _In_ ULONG SortColumn,
+    _In_ ULONG SortOrder
+    )
+{
     PPH_EXTLV_CONTEXT context;
 
-    context = PhAllocate(sizeof(PH_EXTLV_CONTEXT));
-
-    context->Handle = hWnd;
+    context = PhAllocateZero(sizeof(PH_EXTLV_CONTEXT));
+    context->Handle = WindowHandle;
     context->Context = NULL;
     context->TriState = FALSE;
-    context->SortColumn = 0;
-    context->SortOrder = AscendingSortOrder;
+    context->SortColumn = SortColumn;
+    context->SortOrder = SortOrder;
     context->SortFast = FALSE;
     context->TriStateCompareFunction = NULL;
     memset(context->CompareFunctions, 0, sizeof(context->CompareFunctions));
     context->NumberOfFallbackColumns = 0;
-
     context->ItemColorFunction = NULL;
     context->ItemFontFunction = NULL;
-
     context->EnableRedraw = 1;
     context->Cursor = NULL;
 
-    SetWindowSubclass(hWnd, PhpExtendedListViewWndProc, 0, (ULONG_PTR)context);
+    context->OldWndProc = (WNDPROC)GetWindowLongPtr(WindowHandle, GWLP_WNDPROC);
+    PhSetWindowContext(WindowHandle, MAXCHAR, context);
+    SetWindowLongPtr(WindowHandle, GWLP_WNDPROC, (LONG_PTR)PhpExtendedListViewWndProc);
 
-    ExtendedListView_Init(hWnd);
+    ExtendedListView_Init(WindowHandle);
 }
 
 LRESULT CALLBACK PhpExtendedListViewWndProc(
     _In_ HWND hwnd,
     _In_ UINT uMsg,
     _In_ WPARAM wParam,
-    _In_ LPARAM lParam,
-    _In_ UINT_PTR uIdSubclass,
-    _In_ ULONG_PTR dwRefData
+    _In_ LPARAM lParam
     )
 {
-    PPH_EXTLV_CONTEXT context = (PPH_EXTLV_CONTEXT)dwRefData;
+    PPH_EXTLV_CONTEXT context;
+    WNDPROC oldWndProc;
+
+    context = PhGetWindowContext(hwnd, MAXCHAR);
+
+    if (!context)
+        return 0;
+
+    oldWndProc = context->OldWndProc;
 
     switch (uMsg)
     {
     case WM_DESTROY:
         {
-            RemoveWindowSubclass(hwnd, PhpExtendedListViewWndProc, uIdSubclass);
-
+            SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)oldWndProc);
+            PhRemoveWindowContext(hwnd, MAXCHAR);
             PhFree(context);
         }
         break;
@@ -164,7 +174,7 @@ LRESULT CALLBACK PhpExtendedListViewWndProc(
                 {
                     HWND headerHandle;
 
-                    headerHandle = (HWND)SendMessage(hwnd, LVM_GETHEADER, 0, 0);
+                    headerHandle = (HWND)CallWindowProc(oldWndProc, hwnd, LVM_GETHEADER, 0, 0);
 
                     if (header->hwndFrom == headerHandle)
                     {
@@ -244,7 +254,7 @@ LRESULT CALLBACK PhpExtendedListViewWndProc(
                                 }
 
                                 if (newFont)
-                                    SelectObject(customDraw->nmcd.hdc, newFont);
+                                    SelectFont(customDraw->nmcd.hdc, newFont);
 
                                 if (colorChanged)
                                 {
@@ -352,7 +362,7 @@ LRESULT CALLBACK PhpExtendedListViewWndProc(
                 {
                     if (i != column)
                     {
-                        if (SendMessage(hwnd, LVM_GETCOLUMN, i, (LPARAM)&lvColumn))
+                        if (CallWindowProc(oldWndProc, hwnd, LVM_GETCOLUMN, i, (LPARAM)&lvColumn))
                         {
                             availableWidth -= lvColumn.cx;
                         }
@@ -366,10 +376,10 @@ LRESULT CALLBACK PhpExtendedListViewWndProc(
                 }
 
                 if (availableWidth >= 40)
-                    return SendMessage(hwnd, LVM_SETCOLUMNWIDTH, column, availableWidth);
+                    return CallWindowProc(oldWndProc, hwnd, LVM_SETCOLUMNWIDTH, column, availableWidth);
             }
 
-            return SendMessage(hwnd, LVM_SETCOLUMNWIDTH, column, width);
+            return CallWindowProc(oldWndProc, hwnd, LVM_SETCOLUMNWIDTH, column, width);
         }
         break;
     case ELVM_SETCOMPAREFUNCTION:
@@ -419,6 +429,17 @@ LRESULT CALLBACK PhpExtendedListViewWndProc(
             {
                 SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
             }
+        }
+        return TRUE;
+    case ELVM_GETSORT:
+        {
+            PULONG sortColumn = (PULONG)wParam;
+            PPH_SORT_ORDER sortOrder = (PPH_SORT_ORDER)lParam;
+
+            if (sortColumn)
+                *sortColumn = context->SortColumn;
+            if (sortOrder)
+                *sortOrder = context->SortOrder;
         }
         return TRUE;
     case ELVM_SETSORT:
@@ -471,7 +492,7 @@ LRESULT CALLBACK PhpExtendedListViewWndProc(
         return TRUE;
     }
 
-    return DefSubclassProc(hwnd, uMsg, wParam, lParam);
+    return CallWindowProc(oldWndProc, hwnd, uMsg, wParam, lParam);
 }
 
 /**
@@ -549,9 +570,9 @@ static INT PhpExtendedListViewCompareFunc(
     yItem.iItem = y;
     yItem.iSubItem = 0;
 
-    if (!SendMessage(context->Handle, LVM_GETITEM, 0, (LPARAM)&xItem))
+    if (!CallWindowProc(context->OldWndProc, context->Handle, LVM_GETITEM, 0, (LPARAM)&xItem))
         return 0;
-    if (!SendMessage(context->Handle, LVM_GETITEM, 0, (LPARAM)&yItem))
+    if (!CallWindowProc(context->OldWndProc, context->Handle, LVM_GETITEM, 0, (LPARAM)&yItem))
         return 0;
 
     // First, do tri-state sorting.
@@ -700,8 +721,8 @@ static INT PhpDefaultCompareListViewItems(
     _In_ ULONG Column
     )
 {
-    WCHAR xText[261];
-    WCHAR yText[261];
+    WCHAR xText[MAX_PATH + 1];
+    WCHAR yText[MAX_PATH + 1];
     LVITEM item;
 
     // Get the X item text.
@@ -710,19 +731,19 @@ static INT PhpDefaultCompareListViewItems(
     item.iItem = X;
     item.iSubItem = Column;
     item.pszText = xText;
-    item.cchTextMax = 260;
+    item.cchTextMax = MAX_PATH;
 
-    xText[0] = 0;
-    SendMessage(Context->Handle, LVM_GETITEM, 0, (LPARAM)&item);
+    xText[0] = UNICODE_NULL;
+    CallWindowProc(Context->OldWndProc, Context->Handle, LVM_GETITEM, 0, (LPARAM)&item);
 
     // Get the Y item text.
 
     item.iItem = Y;
     item.pszText = yText;
-    item.cchTextMax = 260;
+    item.cchTextMax = MAX_PATH;
 
-    yText[0] = 0;
-    SendMessage(Context->Handle, LVM_GETITEM, 0, (LPARAM)&item);
+    yText[0] = UNICODE_NULL;
+    CallWindowProc(Context->OldWndProc, Context->Handle, LVM_GETITEM, 0, (LPARAM)&item);
 
     // Compare them.
 

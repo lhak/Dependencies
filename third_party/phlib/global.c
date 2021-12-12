@@ -3,6 +3,7 @@
  *   global variables and initialization functions
  *
  * Copyright (C) 2010-2013 wj32
+ * Copyright (C) 2017-2021 dmex
  *
  * This file is part of Process Hacker.
  *
@@ -21,14 +22,7 @@
  */
 
 #include <ph.h>
-
-#include <filestream.h>
 #include <phintrnl.h>
-#include <symprv.h>
-
-BOOLEAN PhInitializeSystem(
-    _In_ ULONG Flags
-    );
 
 VOID PhInitializeSystemInformation(
     VOID
@@ -38,19 +32,18 @@ VOID PhInitializeWindowsVersion(
     VOID
     );
 
-PHLIBAPI PVOID PhInstanceHandle;
-PHLIBAPI PWSTR PhApplicationName = L"Application";
-PHLIBAPI ULONG PhGlobalDpi = 96;
-PHLIBAPI PVOID PhHeapHandle;
-PHLIBAPI RTL_OSVERSIONINFOEXW PhOsVersion;
-PHLIBAPI SYSTEM_BASIC_INFORMATION PhSystemBasicInformation;
-PHLIBAPI ULONG WindowsVersion;
+BOOLEAN PhHeapInitialization(
+    _In_opt_ SIZE_T HeapReserveSize,
+    _In_opt_ SIZE_T HeapCommitSize
+    );
 
-PHLIBAPI ACCESS_MASK ProcessQueryAccess;
-PHLIBAPI ACCESS_MASK ProcessAllAccess;
-PHLIBAPI ACCESS_MASK ThreadQueryAccess;
-PHLIBAPI ACCESS_MASK ThreadSetAccess;
-PHLIBAPI ACCESS_MASK ThreadAllAccess;
+PVOID PhInstanceHandle = NULL;
+PWSTR PhApplicationName = NULL;
+PHLIBAPI ULONG PhGlobalDpi = 96;
+PVOID PhHeapHandle = NULL;
+RTL_OSVERSIONINFOEXW PhOsVersion = { 0 };
+PHLIBAPI SYSTEM_BASIC_INFORMATION PhSystemBasicInformation = { 0 };
+ULONG WindowsVersion = WINDOWS_NEW;
 
 // Internal data
 #ifdef DEBUG
@@ -62,7 +55,8 @@ NTSTATUS PhInitializePhLib(
     )
 {
     return PhInitializePhLibEx(
-        0xffffffff, // all possible features
+        L"Application",
+        ULONG_MAX, // all possible features
         NtCurrentPeb()->ImageBaseAddress,
         0,
         0
@@ -70,49 +64,41 @@ NTSTATUS PhInitializePhLib(
 }
 
 NTSTATUS PhInitializePhLibEx(
+    _In_ PWSTR ApplicationName,
     _In_ ULONG Flags,
     _In_ PVOID ImageBaseAddress,
     _In_opt_ SIZE_T HeapReserveSize,
     _In_opt_ SIZE_T HeapCommitSize
     )
 {
+    PhApplicationName = ApplicationName;
     PhInstanceHandle = ImageBaseAddress;
-    PhHeapHandle = RtlCreateHeap(
-        HEAP_GROWABLE | HEAP_CLASS_1,
-        NULL,
-        HeapReserveSize ? HeapReserveSize : 2 * 1024 * 1024, // 2 MB
-        HeapCommitSize ? HeapCommitSize : 1024 * 1024, // 1 MB
-        NULL,
-        NULL
-        );
-
-    if (!PhHeapHandle)
-        return STATUS_INSUFFICIENT_RESOURCES;
 
     PhInitializeWindowsVersion();
     PhInitializeSystemInformation();
 
+    if (!PhHeapInitialization(HeapReserveSize, HeapCommitSize))
+        return STATUS_UNSUCCESSFUL;
+
     if (!PhQueuedLockInitialization())
         return STATUS_UNSUCCESSFUL;
 
-    if (!NT_SUCCESS(PhRefInitialization()))
-        return STATUS_UNSUCCESSFUL;
-    if (!PhBaseInitialization())
+    if (!PhRefInitialization())
         return STATUS_UNSUCCESSFUL;
 
-    if (!PhInitializeSystem(Flags))
+    if (!PhBaseInitialization())
         return STATUS_UNSUCCESSFUL;
 
     return STATUS_SUCCESS;
 }
 
-#ifndef _WIN64
 BOOLEAN PhIsExecutingInWow64(
     VOID
     )
 {
+#ifndef _WIN64
     static BOOLEAN valid = FALSE;
-    static BOOLEAN isWow64;
+    static BOOLEAN isWow64 = FALSE;
 
     if (!valid)
     {
@@ -122,29 +108,12 @@ BOOLEAN PhIsExecutingInWow64(
     }
 
     return isWow64;
-}
+#else
+    return FALSE;
 #endif
-
-static BOOLEAN PhInitializeSystem(
-    _In_ ULONG Flags
-    )
-{
-    if (Flags & PHLIB_INIT_MODULE_FILE_STREAM)
-    {
-        if (!PhFileStreamInitialization())
-            return FALSE;
-    }
-
-    if (Flags & PHLIB_INIT_MODULE_SYMBOL_PROVIDER)
-    {
-        if (!PhSymbolProviderInitialization())
-            return FALSE;
-    }
-
-    return TRUE;
 }
 
-static VOID PhInitializeSystemInformation(
+VOID PhInitializeSystemInformation(
     VOID
     )
 {
@@ -156,7 +125,7 @@ static VOID PhInitializeSystemInformation(
         );
 }
 
-static VOID PhInitializeWindowsVersion(
+VOID PhInitializeWindowsVersion(
     VOID
     )
 {
@@ -165,9 +134,10 @@ static VOID PhInitializeWindowsVersion(
     ULONG minorVersion;
     ULONG buildVersion;
 
+    memset(&versionInfo, 0, sizeof(RTL_OSVERSIONINFOEXW));
     versionInfo.dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOEXW);
 
-    if (!NT_SUCCESS(RtlGetVersion((PRTL_OSVERSIONINFOW)&versionInfo)))
+    if (!NT_SUCCESS(RtlGetVersion(&versionInfo)))
     {
         WindowsVersion = WINDOWS_NEW;
         return;
@@ -182,54 +152,128 @@ static VOID PhInitializeWindowsVersion(
     {
         WindowsVersion = WINDOWS_ANCIENT;
     }
-    /* Windows 7, Windows Server 2008 R2 */
+    // Windows 7, Windows Server 2008 R2
     else if (majorVersion == 6 && minorVersion == 1)
     {
         WindowsVersion = WINDOWS_7;
     }
-    /* Windows 8 */
+    // Windows 8, Windows Server 2012
     else if (majorVersion == 6 && minorVersion == 2)
     {
         WindowsVersion = WINDOWS_8;
     }
-    /* Windows 8.1 */
+    // Windows 8.1, Windows Server 2012 R2
     else if (majorVersion == 6 && minorVersion == 3)
     {
         WindowsVersion = WINDOWS_8_1;
     }
-    /* Windows 10 */
+    // Windows 10, Windows Server 2016
     else if (majorVersion == 10 && minorVersion == 0)
     {
-        switch (buildVersion)
+        if (buildVersion >= 22000)
         {
-        case 10240:
-            WindowsVersion = WINDOWS_10;
-            break;
-        case 10586:
-            WindowsVersion = WINDOWS_10_TH2;
-            break;
-        case 14393:
-            WindowsVersion = WINDOWS_10_RS1;
-            break;
-        case 15063:
-            WindowsVersion = WINDOWS_10_RS2;
-            break;
-        case 16299:
+            WindowsVersion = WINDOWS_11;
+        }
+        else if (buildVersion >= 19043)
+        {
+            WindowsVersion = WINDOWS_10_21H1;
+        }
+        else if (buildVersion >= 19042)
+        {
+            WindowsVersion = WINDOWS_10_20H2;
+        }
+        else if (buildVersion >= 19041)
+        {
+            WindowsVersion = WINDOWS_10_20H1;
+        }
+        else if (buildVersion >= 18363)
+        {
+            WindowsVersion = WINDOWS_10_19H2;
+        }
+        else if (buildVersion >= 18362)
+        {
+            WindowsVersion = WINDOWS_10_19H1;
+        }
+        else if (buildVersion >= 17763)
+        {
+            WindowsVersion = WINDOWS_10_RS5;
+        }
+        else if (buildVersion >= 17134)
+        {
+            WindowsVersion = WINDOWS_10_RS4;
+        }
+        else if (buildVersion >= 16299)
+        {
             WindowsVersion = WINDOWS_10_RS3;
-            break;
-        default:
-            WindowsVersion = WINDOWS_NEW;
-            break;
+        }
+        else if (buildVersion >= 15063)
+        {
+            WindowsVersion = WINDOWS_10_RS2;
+        }
+        else if (buildVersion >= 14393)
+        {
+            WindowsVersion = WINDOWS_10_RS1;
+        }
+        else if (buildVersion >= 10586)
+        {
+            WindowsVersion = WINDOWS_10_TH2;
+        }
+        else if (buildVersion >= 10240)
+        {
+            WindowsVersion = WINDOWS_10;
+        }
+        else
+        {
+            WindowsVersion = WINDOWS_10;
         }
     }
-    else if (majorVersion == 10 && minorVersion > 0 || majorVersion > 10)
+    else
     {
         WindowsVersion = WINDOWS_NEW;
     }
+}
 
-    ProcessQueryAccess = PROCESS_QUERY_LIMITED_INFORMATION;
-    ProcessAllAccess = STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0x1fff;
-    ThreadQueryAccess = THREAD_QUERY_LIMITED_INFORMATION;
-    ThreadSetAccess = THREAD_SET_LIMITED_INFORMATION;
-    ThreadAllAccess = STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xfff;
+BOOLEAN PhHeapInitialization(
+    _In_opt_ SIZE_T HeapReserveSize,
+    _In_opt_ SIZE_T HeapCommitSize
+    )
+{
+    if (WindowsVersion >= WINDOWS_8)
+    {
+        PhHeapHandle = RtlCreateHeap(
+            HEAP_GROWABLE | HEAP_CREATE_SEGMENT_HEAP | HEAP_CLASS_1,
+            NULL,
+            0,
+            0,
+            NULL,
+            NULL
+            );
+    }
+
+    if (!PhHeapHandle)
+    {
+        PhHeapHandle = RtlCreateHeap(
+            HEAP_GROWABLE | HEAP_CLASS_1,
+            NULL,
+            HeapReserveSize ? HeapReserveSize : 2 * 1024 * 1024, // 2 MB
+            HeapCommitSize ? HeapCommitSize : 1024 * 1024, // 1 MB
+            NULL,
+            NULL
+            );
+
+        if (!PhHeapHandle)
+            return FALSE;
+
+        if (WindowsVersion >= WINDOWS_VISTA)
+        {
+            RtlSetHeapInformation(
+                PhHeapHandle,
+                HeapCompatibilityInformation,
+                &(ULONG){ HEAP_COMPATIBILITY_LFH },
+                sizeof(ULONG)
+                );
+        }
+    }
+
+    return TRUE;
 }

@@ -80,8 +80,8 @@ NTSTATUS PhInitializeMappedWslImage(
         return STATUS_IMAGE_SUBSYSTEM_NOT_PRESENT;
     }
 
-    if (MappedWslImage->Headers64->e_phentsize != sizeof(ELF64_IMAGE_SEGMENT_HEADER))
-        return STATUS_FAIL_CHECK;
+    //if (MappedWslImage->Headers64->e_phentsize != sizeof(ELF64_IMAGE_SEGMENT_HEADER))
+    //    return STATUS_FAIL_CHECK;
     if (MappedWslImage->Headers64->e_shentsize != sizeof(ELF64_IMAGE_SECTION_HEADER))
         return STATUS_FAIL_CHECK;
 
@@ -137,7 +137,7 @@ PVOID PhGetMappedWslImageSectionData(
         {
             section = IMAGE_ELF64_SECTION_BY_INDEX(sectionHeader, i);
 
-            if (strcmp(Name, PTR_ADD_OFFSET(stringTable, section->sh_name)) == 0)
+            if (PhEqualBytesZ(Name, PTR_ADD_OFFSET(stringTable, section->sh_name), FALSE))
             {
                 return PTR_ADD_OFFSET(MappedWslImage->Header, section->sh_offset);
             }
@@ -211,8 +211,37 @@ PELF64_IMAGE_SECTION_HEADER PhGetMappedWslImageSectionByType(
     return NULL;
 }
 
-// TODO: Check this is actually correct.
-// https://stackoverflow.com/questions/18296276/base-address-of-elf
+PELF64_IMAGE_SECTION_HEADER PhGetMappedWslImageSectionByName(
+    _In_ PPH_MAPPED_IMAGE MappedWslImage,
+    _In_ PSTR Name
+    )
+{
+    if (Name)
+    {
+        PELF64_IMAGE_SECTION_HEADER sectionHeader;
+        PELF64_IMAGE_SECTION_HEADER stringSection;
+        PELF64_IMAGE_SECTION_HEADER section;
+        PVOID stringTable;
+        USHORT i;
+
+        sectionHeader = IMAGE_FIRST_ELF64_SECTION(MappedWslImage);
+        stringSection = IMAGE_ELF64_SECTION_BY_INDEX(sectionHeader, MappedWslImage->Headers64->e_shstrndx);
+        stringTable = PTR_ADD_OFFSET(MappedWslImage->Header, stringSection->sh_offset);
+
+        for (i = 0; i < MappedWslImage->Headers64->e_shnum; i++)
+        {
+            section = IMAGE_ELF64_SECTION_BY_INDEX(sectionHeader, i);
+
+            if (PhEqualBytesZ(Name, PTR_ADD_OFFSET(stringTable, section->sh_name), FALSE))
+            {
+                return section;
+            }
+        }
+    }
+
+    return NULL;
+}
+
 ULONG64 PhGetMappedWslImageBaseAddress(
     _In_ PPH_MAPPED_IMAGE MappedWslImage
     )
@@ -320,8 +349,7 @@ static PPH_LIST PhpParseMappedWslImageVersionRecords(
         {
             PPH_ELF_VERSION_RECORD versionInfo;
 
-            versionInfo = PhAllocate(sizeof(PH_ELF_VERSION_RECORD));
-            memset(versionInfo, 0, sizeof(PH_ELF_VERSION_RECORD));
+            versionInfo = PhAllocateZero(sizeof(PH_ELF_VERSION_RECORD));
             versionInfo->Version = versionAux->vna_other;
             versionInfo->Name = PTR_ADD_OFFSET(SymbolStringTable, versionAux->vna_name);
             versionInfo->FileName = PTR_ADD_OFFSET(SymbolStringTable, version->vn_file);
@@ -370,29 +398,33 @@ static PSTR PhpFindWslImageVersionRecordName(
     return NULL;
 }
 
-// TODO: Optimize this function.
 BOOLEAN PhGetMappedWslImageSymbols(
     _In_ PPH_MAPPED_IMAGE MappedWslImage,
     _Out_ PPH_LIST *ImageSymbols
     )
 {
+    PELF64_IMAGE_SECTION_HEADER sectionHeader;
     PELF64_IMAGE_SECTION_HEADER section;
-    PPH_LIST symbols = PhCreateList(2000);
+    PPH_LIST sectionSymbols;
+    USHORT i;
 
-    if (section = PhGetMappedWslImageSectionByType(MappedWslImage, SHT_SYMTAB))
-    {
-        // TODO: Need to find a WSL binary with a symbol table.
-        // SHT_SYMTAB should be parsed idential to SHT_DYNSYM?
-    }
-    
-    if (section = PhGetMappedWslImageSectionByType(MappedWslImage, SHT_DYNSYM))
+    sectionSymbols = PhCreateList(0x800);
+    sectionHeader = IMAGE_FIRST_ELF64_SECTION(MappedWslImage);
+
+    for (i = 0; i < MappedWslImage->Headers64->e_shnum; i++)
     {
         ULONGLONG count;
-        ULONGLONG i;
+        ULONGLONG ii;
         PELF_IMAGE_SYMBOL_ENTRY entry;
         PVOID stringTable;
         PELF_VERSION_TABLE versionTable;
         PPH_LIST versionRecords;
+
+        section = IMAGE_ELF64_SECTION_BY_INDEX(sectionHeader, i);
+
+        // NOTE: The below code needs some improvements for SHT_SYMTAB -dmex
+        if (section->sh_type != SHT_SYMTAB && section->sh_type != SHT_DYNSYM)
+            continue;
 
         if (section->sh_entsize != sizeof(ELF_IMAGE_SYMBOL_ENTRY))
             return FALSE;
@@ -401,26 +433,28 @@ BOOLEAN PhGetMappedWslImageSymbols(
         entry = PTR_ADD_OFFSET(MappedWslImage->Header, section->sh_offset);
         stringTable = PhGetMappedWslImageSectionData(MappedWslImage, NULL, section->sh_link);
 
+        // NOTE: SHT_DYNSYM entries include the version in the symbol name (e.g. printf@GLIBC_2.2.5) 
+        // instead of using a version record entry from the SHT_SUNW_versym section -dmex
         versionTable = PhGetMappedWslImageSectionDataByType(MappedWslImage, SHT_SUNW_versym);
         versionRecords = PhpParseMappedWslImageVersionRecords(MappedWslImage, stringTable);
 
-        for (i = 1; i < count; i++)
+        for (ii = 1; ii < count; ii++)
         {
-            if (entry[i].st_shndx == SHN_UNDEF)
+            if (entry[ii].st_shndx == SHN_UNDEF)
             {
                 PPH_ELF_IMAGE_SYMBOL_ENTRY import;
 
-                import = PhAllocate(sizeof(PH_ELF_IMAGE_SYMBOL_ENTRY));
-                memset(import, 0, sizeof(PH_ELF_IMAGE_SYMBOL_ENTRY));
-
+                import = PhAllocateZero(sizeof(PH_ELF_IMAGE_SYMBOL_ENTRY));
                 import->ImportSymbol = TRUE;
-                import->Address = entry[i].st_value;
-                import->Size = entry[i].st_size;
-                import->TypeInfo = entry[i].st_info;
+                import->Address = entry[ii].st_value;
+                import->Size = entry[ii].st_size;
+                import->TypeInfo = entry[ii].st_info;
+                import->OtherInfo = entry[ii].st_other;
+                import->SectionIndex = entry[ii].st_shndx;
 
                 // function name
                 PhCopyStringZFromBytes(
-                    PTR_ADD_OFFSET(stringTable, entry[i].st_name),
+                    PTR_ADD_OFFSET(stringTable, entry[ii].st_name),
                     -1,
                     import->Name,
                     sizeof(import->Name),
@@ -432,7 +466,7 @@ BOOLEAN PhGetMappedWslImageSymbols(
                 {
                     PSTR moduleName;
 
-                    if (moduleName = PhpFindWslImageVersionRecordName(versionRecords, versionTable[i].vs_vers))
+                    if (moduleName = PhpFindWslImageVersionRecordName(versionRecords, versionTable[ii].vs_vers))
                     {
                         PhCopyStringZFromBytes(
                             moduleName,
@@ -444,56 +478,56 @@ BOOLEAN PhGetMappedWslImageSymbols(
                     }
                 }
 
-                PhAddItemList(symbols, import);
+                PhAddItemList(sectionSymbols, import);
             }
-            else if (entry[i].st_shndx != SHN_UNDEF && entry[i].st_value != 0)
+            else if (entry[ii].st_shndx != SHN_UNDEF && entry[ii].st_value != 0)
             {
                 PPH_ELF_IMAGE_SYMBOL_ENTRY export;
 
-                if (ELF_ST_TYPE(entry[i].st_info) == STT_SECTION) // Ignore section symbol types.
+                if (ELF_ST_TYPE(entry[ii].st_info) == STT_SECTION) // Ignore section symbol types.
                     continue;
 
-                export = PhAllocate(sizeof(PH_ELF_IMAGE_SYMBOL_ENTRY));
-                memset(export, 0, sizeof(PH_ELF_IMAGE_SYMBOL_ENTRY));
-
+                export = PhAllocateZero(sizeof(PH_ELF_IMAGE_SYMBOL_ENTRY));
                 export->ExportSymbol = TRUE;
-                export->Address = entry[i].st_value;
-                export->Size = entry[i].st_size;
-                export->TypeInfo = entry[i].st_info;
+                export->Address = entry[ii].st_value;
+                export->Size = entry[ii].st_size;
+                export->TypeInfo = entry[ii].st_info;
+                export->OtherInfo = entry[ii].st_other;
+                export->SectionIndex = entry[ii].st_shndx;
 
                 // function name
                 PhCopyStringZFromBytes(
-                    PTR_ADD_OFFSET(stringTable, entry[i].st_name),
+                    PTR_ADD_OFFSET(stringTable, entry[ii].st_name),
                     -1,
                     export->Name,
                     sizeof(export->Name),
                     NULL
                     );
 
-                PhAddItemList(symbols, export);
+                PhAddItemList(sectionSymbols, export);
             }
             else
-            {   
+            {
                 PPH_ELF_IMAGE_SYMBOL_ENTRY export;
 
-                export = PhAllocate(sizeof(PH_ELF_IMAGE_SYMBOL_ENTRY));
-                memset(export, 0, sizeof(PH_ELF_IMAGE_SYMBOL_ENTRY));
-
+                export = PhAllocateZero(sizeof(PH_ELF_IMAGE_SYMBOL_ENTRY));
                 export->UnknownSymbol = TRUE;
-                export->Address = entry[i].st_value;
-                export->Size = entry[i].st_size;
-                export->TypeInfo = entry[i].st_info;
+                export->Address = entry[ii].st_value;
+                export->Size = entry[ii].st_size;
+                export->TypeInfo = entry[ii].st_info;
+                export->OtherInfo = entry[ii].st_other;
+                export->SectionIndex = entry[ii].st_shndx;
 
                 // function name
                 PhCopyStringZFromBytes(
-                    PTR_ADD_OFFSET(stringTable, entry[i].st_name),
+                    PTR_ADD_OFFSET(stringTable, entry[ii].st_name),
                     -1,
                     export->Name,
                     sizeof(export->Name),
                     NULL
                     );
 
-                PhAddItemList(symbols, export);
+                PhAddItemList(sectionSymbols, export);
             }
         }
 
@@ -501,7 +535,7 @@ BOOLEAN PhGetMappedWslImageSymbols(
             PhpFreeMappedWslImageVersionRecords(versionRecords);
     }
 
-    *ImageSymbols = symbols;
+    *ImageSymbols = sectionSymbols;
 
     return TRUE;
 }
@@ -514,4 +548,101 @@ VOID PhFreeMappedWslImageSymbols(
         PhFree(ImageSymbols->Items[i]);
 
     PhDereferenceObject(ImageSymbols);
+}
+
+BOOLEAN PhGetMappedWslImageDynamic(
+    _In_ PPH_MAPPED_IMAGE MappedWslImage,
+    _Out_ PPH_LIST *ImageDynamic
+    )
+{
+    PELF64_IMAGE_SECTION_HEADER sectionHeader;
+    PELF64_IMAGE_SECTION_HEADER section;
+    PPH_LIST dynamicSymbols;
+    USHORT i;
+
+    dynamicSymbols = PhCreateList(0x40);
+    sectionHeader = IMAGE_FIRST_ELF64_SECTION(MappedWslImage);
+
+    for (i = 0; i < MappedWslImage->Headers64->e_shnum; i++)
+    {
+        ULONGLONG count;
+        ULONGLONG ii;
+        PELF64_IMAGE_DYNAMIC_ENTRY entry;
+        PVOID stringTable;
+
+        section = IMAGE_ELF64_SECTION_BY_INDEX(sectionHeader, i);
+
+        if (section->sh_type != SHT_DYNAMIC)
+            continue;
+
+        if (section->sh_entsize != sizeof(ELF64_IMAGE_DYNAMIC_ENTRY))
+            return FALSE;
+
+        count = section->sh_size / sizeof(ELF64_IMAGE_DYNAMIC_ENTRY);
+        entry = PTR_ADD_OFFSET(MappedWslImage->Header, section->sh_offset);
+        stringTable = PhGetMappedWslImageSectionData(MappedWslImage, NULL, section->sh_link);
+
+        for (ii = 0; ii < count; ii++)
+        {
+            PPH_ELF_IMAGE_DYNAMIC_ENTRY dynamic;
+
+            dynamic = PhAllocateZero(sizeof(PH_ELF_IMAGE_DYNAMIC_ENTRY));
+            dynamic->Tag = entry[ii].d_tag;
+
+            switch (dynamic->Tag)
+            {
+            case DT_NEEDED:
+            case DT_SONAME:
+            case DT_RPATH:
+            case DT_RUNPATH:
+                dynamic->Value = PhConvertUtf8ToUtf16(PTR_ADD_OFFSET(stringTable, entry[ii].d_val));
+                break;
+            case DT_PLTRELSZ:
+            case DT_RELASZ:
+            case DT_RELAENT:
+            case DT_STRSZ:
+            case DT_SYMENT:
+            case DT_RELSZ:
+            case DT_RELENT:
+            case DT_INIT_ARRAYSZ:
+            case DT_FINI_ARRAYSZ:
+            case DT_PREINIT_ARRAYSZ:
+                dynamic->Value = PhFormatSize(entry[ii].d_val, ULONG_MAX);
+                break;
+            case DT_RELACOUNT:
+            case DT_RELCOUNT:
+            case DT_VERDEFNUM:
+            case DT_VERNEEDNUM:
+                dynamic->Value = PhFormatUInt64(entry[ii].d_val, TRUE);
+                break;
+            default:
+                dynamic->Value = PhFormatString(L"0x%llx", entry[ii].d_val);
+                break;
+            }
+
+            PhAddItemList(dynamicSymbols, dynamic);
+
+            if (entry[ii].d_tag == DT_NULL)
+                break;
+        }
+    }
+
+    *ImageDynamic = dynamicSymbols;
+
+    return TRUE;
+}
+
+VOID PhFreeMappedWslImageDynamic(
+    _In_ PPH_LIST ImageDynamic
+    )
+{
+    for (ULONG i = 0; i < ImageDynamic->Count; i++)
+    {
+        PPH_ELF_IMAGE_DYNAMIC_ENTRY dynamic = ImageDynamic->Items[i];
+
+        PhDereferenceObject(dynamic->Value);
+        PhFree(dynamic);
+    }
+
+    PhDereferenceObject(ImageDynamic);
 }

@@ -12,7 +12,7 @@ extern "C" {
 // guisup
 
 typedef BOOL (WINAPI *_IsImmersiveProcess)(
-    _In_ HANDLE hProcess
+    _In_ HANDLE ProcessHandle
     );
 
 #define RFF_NOBROWSE 0x0001
@@ -28,9 +28,9 @@ typedef BOOL (WINAPI *_IsImmersiveProcess)(
 typedef struct _NMRUNFILEDLGW
 {
     NMHDR hdr;
-    LPCWSTR lpszFile;
-    LPCWSTR lpszDirectory;
-    UINT nShow;
+    PWSTR lpszFile;
+    PWSTR lpszDirectory;
+    UINT ShowCmd;
 } NMRUNFILEDLGW, *LPNMRUNFILEDLGW, *PNMRUNFILEDLGW;
 
 typedef NMRUNFILEDLGW NMRUNFILEDLG;
@@ -43,23 +43,12 @@ typedef LPNMRUNFILEDLGW LPNMRUNFILEDLG;
 
 typedef HANDLE HTHEME;
 
-typedef BOOL (WINAPI *_RunFileDlg)(
-    _In_ HWND hwndOwner,
-    _In_opt_ HICON hIcon,
-    _In_opt_ LPCWSTR lpszDirectory,
-    _In_opt_ LPCWSTR lpszTitle,
-    _In_opt_ LPCWSTR lpszDescription,
-    _In_ ULONG uFlags
-    );
-
-typedef HRESULT (WINAPI *_SHAutoComplete)(
-    _In_ HWND hwndEdit,
-    _In_ ULONG dwFlags
-    );
+#define DCX_USESTYLE 0x00010000
+#define DCX_NODELETERGN 0x00040000
 
 extern _IsImmersiveProcess IsImmersiveProcess_I;
-extern _RunFileDlg RunFileDlg;
-extern _SHAutoComplete SHAutoComplete_I;
+extern PH_INTEGER_PAIR PhSmallIconSize;
+extern PH_INTEGER_PAIR PhLargeIconSize;
 
 PHLIBAPI
 VOID PhGuiSupportInitialization(
@@ -71,6 +60,20 @@ VOID PhSetControlTheme(
     _In_ HWND Handle,
     _In_ PWSTR Theme
     );
+
+FORCEINLINE LONG_PTR PhGetWindowStyle(
+    _In_ HWND WindowHandle
+    )
+{
+    return GetWindowLongPtr(WindowHandle, GWL_STYLE);
+}
+
+FORCEINLINE LONG_PTR PhGetWindowStyleEx(
+    _In_ HWND WindowHandle
+    )
+{
+    return GetWindowLongPtr(WindowHandle, GWL_EXSTYLE);
+}
 
 FORCEINLINE VOID PhSetWindowStyle(
     _In_ HWND Handle,
@@ -139,24 +142,6 @@ FORCEINLINE LRESULT PhReflectMessage(
     return 0;
 }
 
-#define PH_DEFINE_MAKE_ATOM(AtomName) \
-do { \
-    static UNICODE_STRING atomName = RTL_CONSTANT_STRING(AtomName); \
-    static PH_INITONCE initOnce = PH_INITONCE_INIT; \
-    static RTL_ATOM atom = 0; \
-\
-    if (PhBeginInitOnce(&initOnce)) \
-    { \
-        NtAddAtom(atomName.Buffer, atomName.Length, &atom); \
-        PhEndInitOnce(&initOnce); \
-    } \
-\
-    if (atom) \
-        return (PWSTR)(ULONG_PTR)atom; \
-    else \
-        return atomName.Buffer; \
-} while (0)
-
 FORCEINLINE VOID PhSetListViewStyle(
     _In_ HWND Handle,
     _In_ BOOLEAN AllowDragDrop,
@@ -191,7 +176,9 @@ INT PhAddListViewColumn(
     );
 
 PHLIBAPI
-INT PhAddListViewItem(
+INT
+NTAPI
+PhAddListViewItem(
     _In_ HWND ListViewHandle,
     _In_ INT Index,
     _In_ PWSTR Text,
@@ -199,31 +186,50 @@ INT PhAddListViewItem(
     );
 
 PHLIBAPI
-INT PhFindListViewItemByFlags(
+INT
+NTAPI
+PhFindListViewItemByFlags(
     _In_ HWND ListViewHandle,
     _In_ INT StartIndex,
     _In_ ULONG Flags
     );
 
 PHLIBAPI
-INT PhFindListViewItemByParam(
+INT
+NTAPI
+PhFindListViewItemByParam(
     _In_ HWND ListViewHandle,
     _In_ INT StartIndex,
     _In_opt_ PVOID Param
     );
 
+_Success_(return)
 PHLIBAPI
-LOGICAL PhGetListViewItemImageIndex(
+BOOLEAN
+NTAPI
+PhGetListViewItemImageIndex(
     _In_ HWND ListViewHandle,
     _In_ INT Index,
     _Out_ PINT ImageIndex
     );
 
+_Success_(return)
 PHLIBAPI
-LOGICAL PhGetListViewItemParam(
+BOOLEAN
+NTAPI
+PhGetListViewItemParam(
     _In_ HWND ListViewHandle,
     _In_ INT Index,
     _Out_ PVOID *Param
+    );
+
+PHLIBAPI
+BOOLEAN
+NTAPI
+PhSetListViewItemParam(
+    _In_ HWND ListViewHandle,
+    _In_ INT Index,
+    _In_ PVOID Param
     );
 
 PHLIBAPI
@@ -245,6 +251,25 @@ VOID PhSetListViewSubItem(
     _In_ INT Index,
     _In_ INT SubItemIndex,
     _In_ PWSTR Text
+    );
+
+PHLIBAPI
+INT
+NTAPI
+PhAddListViewGroup(
+    _In_ HWND ListViewHandle,
+    _In_ INT GroupId,
+    _In_ PWSTR Text
+    );
+
+PHLIBAPI
+INT
+NTAPI PhAddListViewGroupItem(
+    _In_ HWND ListViewHandle,
+    _In_ INT GroupId,
+    _In_ INT Index,
+    _In_ PWSTR Text,
+    _In_opt_ PVOID Param
     );
 
 PHLIBAPI
@@ -270,6 +295,17 @@ ULONG PhGetWindowTextEx(
     _In_ HWND hwnd,
     _In_ ULONG Flags,
     _Out_opt_ PPH_STRING *Text
+    );
+
+PHLIBAPI
+ULONG
+NTAPI
+PhGetWindowTextToBuffer(
+    _In_ HWND hwnd,
+    _In_ ULONG Flags,
+    _Out_writes_bytes_opt_(BufferLength) PWSTR Buffer,
+    _In_opt_ ULONG BufferLength,
+    _Out_opt_ PULONG ReturnLength
     );
 
 PHLIBAPI
@@ -332,7 +368,7 @@ VOID PhSetImageListBitmap(
 
 PHLIBAPI
 HICON PhLoadIcon(
-    _In_opt_ HINSTANCE InstanceHandle,
+    _In_opt_ PVOID ImageBaseAddress,
     _In_ PWSTR Name,
     _In_ ULONG Flags,
     _In_opt_ ULONG Width,
@@ -358,19 +394,29 @@ VOID PhSetClipboardString(
     _In_ PPH_STRINGREF String
     );
 
+#include <pshpack1.h>
 typedef struct _DLGTEMPLATEEX
 {
-    WORD dlgVer;
-    WORD signature;
-    DWORD helpID;
-    DWORD exStyle;
-    DWORD style;
-    WORD cDlgItems;
-    short x;
-    short y;
-    short cx;
-    short cy;
+    USHORT dlgVer;
+    USHORT signature;
+    ULONG helpID;
+    ULONG exStyle;
+    ULONG style;
+    USHORT cDlgItems;
+    SHORT x;
+    SHORT y;
+    SHORT cx;
+    SHORT cy;
+    //sz_Or_Ord menu;
+    //sz_Or_Ord windowClass;
+    //WCHAR title[titleLen];
+    //USHORT pointsize;
+    //USHORT weight;
+    //BYTE italic;
+    //BYTE charset;
+    //WCHAR typeface[stringLen];
 } DLGTEMPLATEEX, *PDLGTEMPLATEEX;
+#include <poppack.h>
 
 PHLIBAPI
 HWND PhCreateDialogFromTemplate(
@@ -380,6 +426,17 @@ HWND PhCreateDialogFromTemplate(
     _In_ PWSTR Template,
     _In_ DLGPROC DialogProc,
     _In_ PVOID Parameter
+    );
+
+PHLIBAPI
+HWND
+NTAPI
+PhCreateDialog(
+    _In_ PVOID Instance,
+    _In_ PWSTR Template,
+    _In_opt_ HWND ParentWindow,
+    _In_ DLGPROC DialogProc,
+    _In_opt_ PVOID Parameter
     );
 
 PHLIBAPI
@@ -456,6 +513,123 @@ PHLIBAPI
 VOID PhLayoutManagerLayout(
     _Inout_ PPH_LAYOUT_MANAGER Manager
     );
+
+#define PH_WINDOW_CONTEXT_DEFAULT 0xFFFF
+
+PHLIBAPI
+PVOID 
+PhGetWindowContext(
+    _In_ HWND WindowHandle, 
+    _In_ ULONG PropertyHash
+    );
+
+PHLIBAPI
+VOID 
+PhSetWindowContext(
+    _In_ HWND WindowHandle, 
+    _In_ ULONG PropertyHash,
+    _In_ PVOID Context
+    );
+
+PHLIBAPI
+VOID 
+PhRemoveWindowContext(
+    _In_ HWND WindowHandle, 
+    _In_ ULONG PropertyHash
+    );
+
+typedef BOOL (CALLBACK* PH_ENUM_CALLBACK)(
+    _In_ HWND WindowHandle,
+    _In_opt_ PVOID Context
+    );
+
+VOID PhEnumWindows(
+    _In_ PH_ENUM_CALLBACK Callback,
+    _In_opt_ PVOID Context
+    );
+
+typedef BOOLEAN (CALLBACK *PH_CHILD_ENUM_CALLBACK)(
+    _In_ HWND WindowHandle, 
+    _In_opt_ PVOID Context
+    );
+
+VOID PhEnumChildWindows(
+    _In_opt_ HWND WindowHandle,
+    _In_ ULONG Limit,
+    _In_ PH_CHILD_ENUM_CALLBACK Callback,
+    _In_opt_ PVOID Context
+    );
+
+HWND PhGetProcessMainWindow(
+    _In_ HANDLE ProcessId,
+    _In_opt_ HANDLE ProcessHandle
+    );
+
+HWND PhGetProcessMainWindowEx(
+    _In_ HANDLE ProcessId,
+    _In_opt_ HANDLE ProcessHandle,
+    _In_ BOOLEAN SkipInvisible
+    );
+
+PHLIBAPI
+ULONG
+NTAPI
+PhGetDialogItemValue(
+    _In_ HWND WindowHandle,
+    _In_ INT ControlID
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhSetDialogItemValue(
+    _In_ HWND WindowHandle,
+    _In_ INT ControlID,
+    _In_ ULONG Value,
+    _In_ BOOLEAN Signed
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhSetDialogItemText(
+    _In_ HWND WindowHandle,
+    _In_ INT ControlID,
+    _In_ PCWSTR WindowText
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhSetWindowText(
+    _In_ HWND WindowHandle,
+    _In_ PCWSTR WindowText
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhSetWindowAlwaysOnTop(
+    _In_ HWND WindowHandle,
+    _In_ BOOLEAN AlwaysOnTop
+    );
+
+FORCEINLINE ULONG PhGetWindowTextLength(
+    _In_ HWND WindowHandle
+    )
+{
+    return (ULONG)SendMessage(WindowHandle, WM_GETTEXTLENGTH, 0, 0); // DefWindowProc
+}
+
+FORCEINLINE VOID PhSetDialogFocus(
+    _In_ HWND WindowHandle,
+    _In_ HWND FocusHandle
+    )
+{
+    // Do not use the SendMessage function to send a WM_NEXTDLGCTL message if your application will 
+    // concurrently process other messages that set the focus. Use the PostMessage function instead.
+    SendMessage(WindowHandle, WM_NEXTDLGCTL, (WPARAM)FocusHandle, MAKELPARAM(TRUE, 0));
+}
 
 FORCEINLINE VOID PhResizingMinimumSize(
     _Inout_ PRECT Rect,
@@ -554,6 +728,15 @@ PhSetExtendedListView(
 PHLIBAPI
 VOID
 NTAPI
+PhSetExtendedListViewEx(
+    _In_ HWND WindowHandle,
+    _In_ ULONG SortColumn,
+    _In_ ULONG SortOrder
+    );
+
+PHLIBAPI
+VOID
+NTAPI
 PhSetHeaderSortIcon(
     _In_ HWND hwnd,
     _In_ INT Index,
@@ -575,7 +758,7 @@ PhSetHeaderSortIcon(
 #define ELVM_SETITEMFONTFUNCTION (WM_APP + 1117)
 #define ELVM_RESERVED1 (WM_APP + 1112)
 #define ELVM_SETREDRAW (WM_APP + 1116)
-#define ELVM_RESERVED2 (WM_APP + 1113)
+#define ELVM_GETSORT (WM_APP + 1113)
 #define ELVM_SETSORT (WM_APP + 1108)
 #define ELVM_SETSORTFAST (WM_APP + 1119)
 #define ELVM_RESERVED0 (WM_APP + 1110)
@@ -604,6 +787,8 @@ PhSetHeaderSortIcon(
     SendMessage((hWnd), ELVM_SETITEMFONTFUNCTION, 0, (LPARAM)(ItemFontFunction))
 #define ExtendedListView_SetRedraw(hWnd, Redraw) \
     SendMessage((hWnd), ELVM_SETREDRAW, (WPARAM)(Redraw), 0)
+#define ExtendedListView_GetSort(hWnd, Column, Order) \
+    SendMessage((hWnd), ELVM_GETSORT, (WPARAM)(Column), (LPARAM)(Order))
 #define ExtendedListView_SetSort(hWnd, Column, Order) \
     SendMessage((hWnd), ELVM_SETSORT, (WPARAM)(Column), (LPARAM)(Order))
 #define ExtendedListView_SetSortFast(hWnd, Fast) \
@@ -699,6 +884,361 @@ PhMakeColorBrighter(
         b = 255;
 
     return RGB(r, g, b);
+}
+
+// Window support
+
+typedef enum _PH_PLUGIN_WINDOW_EVENT_TYPE
+{
+    PH_PLUGIN_WINDOW_EVENT_TYPE_NONE,
+    PH_PLUGIN_WINDOW_EVENT_TYPE_TOPMOST,
+    PH_PLUGIN_WINDOW_EVENT_TYPE_MAX
+} PH_PLUGIN_WINDOW_EVENT_TYPE;
+
+typedef struct _PH_PLUGIN_WINDOW_CALLBACK_REGISTRATION
+{
+    HWND WindowHandle;
+    PH_PLUGIN_WINDOW_EVENT_TYPE Type;
+} PH_PLUGIN_WINDOW_CALLBACK_REGISTRATION, *PPH_PLUGIN_WINDOW_CALLBACK_REGISTRATION;
+
+typedef struct _PH_PLUGIN_WINDOW_NOTIFY_EVENT
+{
+    PH_PLUGIN_WINDOW_EVENT_TYPE Type;
+    union
+    {
+        BOOLEAN TopMost;
+        //HFONT FontHandle;
+    };
+} PH_PLUGIN_WINDOW_NOTIFY_EVENT, *PPH_PLUGIN_WINDOW_NOTIFY_EVENT;
+
+typedef struct _PH_PLUGIN_MAINWINDOW_NOTIFY_EVENT
+{
+    PPH_PLUGIN_WINDOW_NOTIFY_EVENT Event;
+    PPH_PLUGIN_WINDOW_CALLBACK_REGISTRATION Callback;
+} PH_PLUGIN_MAINWINDOW_NOTIFY_EVENT, *PPH_PLUGIN_MAINWINDOW_NOTIFY_EVENT;
+
+PHLIBAPI
+VOID
+NTAPI
+PhRegisterWindowCallback(
+    _In_ HWND WindowHandle,
+    _In_ PH_PLUGIN_WINDOW_EVENT_TYPE Type,
+    _In_opt_ PVOID Context
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhUnregisterWindowCallback(
+    _In_ HWND WindowHandle
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhWindowNotifyTopMostEvent(
+    _In_ BOOLEAN TopMost
+    );
+
+PHLIBAPI
+HANDLE
+NTAPI
+PhGetGlobalTimerQueue(
+    VOID
+    );
+
+_Success_(return)
+PHLIBAPI
+BOOLEAN
+NTAPI
+PhExtractIcon(
+    _In_ PWSTR FileName,
+    _Out_opt_ HICON *IconLarge,
+    _Out_opt_ HICON *IconSmall
+    );
+
+_Success_(return)
+PHLIBAPI
+BOOLEAN
+NTAPI
+PhExtractIconEx(
+    _In_ PPH_STRING FileName,
+    _In_ BOOLEAN NativeFileName,
+    _In_ INT32 IconIndex,
+    _Out_opt_ HICON *IconLarge,
+    _Out_opt_ HICON *IconSmall
+    );
+
+// Imagelist support
+
+PHLIBAPI
+HIMAGELIST
+NTAPI
+PhImageListCreate(
+    _In_ UINT Width,
+    _In_ UINT Height,
+    _In_ UINT Flags,
+    _In_ UINT InitialCount,
+    _In_ UINT GrowCount
+    );
+
+PHLIBAPI
+BOOLEAN
+NTAPI
+PhImageListDestroy(
+    _In_ HIMAGELIST ImageListHandle
+    );
+
+PHLIBAPI
+BOOLEAN
+NTAPI
+PhImageListSetImageCount(
+    _In_ HIMAGELIST ImageListHandle,
+    _In_ UINT Count
+    );
+
+PHLIBAPI
+BOOLEAN
+NTAPI
+PhImageListSetBkColor(
+    _In_ HIMAGELIST ImageListHandle,
+    _In_ COLORREF BackgroundColor
+    );
+
+PHLIBAPI
+BOOLEAN
+NTAPI
+PhImageListRemoveIcon(
+    _In_ HIMAGELIST ImageListHandle,
+    _In_ UINT Index
+    );
+
+#define PhImageListRemoveAll(ImageListHandle) \
+    PhImageListRemoveIcon((ImageListHandle), -1)
+
+PHLIBAPI
+UINT
+NTAPI
+PhImageListAddIcon(
+    _In_ HIMAGELIST ImageListHandle,
+    _In_ HICON IconHandle
+    );
+
+PHLIBAPI
+UINT
+NTAPI
+PhImageListAddBitmap(
+    _In_ HIMAGELIST ImageListHandle,
+    _In_ HBITMAP BitmapImage,
+    _In_opt_ HBITMAP BitmapMask
+    );
+
+PHLIBAPI
+HICON
+NTAPI
+PhImageListGetIcon(
+    _In_ HIMAGELIST ImageListHandle,
+    _In_ UINT Index,
+    _In_ UINT Flags
+    );
+
+PHLIBAPI
+BOOLEAN
+NTAPI
+PhImageListReplace(
+    _In_ HIMAGELIST ImageListHandle,
+    _In_ UINT Index,
+    _In_ HBITMAP BitmapImage,
+    _In_opt_ HBITMAP BitmapMask
+    );
+
+PHLIBAPI
+BOOLEAN
+NTAPI
+PhImageListDrawIcon(
+    _In_ HIMAGELIST ImageListHandle,
+    _In_ INT Index,
+    _In_ HDC Hdc,
+    _In_ INT x,
+    _In_ INT y,
+    _In_ UINT Style
+    );
+
+PHLIBAPI
+BOOLEAN
+NTAPI
+PhImageListDrawEx(
+    _In_ HIMAGELIST ImageListHandle,
+    _In_ INT Index,
+    _In_ HDC Hdc,
+    _In_ INT x,
+    _In_ INT y,
+    _In_ INT dx,
+    _In_ INT dy,
+    _In_ COLORREF BackColor,
+    _In_ COLORREF ForeColor,
+    _In_ UINT Style
+    );
+
+#define PH_DRAW_TIMELINE_OVERFLOW 0x1
+#define PH_DRAW_TIMELINE_DARKTHEME 0x2
+
+PHLIBAPI
+VOID
+NTAPI
+PhCustomDrawTreeTimeLine(
+    _In_ HDC Hdc,
+    _In_ RECT CellRect,
+    _In_ ULONG Flags,
+    _In_opt_ PLARGE_INTEGER StartTime,
+    _In_ PLARGE_INTEGER CreateTime
+    );
+
+// theme support (theme.c)
+
+PHLIBAPI extern HFONT PhApplicationFont; // phapppub
+PHLIBAPI extern HFONT PhTreeWindowFont; // phapppub
+PHLIBAPI extern HBRUSH PhMenuBackgroundBrush;
+extern COLORREF PhThemeWindowForegroundColor;
+extern COLORREF PhThemeWindowBackgroundColor;
+
+PHLIBAPI
+VOID
+NTAPI
+PhInitializeWindowTheme(
+    _In_ HWND WindowHandle,
+    _In_ BOOLEAN EnableThemeSupport
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhInitializeWindowThemeEx(
+    _In_ HWND WindowHandle
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhReInitializeWindowTheme(
+    _In_ HWND WindowHandle
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhInitializeThemeWindowFrame(
+    _In_ HWND WindowHandle
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhInitializeThemeWindowHeader(
+    _In_ HWND HeaderWindow
+    );
+
+PHLIBAPI
+BOOLEAN
+NTAPI
+PhThemeWindowDrawItem(
+    _In_ PDRAWITEMSTRUCT DrawInfo
+    );
+
+PHLIBAPI
+BOOLEAN
+NTAPI
+PhThemeWindowMeasureItem(
+    _In_ HWND WindowHandle,
+    _In_ PMEASUREITEMSTRUCT DrawInfo
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhInitializeWindowThemeStatusBar(
+    _In_ HWND StatusBarHandle
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhInitializeWindowThemeRebar(
+    _In_ HWND HeaderWindow
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhInitializeWindowThemeMainMenu(
+    _In_ HMENU MenuHandle
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhInitializeWindowThemeStaticControl(
+    _In_ HWND StaticControl
+    );
+
+PHLIBAPI
+LRESULT
+CALLBACK
+PhThemeWindowDrawRebar(
+    _In_ LPNMCUSTOMDRAW DrawInfo
+    );
+
+PHLIBAPI
+LRESULT
+CALLBACK
+PhThemeWindowDrawToolbar(
+    _In_ LPNMTBCUSTOMDRAW DrawInfo
+    );
+
+FORCEINLINE
+HFONT
+PhDuplicateFontWithNewHeight(
+    _In_ HFONT Font,
+    _In_ LONG NewHeight
+    )
+{
+    LOGFONT logFont;
+
+    if (GetObject(Font, sizeof(LOGFONT), &logFont))
+    {
+        logFont.lfHeight = PhMultiplyDivide(NewHeight, PhGlobalDpi, 96);
+        return CreateFontIndirect(&logFont);
+    }
+
+    return NULL;
+}
+
+FORCEINLINE
+VOID
+PhInflateRect(
+    _In_ PRECT Rect,
+    _In_ INT dx,
+    _In_ INT dy
+    )
+{
+    Rect->left -= dx;
+    Rect->top -= dy;
+    Rect->right += dx;
+    Rect->bottom += dy;
+}
+
+FORCEINLINE
+VOID
+PhOffsetRect(
+    _In_ PRECT Rect,
+    _In_ INT dx,
+    _In_ INT dy
+    )
+{
+    Rect->left += dx;
+    Rect->top += dy;
+    Rect->right += dx;
+    Rect->bottom += dy;
 }
 
 #ifdef __cplusplus

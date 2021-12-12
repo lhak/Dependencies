@@ -128,8 +128,11 @@ PhGetExpandStringSetting(
     PPH_STRING setting;
 
     setting = PhGetStringSetting(Name);
+#ifdef __cplusplus
+    PhMoveReference((PVOID*)&setting, PhExpandEnvironmentStrings(&setting->sr));
+#else
     PhMoveReference(&setting, PhExpandEnvironmentStrings(&setting->sr));
-
+#endif
     return setting;
 }
 
@@ -263,9 +266,37 @@ PhSaveListViewColumnsToSetting(
     _In_ PWSTR Name,
     _In_ HWND ListViewHandle
     );
+
+VOID
+NTAPI
+PhLoadListViewSortColumnsFromSetting(
+    _In_ PWSTR Name,
+    _In_ HWND ListViewHandle
+    );
+
+VOID
+NTAPI
+PhSaveListViewSortColumnsToSetting(
+    _In_ PWSTR Name,
+    _In_ HWND ListViewHandle
+    );
+
+VOID
+NTAPI
+PhLoadListViewGroupStatesFromSetting(
+    _In_ PWSTR Name,
+    _In_ HWND ListViewHandle
+    );
+
+VOID
+NTAPI
+PhSaveListViewGroupStatesToSetting(
+    _In_ PWSTR Name,
+    _In_ HWND ListViewHandle
+    );
 // end_phapppub
 
-#define PH_SET_INTEGER_CACHED_SETTING(Name, Value) (PhSetIntegerSetting(L#Name, PhCs##Name = (Value)))
+#define PH_SET_INTEGER_CACHED_SETTING(Name, Value) (PhSetIntegerSetting(TEXT(#Name), PhCs##Name = (Value)))
 
 #ifdef __cplusplus
 }

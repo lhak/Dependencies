@@ -1,17 +1,12 @@
 /*
- * "$Id: mxml-get.c 451 2014-01-04 21:50:06Z msweet $"
+ * Node get functions for Mini-XML, a small XML file parsing library.
  *
- * Node get functions for Mini-XML, a small XML-like file parsing library.
+ * https://www.msweet.org/mxml
  *
- * Copyright 2014 by Michael R Sweet.
+ * Copyright © 2014-2019 by Michael R Sweet.
  *
- * These coded instructions, statements, and computer programs are the
- * property of Michael R Sweet and are protected by Federal copyright
- * law.  Distribution and use rights are outlined in the file "COPYING"
- * which should have been included with this file.  If this file is
- * missing or damaged, see the license at:
- *
- *     http://www.msweet.org/projects.php/Mini-XML
+ * Licensed under Apache License v2.0.  See the file "LICENSE" for more
+ * information.
  */
 
 /*
@@ -19,7 +14,7 @@
  */
 
 #include "config.h"
-#include "mxml.h"
+#include "mxml-private.h"
 
 
 /*
@@ -30,7 +25,7 @@
  * @since Mini-XML 2.7@
  */
 
-const char *				/* O - CDATA value or NULL */
+const char *				/* O - CDATA value or @code NULL@ */
 mxmlGetCDATA(mxml_node_t *node)		/* I - Node to get */
 {
  /*
@@ -58,7 +53,7 @@ mxmlGetCDATA(mxml_node_t *node)		/* I - Node to get */
  * @since Mini-XML 2.7@
  */
 
-const void *				/* O - Custom value or NULL */
+const void *				/* O - Custom value or @code NULL@ */
 mxmlGetCustom(mxml_node_t *node)	/* I - Node to get */
 {
  /*
@@ -76,7 +71,7 @@ mxmlGetCustom(mxml_node_t *node)	/* I - Node to get */
     return (node->value.custom.data);
   else if (node->type == MXML_ELEMENT &&
            node->child &&
-	   node->child->type == MXML_CUSTOM)
+       node->child->type == MXML_CUSTOM)
     return (node->child->value.custom.data);
   else
     return (NULL);
@@ -91,7 +86,7 @@ mxmlGetCustom(mxml_node_t *node)	/* I - Node to get */
  * @since Mini-XML 2.7@
  */
 
-const char *				/* O - Element name or NULL */
+const char *				/* O - Element name or @code NULL@ */
 mxmlGetElement(mxml_node_t *node)	/* I - Node to get */
 {
  /*
@@ -118,7 +113,7 @@ mxmlGetElement(mxml_node_t *node)	/* I - Node to get */
  * @since Mini-XML 2.7@
  */
 
-mxml_node_t *				/* O - First child or NULL */
+mxml_node_t *				/* O - First child or @code NULL@ */
 mxmlGetFirstChild(mxml_node_t *node)	/* I - Node to get */
 {
  /*
@@ -163,7 +158,7 @@ mxmlGetInteger(mxml_node_t *node)	/* I - Node to get */
     return (node->value.integer);
   else if (node->type == MXML_ELEMENT &&
            node->child &&
-	   node->child->type == MXML_INTEGER)
+       node->child->type == MXML_INTEGER)
     return (node->child->value.integer);
   else
     return (0);
@@ -179,7 +174,7 @@ mxmlGetInteger(mxml_node_t *node)	/* I - Node to get */
  * @since Mini-XML 2.7@
  */
 
-mxml_node_t *				/* O - Last child or NULL */
+mxml_node_t *				/* O - Last child or @code NULL@ */
 mxmlGetLastChild(mxml_node_t *node)	/* I - Node to get */
 {
  /*
@@ -232,7 +227,7 @@ mxmlGetNextSibling(mxml_node_t *node)	/* I - Node to get */
  * @since Mini-XML 2.7@
  */
 
-const char *				/* O - Opaque string or NULL */
+const char *				/* O - Opaque string or @code NULL@ */
 mxmlGetOpaque(mxml_node_t *node)	/* I - Node to get */
 {
  /*
@@ -250,7 +245,7 @@ mxmlGetOpaque(mxml_node_t *node)	/* I - Node to get */
     return (node->value.opaque);
   else if (node->type == MXML_ELEMENT &&
            node->child &&
-	   node->child->type == MXML_OPAQUE)
+       node->child->type == MXML_OPAQUE)
     return (node->child->value.opaque);
   else
     return (NULL);
@@ -265,7 +260,7 @@ mxmlGetOpaque(mxml_node_t *node)	/* I - Node to get */
  * @since Mini-XML 2.7@
  */
 
-mxml_node_t *				/* O - Parent node or NULL */
+mxml_node_t *				/* O - Parent node or @code NULL@ */
 mxmlGetParent(mxml_node_t *node)	/* I - Node to get */
 {
  /*
@@ -291,7 +286,7 @@ mxmlGetParent(mxml_node_t *node)	/* I - Node to get */
  * @since Mini-XML 2.7@
  */
 
-mxml_node_t *				/* O - Previous node or NULL */
+mxml_node_t *				/* O - Previous node or @code NULL@ */
 mxmlGetPrevSibling(mxml_node_t *node)	/* I - Node to get */
 {
  /*
@@ -335,7 +330,7 @@ mxmlGetReal(mxml_node_t *node)		/* I - Node to get */
     return (node->value.real);
   else if (node->type == MXML_ELEMENT &&
            node->child &&
-	   node->child->type == MXML_REAL)
+       node->child->type == MXML_REAL)
     return (node->child->value.real);
   else
     return (0.0);
@@ -346,12 +341,18 @@ mxmlGetReal(mxml_node_t *node)		/* I - Node to get */
  * 'mxmlGetText()' - Get the text value for a node or its first child.
  *
  * @code NULL@ is returned if the node (or its first child) is not a text node.
- * The "whitespace" argument can be NULL.
+ * The "whitespace" argument can be @code NULL@.
+ *
+ * Note: Text nodes consist of whitespace-delimited words. You will only get
+ * single words of text when reading an XML file with @code MXML_TEXT@ nodes.
+ * If you want the entire string between elements in the XML file, you MUST read
+ * the XML file with @code MXML_OPAQUE@ nodes and get the resulting strings
+ * using the @link mxmlGetOpaque@ function instead.
  *
  * @since Mini-XML 2.7@
  */
 
-const char *				/* O - Text string or NULL */
+const char *				/* O - Text string or @code NULL@ */
 mxmlGetText(mxml_node_t *node,		/* I - Node to get */
             int         *whitespace)	/* O - 1 if string is preceded by whitespace, 0 otherwise */
 {
@@ -380,7 +381,7 @@ mxmlGetText(mxml_node_t *node,		/* I - Node to get */
   }
   else if (node->type == MXML_ELEMENT &&
            node->child &&
-	   node->child->type == MXML_TEXT)
+       node->child->type == MXML_TEXT)
   {
     if (whitespace)
       *whitespace = node->child->value.text.whitespace;
@@ -445,8 +446,3 @@ mxmlGetUserData(mxml_node_t *node)	/* I - Node to get */
 
   return (node->user_data);
 }
-
-
-/*
- * End of "$Id: mxml-get.c 451 2014-01-04 21:50:06Z msweet $".
- */

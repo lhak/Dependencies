@@ -1,11 +1,59 @@
+/*
+ * Process Hacker -
+ *   Win32 definition support
+ *
+ * This file is part of Process Hacker.
+ *
+ * Process Hacker is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Process Hacker is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Process Hacker.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef _PHNT_WINDOWS_H
 #define _PHNT_WINDOWS_H
 
 // This header file provides access to Win32, plus NTSTATUS values and some access mask values.
 
+#ifndef __cplusplus
+#ifndef CINTERFACE
+#define CINTERFACE
+#endif
+
+#ifndef COBJMACROS
+#define COBJMACROS
+#endif
+#endif
+
+#ifndef INITGUID
+#define INITGUID
+#endif
+
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
+
+#ifndef WIN32_NO_STATUS
 #define WIN32_NO_STATUS
+#endif
+
+#ifndef __cplusplus
+// This is needed to workaround C17 preprocessor errors when using legacy versions of the Windows SDK. (dmex)
+#ifndef MICROSOFT_WINDOWS_WINBASE_H_DEFINE_INTERLOCKED_CPLUSPLUS_OVERLOADS
+#define MICROSOFT_WINDOWS_WINBASE_H_DEFINE_INTERLOCKED_CPLUSPLUS_OVERLOADS 0
+#endif
+#endif
+
 #include <windows.h>
+#include <windowsx.h>
 #undef WIN32_NO_STATUS
 #include <ntstatus.h>
 #include <winioctl.h>

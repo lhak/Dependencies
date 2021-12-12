@@ -2,7 +2,7 @@
  * Process Hacker -
  *   Appmodel support functions
  *
- * Copyright (C) 2017-2018 dmex
+ * Copyright (C) 2017-2019 dmex
  *
  * This file is part of Process Hacker.
  *
@@ -42,6 +42,64 @@ static IID IID_IMrtResourceManager_I = { 0x130A2F65, 0x2BE7, 0x4309,{ 0x9A, 0x58
 static IID IID_IResourceContext_I = { 0xE3C22B30, 0x8502, 0x4B2F,{ 0x91, 0x33, 0x55, 0x96, 0x74, 0x58, 0x7E, 0x51 } };
 // "6E21E72B-B9B0-42AE-A686-983CF784EDCD"
 static IID IID_IResourceMap_I = { 0x6E21E72B, 0xB9B0, 0x42AE,{ 0xA6, 0x86, 0x98, 0x3C, 0xF7, 0x84, 0xED, 0xCD } };
+
+static HRESULT (WINAPI* AppContainerDeriveSidFromMoniker_I)( // DeriveAppContainerSidFromAppContainerName
+    _In_ PCWSTR AppContainerName,
+    _Out_ PSID *AppContainerSid
+    ) = NULL;
+
+// Note: LookupAppContainerDisplayName (userenv.dll, ordinal 211) has the same prototype but returns 'PackageName/ContainerName'.
+static HRESULT (WINAPI* AppContainerLookupMoniker_I)(
+    _In_ PSID AppContainerSid, 
+    _Out_ PWSTR *PackageFamilyName
+    ) = NULL;
+
+static HRESULT (WINAPI* AppContainerRegisterSid_I)(
+    _In_ PSID Sid,
+    _In_ PCWSTR AppContainerName,
+    _In_ PCWSTR DisplayName
+    ) = NULL;
+
+static HRESULT (WINAPI* AppContainerUnregisterSid_I)(
+    _In_ PSID Sid
+    ) = NULL;
+
+static BOOL (WINAPI* AppContainerFreeMemory_I)(
+    _Frees_ptr_opt_ PVOID Memory
+    ) = NULL;
+
+static HRESULT (WINAPI* AppPolicyGetWindowingModel_I)(
+    _In_ HANDLE ProcessTokenHandle,
+    _Out_ AppPolicyWindowingModel *ProcessWindowingModelPolicy
+    ) = NULL;
+
+// rev
+static NTSTATUS (NTAPI* PsmGetKeyFromProcess_I)(
+    _In_ HANDLE ProcessHandle,
+    _Out_ PVOID KeyBuffer,
+    _Inout_ PULONG KeyLength
+    ) = NULL;
+
+// rev
+static NTSTATUS (NTAPI* PsmGetKeyFromToken_I)(
+    _In_ HANDLE TokenHandle,
+    _Out_ PVOID KeyBuffer,
+    _Inout_ PULONG KeyLength
+    ) = NULL;
+
+// rev
+static NTSTATUS (NTAPI* PsmGetApplicationNameFromKey_I)(
+    _In_ PVOID KeyBuffer,
+    _Out_ PVOID NameBuffer,
+    _Inout_ PULONG NameLength
+    ) = NULL;
+
+// rev
+static NTSTATUS (NTAPI* PsmGetPackageFullNameFromKey_I)(
+    _In_ PVOID KeyBuffer,
+    _Out_ PVOID NameBuffer,
+    _Inout_ PULONG NameLength
+    ) = NULL;
 
 typedef enum _START_MENU_APP_ITEMS_FLAGS
 {
@@ -118,7 +176,7 @@ DECLARE_INTERFACE_IID(IApplicationResolver61, IUnknown)
 
 #define IApplicationResolver_QueryInterface(This, riid, ppvObject) \
     ((This)->lpVtbl->QueryInterface(This, riid, ppvObject))
-#define IApplicationResolver_AddRef(This)	\
+#define IApplicationResolver_AddRef(This) \
     ((This)->lpVtbl->AddRef(This))
 #define IApplicationResolver_Release(This) \
     ((This)->lpVtbl->Release(This))
@@ -215,12 +273,16 @@ DECLARE_INTERFACE_IID(IApplicationResolver62, IUnknown)
         _Out_opt_ IShellItem **ppsi
         ) PURE;
 
+    // STDMETHOD(GetLauncherAppIDForItem)(THIS)
+    // STDMETHOD(GetShortcutForAppID)(THIS)
+    // STDMETHOD(GetLauncherAppIDForItemEx)(THIS)
+
     END_INTERFACE
 };
 
 #define IApplicationResolver2_QueryInterface(This, riid, ppvObject) \
     ((This)->lpVtbl->QueryInterface(This, riid, ppvObject))
-#define IApplicationResolver2_AddRef(This)	\
+#define IApplicationResolver2_AddRef(This) \
     ((This)->lpVtbl->AddRef(This))
 #define IApplicationResolver2_Release(This) \
     ((This)->lpVtbl->Release(This))
@@ -262,12 +324,12 @@ DECLARE_INTERFACE_IID(IStartMenuAppItems61, IUnknown)
 
     // IStartMenuAppItems61
     STDMETHOD(EnumItems)(THIS,
-        _In_ ULONG Flags,
+        _In_ START_MENU_APP_ITEMS_FLAGS Flags,
         _In_ REFIID riid,
-        _Outptr_ IEnumObjects *ppvObject
+        _Outptr_ IEnumObjects **ppvObject
         ) PURE;
     STDMETHOD(GetItem)(THIS,
-        _In_ ULONG Flags,
+        _In_ START_MENU_APP_ITEMS_FLAGS Flags,
         _In_ PWSTR AppUserModelId,
         _In_ REFIID riid,
         _Outptr_ PVOID *ppvObject // ppvObject == IPropertyStore, IStartMenuAppItems61
@@ -278,7 +340,7 @@ DECLARE_INTERFACE_IID(IStartMenuAppItems61, IUnknown)
 
 #define IStartMenuAppItems_QueryInterface(This, riid, ppvObject) \
     ((This)->lpVtbl->QueryInterface(This, riid, ppvObject))
-#define IStartMenuAppItems_AddRef(This)	\
+#define IStartMenuAppItems_AddRef(This) \
     ((This)->lpVtbl->AddRef(This))
 #define IStartMenuAppItems_Release(This) \
     ((This)->lpVtbl->Release(This))
@@ -300,25 +362,25 @@ DECLARE_INTERFACE_IID(IStartMenuAppItems62, IUnknown)
 
     // IStartMenuAppItems62
     STDMETHOD(EnumItems)(THIS,
-        _In_ ULONG Flags,
+        _In_ START_MENU_APP_ITEMS_FLAGS Flags,
         _In_ REFIID riid,
-        _Outptr_ IEnumObjects *ppvObject
+        _Outptr_ IEnumObjects **ppvObject
         ) PURE;
     STDMETHOD(GetItem)(THIS,
-        _In_ ULONG Flags,
+        _In_ START_MENU_APP_ITEMS_FLAGS Flags,
         _In_ PWSTR AppUserModelId,
         _In_ REFIID riid,
         _Outptr_ PVOID *ppvObject // ppvObject == IPropertyStore, IStartMenuAppItems61
         ) PURE;
-    // STDMETHOD(Unknown)(THIS)
-    // STDMETHOD(Unknown)(THIS)
+    // STDMETHOD(GetItemByAppPath)(THIS)
+    // STDMETHOD(EnumCachedItems)(THIS)
 
     END_INTERFACE
 };
 
 #define IStartMenuAppItems2_QueryInterface(This, riid, ppvObject) \
     ((This)->lpVtbl->QueryInterface(This, riid, ppvObject))
-#define IStartMenuAppItems2_AddRef(This)	\
+#define IStartMenuAppItems2_AddRef(This) \
     ((This)->lpVtbl->AddRef(This))
 #define IStartMenuAppItems2_Release(This) \
     ((This)->lpVtbl->Release(This))
@@ -354,7 +416,7 @@ DECLARE_INTERFACE_IID(IMrtResourceManager, IUnknown)
 
 #define IMrtResourceManager_QueryInterface(This, riid, ppvObject) \
     ((This)->lpVtbl->QueryInterface(This, riid, ppvObject)) 
-#define IMrtResourceManager_AddRef(This)	\
+#define IMrtResourceManager_AddRef(This) \
     ((This)->lpVtbl->AddRef(This))
 #define IMrtResourceManager_Release(This) \
     ((This)->lpVtbl->Release(This)) 
@@ -444,7 +506,7 @@ DECLARE_INTERFACE_IID(IResourceMap, IUnknown)
 
 #define IResourceMap_QueryInterface(This, riid, ppvObject) \
     ((This)->lpVtbl->QueryInterface(This, riid, ppvObject)) 
-#define IResourceMap_AddRef(This)	\
+#define IResourceMap_AddRef(This) \
     ((This)->lpVtbl->AddRef(This))
 #define IResourceMap_Release(This) \
     ((This)->lpVtbl->Release(This)) 
@@ -464,8 +526,8 @@ DECLARE_INTERFACE_IID(IResourceMap, IUnknown)
     ((This)->lpVtbl->GetNamedResourceCount(This, Count)) 
 #define IResourceMap_GetNamedResourceUri(This, Index, Name) \
     ((This)->lpVtbl->GetNamedResourceUri(This, Index, Name)) 
-#define IResourceMap_GetNamedResource(This) \
-    ((This)->lpVtbl->GetNamedResource(This)) 
+#define IResourceMap_GetNamedResource(This, Name, rrid, ppvObject) \
+    ((This)->lpVtbl->GetNamedResource(This, Name, rrid, ppvObject))
 #define IResourceMap_GetFullyQualifiedReference(This) \
     ((This)->lpVtbl->GetFullyQualifiedReference(This)) 
 #define IResourceMap_GetFilePathByUri(This) \
@@ -480,32 +542,32 @@ DEFINE_PROPERTYKEY(PKEY_AppUserModel_PackageFamilyName, 0x9F4C2855, 0x9F79, 0x4B
 DEFINE_PROPERTYKEY(PKEY_AppUserModel_ParentID, 0x9F4C2855, 0x9F79, 0x4B39, 0xA8, 0xD0, 0xE1, 0xD4, 0x2D, 0xE1, 0xD5, 0xF3, 19);
 DEFINE_PROPERTYKEY(PKEY_AppUserModel_PackageFullName, 0x9F4C2855, 0x9F79, 0x4B39, 0xA8, 0xD0, 0xE1, 0xD4, 0x2D, 0xE1, 0xD5, 0xF3, 21);
 // PKEY_AppUserModel_ExcludeFromShowInNewInstall {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 8
-//2	PKEY_AppUserModel_ID {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 5
-//3	PKEY_AppUserModel_IsDestListSeparator {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 6
-//4	PKEY_AppUserModel_IsDualMode {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 11
-//5	PKEY_AppUserModel_PreventPinning {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 9
-//6	PKEY_AppUserModel_RelaunchCommand {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 2
-//7	PKEY_AppUserModel_RelaunchDisplayNameResource {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 4
-//8	PKEY_AppUserModel_RelaunchIconResource {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 3
-//9	PKEY_AppUserModel_StartPinOption {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 12
+//2 PKEY_AppUserModel_ID {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 5
+//3 PKEY_AppUserModel_IsDestListSeparator {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 6
+//4 PKEY_AppUserModel_IsDualMode {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 11
+//5 PKEY_AppUserModel_PreventPinning {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 9
+//6 PKEY_AppUserModel_RelaunchCommand {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 2
+//7 PKEY_AppUserModel_RelaunchDisplayNameResource {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 4
+//8 PKEY_AppUserModel_RelaunchIconResource {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 3
+//9 PKEY_AppUserModel_StartPinOption {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 12
 //10 PKEY_AppUserModel_ToastActivatorCLSID {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 26
 //11 PKEY_AppUserModel_PackageInstallPath {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 15
 //12 PKEY_AppUserModel_RecordState {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 16
 //13 PKEY_AppUserModel_PackageFullName {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 21
 //14 PKEY_AppUserModel_DestListProvidedTitle {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 27
 //15 PKEY_AppUserModel_DestListProvidedDescription {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 28
-//16 PKEY_AppUserModel_ParentID	{9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 19
+//16 PKEY_AppUserModel_ParentID {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 19
 //17 PKEY_AppUserModel_HostEnvironment {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 14
 //18 PKEY_AppUserModel_Relevance {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 13
-//19 PKEY_AppUserModel_PackageRelativeApplicationID	{9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 22
+//19 PKEY_AppUserModel_PackageRelativeApplicationID {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 22
 //20 PKEY_AppUserModel_ExcludedFromLauncher {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 23
 //21 PKEY_AppUserModel_DestListLogoUri {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 29
 //22 PKEY_AppUserModel_ActivationContext {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 20
 //23 PKEY_AppUserModel_PackageFamilyName {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 17
-//24 PKEY_AppUserModel_BestShortcut	{9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 10
+//24 PKEY_AppUserModel_BestShortcut {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 10
 //25 PKEY_AppUserModel_IsDestListLink {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 7
 //26 PKEY_AppUserModel_InstalledBy {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 18
-//27 PKEY_AppUserModel_RunFlags	{9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 25
+//27 PKEY_AppUserModel_RunFlags {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 25
 //28 PKEY_AppUserModel_DestListProvidedGroupName {9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3} 30
 DEFINE_PROPERTYKEY(PKEY_Tile_SmallLogoPath, 0x86D40B4D, 0x9069, 0x443C, 0x81, 0x9A, 0x2A, 0x54, 0x09, 0x0D, 0xCC, 0xEC, 2);
 DEFINE_PROPERTYKEY(PKEY_Tile_Background, 0x86D40B4D, 0x9069, 0x443C, 0x81, 0x9A, 0x2A, 0x54, 0x09, 0x0D, 0xCC, 0xEC, 4);
@@ -523,5 +585,147 @@ DEFINE_PROPERTYKEY(PKEY_Tile_Square70x70LogoPath, 0x86D40B4D, 0x9069, 0x443C, 0x
 DEFINE_PROPERTYKEY(PKEY_Tile_FencePost, 0x86D40B4D, 0x9069, 0x443C, 0x81, 0x9A, 0x2A, 0x54, 0x09, 0x0D, 0xCC, 0xEC, 21);
 DEFINE_PROPERTYKEY(PKEY_Tile_InstallProgress, 0x86D40B4D, 0x9069, 0x443C, 0x81, 0x9A, 0x2A, 0x54, 0x09, 0x0D, 0xCC, 0xEC, 22);
 DEFINE_PROPERTYKEY(PKEY_Tile_EncodedTargetPath, 0x86D40B4D, 0x9069, 0x443C, 0x81, 0x9A, 0x2A, 0x54, 0x09, 0x0D, 0xCC, 0xEC, 23);
+
+// Immersive PLM task support
+
+// "07fc2b94-5285-417e-8ac3-c2ce5240b0fa"
+static CLSID CLSID_OSTaskCompletion_I = { 0x07fc2b94, 0x5285, 0x417e, { 0x8a, 0xc3, 0xc2, 0xce, 0x52, 0x40, 0xb0, 0xfa } };
+// "c7e40572-c36a-43ea-9a40-f3b168da5558"
+static IID IID_IOSTaskCompletion_I = { 0xc7e40572, 0xc36a, 0x43ea, { 0x9a, 0x40, 0xf3, 0xb1, 0x68, 0xda, 0x55, 0x58 } };
+
+typedef enum _PLM_TASKCOMPLETION_CATEGORY_FLAGS
+{
+    PT_TC_NONE = 0,
+    PT_TC_PBM = 1,
+    PT_TC_FILEOPENPICKER = 2,
+    PT_TC_SHARING = 4,
+    PT_TC_PRINTING = 8,
+    PT_TC_GENERIC = 16,
+    PT_TC_CAMERA_DCA = 32,
+    PT_TC_PRINTER_DCA = 64,
+    PT_TC_PLAYTO = 128,
+    PT_TC_FILESAVEPICKER = 256,
+    PT_TC_CONTACTPICKER = 512,
+    PT_TC_CACHEDFILEUPDATER_LOCAL = 1024,
+    PT_TC_CACHEDFILEUPDATER_REMOTE = 2048,
+    PT_TC_ERROR_REPORT = 8192,
+    PT_TC_DATA_PACKAGE = 16384,
+    PT_TC_CRASHDUMP = 0x10000,
+    PT_TC_STREAMEDFILE = 0x20000,
+    PT_TC_PBM_COMMUNICATION = 0x80000,
+    PT_TC_HOSTEDAPPLICATION = 0x100000,
+    PT_TC_MEDIA_CONTROLS_ACTIVE = 0x200000,
+    PT_TC_EMPTYHOST = 0x400000,
+    PT_TC_SCANNING = 0x800000,
+    PT_TC_ACTIONS = 0x1000000,
+    PT_TC_KERNEL_MODE = 0x20000000,
+    PT_TC_REALTIMECOMM = 0x40000000,
+    PT_TC_IGNORE_NAV_LEVEL_FOR_CS = 0x80000000
+} PLM_TASKCOMPLETION_CATEGORY_FLAGS;
+
+#undef INTERFACE
+#define INTERFACE IOSTaskCompletion
+DECLARE_INTERFACE_IID(IOSTaskCompletion, IUnknown)
+{
+    BEGIN_INTERFACE
+
+    // IUnknown
+    STDMETHOD(QueryInterface)(THIS, REFIID riid, PVOID *ppvObject) PURE;
+    STDMETHOD_(ULONG, AddRef)(THIS) PURE;
+    STDMETHOD_(ULONG, Release)(THIS) PURE;
+
+    // IOSTaskCompletion
+    STDMETHOD(BeginTask)(THIS, ULONG ProcessId, PLM_TASKCOMPLETION_CATEGORY_FLAGS Flags) PURE;
+    STDMETHOD(BeginTaskByHandle)(THIS, HANDLE ProcessHandle, PLM_TASKCOMPLETION_CATEGORY_FLAGS Flags) PURE;
+    STDMETHOD(EndTask)(THIS) PURE;
+    STDMETHOD_(ULONG, ValidateStreamedFileTaskCompletionUsage)(THIS, HANDLE ProcessHandle, ULONG ProcessId) PURE; // returns PsmKey
+
+    END_INTERFACE
+};
+
+#define IOSTaskCompletion_QueryInterface(This, riid, ppvObject) \
+    ((This)->lpVtbl->QueryInterface(This, riid, ppvObject)) 
+#define IOSTaskCompletion_AddRef(This) \
+    ((This)->lpVtbl->AddRef(This))
+#define IOSTaskCompletion_Release(This) \
+    ((This)->lpVtbl->Release(This)) 
+#define IOSTaskCompletion_BeginTask(This, ProcessId, Flags) \
+    ((This)->lpVtbl->BeginTask(This, ProcessId, Flags)) 
+#define IOSTaskCompletion_BeginTaskByHandle(This, ProcessHandle, Flags) \
+    ((This)->lpVtbl->BeginTaskByHandle(This, ProcessHandle, Flags))
+#define IOSTaskCompletion_EndTask(This) \
+    ((This)->lpVtbl->EndTask(This))
+#define IOSTaskCompletion_ValidateStreamedFileTaskCompletionUsage(This, ProcessHandle, ProcessId) \
+    ((This)->lpVtbl->ValidateStreamedFileTaskCompletionUsage(This, ProcessHandle, ProcessId))
+
+#undef INTERFACE
+#define INTERFACE IOSTaskCompletion2
+DECLARE_INTERFACE_IID(IOSTaskCompletion2, IOSTaskCompletion)
+{
+    BEGIN_INTERFACE
+
+    // IUnknown
+    STDMETHOD(QueryInterface)(THIS, REFIID riid, PVOID *ppvObject) PURE;
+    STDMETHOD_(ULONG, AddRef)(THIS) PURE;
+    STDMETHOD_(ULONG, Release)(THIS) PURE;
+
+    // IOSTaskCompletion2
+    STDMETHOD(InternalGetTrustLevelStatic)(THIS) PURE;
+    STDMETHOD(InternalGetTrustLevelStatic2)(THIS) PURE;
+    STDMETHOD(EndAllTasksAndWait)(THIS) PURE;
+    STDMETHOD(BeginTaskByHandleEx)(THIS, HANDLE ProcessHandle, PLM_TASKCOMPLETION_CATEGORY_FLAGS Flags, enum PLM_TASKCOMPLETION_BEGIN_TASK_FLAGS TaskFlags) PURE;
+
+    END_INTERFACE
+};
+
+#define IOSTaskCompletion_QueryInterface(This, riid, ppvObject) \
+    ((This)->lpVtbl->QueryInterface(This, riid, ppvObject)) 
+#define IOSTaskCompletion_AddRef(This) \
+    ((This)->lpVtbl->AddRef(This))
+#define IOSTaskCompletion_Release(This) \
+    ((This)->lpVtbl->Release(This)) 
+#define IOSTaskCompletion_InternalGetTrustLevelStatic(This) \
+    ((This)->lpVtbl->InternalGetTrustLevelStatic(This)) 
+#define IOSTaskCompletion_InternalGetTrustLevelStatic2(This) \
+    ((This)->lpVtbl->InternalGetTrustLevelStatic2(This))
+#define IOSTaskCompletion_EndAllTasksAndWait(This) \
+    ((This)->lpVtbl->EndAllTasksAndWait(This))
+#define IOSTaskCompletion_BeginTaskByHandleEx(This, ProcessHandle, Flags, TaskFlags) \
+    ((This)->lpVtbl->BeginTaskByHandleEx(This, ProcessHandle, Flags, TaskFlags))
+
+// EDP
+
+typedef enum _EDP_CONTEXT_STATES
+{
+    EDP_CONTEXT_NONE = 0,
+    EDP_CONTEXT_IS_EXEMPT = 1,
+    EDP_CONTEXT_IS_ENLIGHTENED = 2,
+    EDP_CONTEXT_IS_UNENLIGHTENED_ALLOWED = 4,
+    EDP_CONTEXT_IS_PERMISSIVE = 8,
+    EDP_CONTEXT_IS_COPY_EXEMPT = 16,
+    EDP_CONTEXT_IS_DENIED = 32,
+} EDP_CONTEXT_STATES;
+
+typedef struct _EDP_CONTEXT
+{
+    EDP_CONTEXT_STATES contextStates;
+    ULONG allowedEnterpriseIdCount;
+    PWSTR enterpriseIdForUIEnforcement;
+    WCHAR allowedEnterpriseIds[1];
+} EDP_CONTEXT, *PEDP_CONTEXT;
+
+static HRESULT (WINAPI* EdpGetContextForWindow_I)(
+    _In_ HWND WindowHandle,
+    _Out_ PEDP_CONTEXT* EdpContext
+    ) = NULL;
+
+static HRESULT (WINAPI* EdpGetContextForProcess_I)(
+    _In_ ULONG ProcessId,
+    _Out_ PEDP_CONTEXT* EdpContext
+    ) = NULL;
+
+static VOID (WINAPI* EdpFreeContext_I)(
+    _In_ PEDP_CONTEXT EdpContext
+    ) = NULL;
 
 #endif

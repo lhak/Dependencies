@@ -72,7 +72,7 @@ VOID PvpLoadDbgHelpFromPath(
     HMODULE dbghelpModule;
 	
 	// try to load from windows kits installed on the machine
-	dbghelpModule = LoadLibrary(DbgHelpPath);
+	dbghelpModule = (HMODULE)PhLoadLibrary(DbgHelpPath);
 
 	// try system32, and then current dir
 	if (!dbghelpModule)
@@ -101,7 +101,7 @@ VOID PvpLoadDbgHelpFromPath(
 
                 symsrvPath = PhConcatStringRef2(&dbghelpFolder, &symsrvString);
 
-                LoadLibrary(symsrvPath->Buffer);
+                PhLoadLibrary(symsrvPath->Buffer);
 
                 PhDereferenceObject(symsrvPath);
             }
@@ -109,7 +109,7 @@ VOID PvpLoadDbgHelpFromPath(
             PhDereferenceObject(fullDbghelpPath);
         }
 
-		PhSymbolProviderCompleteInitialization(dbghelpModule);
+		//PhSymbolProviderCompleteInitialization(dbghelpModule);
     }
     //else
     //{
@@ -136,8 +136,8 @@ BOOLEAN PvpLoadDbgHelp(
     symbolPathUs.MaximumLength = sizeof(buffer);
     
 
-    if (!PhSymbolProviderInitialization())
-        return FALSE;
+   // if (!PhSymbolProviderInitialization())
+     //   return FALSE;
 
 	PvpGetDefaultPathForDbgHelp((PWSTR)DefaultDbgHelpPath);
     PvpLoadDbgHelpFromPath((PWSTR)DefaultDbgHelpPath);

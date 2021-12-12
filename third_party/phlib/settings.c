@@ -3,7 +3,7 @@
  *   settings
  *
  * Copyright (C) 2010-2016 wj32
- * Copyright (C) 2017 dmex
+ * Copyright (C) 2017-2021 dmex
  *
  * This file is part of Process Hacker.
  *
@@ -36,13 +36,9 @@
  */
 
 #include <ph.h>
-#include <phbasesup.h>
-#include <phutil.h>
+#include <guisup.h>
 #include <settings.h>
-
-#include <commctrl.h>
-
-#include "mxml/mxml.h"
+#include <json.h>
 
 BOOLEAN NTAPI PhpSettingsHashtableEqualFunction(
     _In_ PVOID Entry1,
@@ -78,7 +74,7 @@ VOID PhSettingsInitialization(
         sizeof(PH_SETTING),
         PhpSettingsHashtableEqualFunction,
         PhpSettingsHashtableHashFunction,
-        256
+        512
         );
     PhIgnoredSettings = PhCreateList(4);
 
@@ -103,7 +99,7 @@ ULONG NTAPI PhpSettingsHashtableHashFunction(
 {
     PPH_SETTING setting = (PPH_SETTING)Entry;
 
-    return PhHashBytes((PUCHAR)setting->Name.Buffer, setting->Name.Length);
+    return PhHashStringRefEx(&setting->Name, FALSE, PH_STRING_HASH_X65599);
 }
 
 static ULONG PhpGetCurrentScale(
@@ -147,22 +143,42 @@ PPH_STRING PhSettingToString(
         }
     case IntegerSettingType:
         {
-            return PhFormatString(L"%x", Setting->u.Integer);
+            PH_FORMAT format[1];
+
+            // %x
+            PhInitFormatX(&format[0], Setting->u.Integer);
+
+            return PhFormat(format, RTL_NUMBER_OF(format), 0);  
         }
     case IntegerPairSettingType:
         {
             PPH_INTEGER_PAIR integerPair = &Setting->u.IntegerPair;
+            PH_FORMAT format[3];
 
-            return PhFormatString(L"%ld,%ld", integerPair->X, integerPair->Y);
+            // %ld,%ld
+            PhInitFormatD(&format[0], integerPair->X);
+            PhInitFormatC(&format[1], L',');
+            PhInitFormatD(&format[2], integerPair->Y);
+
+            return PhFormat(format, RTL_NUMBER_OF(format), 0);
         }
     case ScalableIntegerPairSettingType:
         {
             PPH_SCALABLE_INTEGER_PAIR scalableIntegerPair = Setting->u.Pointer;
+            PH_FORMAT format[6];
 
             if (!scalableIntegerPair)
                 return PhReferenceEmptyString();
 
-            return PhFormatString(L"@%lu|%ld,%ld", scalableIntegerPair->Scale, scalableIntegerPair->X, scalableIntegerPair->Y);
+            // @%lu|%ld,%ld
+            PhInitFormatC(&format[0], L'@');
+            PhInitFormatU(&format[1], scalableIntegerPair->Scale);
+            PhInitFormatC(&format[2], L'|');
+            PhInitFormatD(&format[3], scalableIntegerPair->X);
+            PhInitFormatC(&format[4], L',');
+            PhInitFormatD(&format[5], scalableIntegerPair->Y);
+
+            return PhFormat(format, RTL_NUMBER_OF(format), 0);
         }
     }
 
@@ -212,7 +228,7 @@ BOOLEAN PhSettingFromString(
             PH_STRINGREF xString;
             PH_STRINGREF yString;
 
-            if (!PhSplitStringRefAtChar(StringRef, ',', &xString, &yString))
+            if (!PhSplitStringRefAtChar(StringRef, L',', &xString, &yString))
                 return FALSE;
 
             if (PhStringToInteger64(&xString, 10, &x) && PhStringToInteger64(&yString, 10, &y))
@@ -238,11 +254,11 @@ BOOLEAN PhSettingFromString(
 
             stringRef = *StringRef;
 
-            if (stringRef.Length != 0 && stringRef.Buffer[0] == '@')
+            if (stringRef.Length != 0 && stringRef.Buffer[0] == L'@')
             {
                 PhSkipStringRef(&stringRef, sizeof(WCHAR));
 
-                if (!PhSplitStringRefAtChar(&stringRef, '|', &firstPart, &stringRef))
+                if (!PhSplitStringRefAtChar(&stringRef, L'|', &firstPart, &stringRef))
                     return FALSE;
                 if (!PhStringToInteger64(&firstPart, 10, &scale))
                     return FALSE;
@@ -252,7 +268,7 @@ BOOLEAN PhSettingFromString(
                 scale = PhpGetCurrentScale();
             }
 
-            if (!PhSplitStringRefAtChar(&stringRef, ',', &firstPart, &secondPart))
+            if (!PhSplitStringRefAtChar(&stringRef, L',', &firstPart, &secondPart))
                 return FALSE;
 
             if (PhStringToInteger64(&firstPart, 10, &x) && PhStringToInteger64(&secondPart, 10, &y))
@@ -726,84 +742,30 @@ VOID PhConvertIgnoredSettings(
     PhReleaseQueuedLockExclusive(&PhSettingsLock);
 }
 
-PPH_STRING PhpGetOpaqueXmlNodeText(
-    _In_ mxml_node_t *node
-    )
-{
-    if (node->child && node->child->type == MXML_OPAQUE && node->child->value.opaque)
-    {
-        return PhConvertUtf8ToUtf16(node->child->value.opaque);
-    }
-    else
-    {
-        return PhReferenceEmptyString();
-    }
-}
-
 NTSTATUS PhLoadSettings(
     _In_ PWSTR FileName
     )
 {
     NTSTATUS status;
-    HANDLE fileHandle;
-    LARGE_INTEGER fileSize;
-    mxml_node_t *topNode;
-    mxml_node_t *currentNode;
+    PVOID topNode;
+    PVOID currentNode;
 
     PhpClearIgnoredSettings();
 
-    status = PhCreateFileWin32(
-        &fileHandle,
-        FileName,
-        FILE_GENERIC_READ,
-        0,
-        FILE_SHARE_READ | FILE_SHARE_DELETE,
-        FILE_OPEN,
-        FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT
-        );
-
-    if (!NT_SUCCESS(status))
+    if (!NT_SUCCESS(status = PhLoadXmlObjectFromFile(FileName, &topNode)))
         return status;
-
-    if (NT_SUCCESS(PhGetFileSize(fileHandle, &fileSize)) && fileSize.QuadPart == 0)
-    {
-        // A blank file is OK. There are no settings to load.
-        NtClose(fileHandle);
-        return status;
-    }
-
-    topNode = mxmlLoadFd(NULL, fileHandle, MXML_OPAQUE_CALLBACK);
-    NtClose(fileHandle);
-
-    if (!topNode)
+    if (!topNode) // Return corrupt status and reset the settings.
         return STATUS_FILE_CORRUPT_ERROR;
 
-    if (topNode->type != MXML_ELEMENT)
-    {
-        mxmlDelete(topNode);
-        return STATUS_FILE_CORRUPT_ERROR;
-    }
-
-    currentNode = topNode->child;
+    currentNode = PhGetXmlNodeFirstChild(topNode);
 
     while (currentNode)
     {
-        PPH_STRING settingName = NULL;
+        PPH_STRING settingName;
 
-        if (
-            currentNode->type == MXML_ELEMENT &&
-            currentNode->value.element.num_attrs >= 1 &&
-            _stricmp(currentNode->value.element.attrs[0].name, "name") == 0
-            )
+        if (settingName = PhGetXmlNodeAttributeText(currentNode, "name"))
         {
-            settingName = PhConvertUtf8ToUtf16(currentNode->value.element.attrs[0].value);
-        }
-
-        if (settingName)
-        {
-            PPH_STRING settingValue = 0;
-
-            settingValue = PhpGetOpaqueXmlNodeText(currentNode);
+            PPH_STRING settingValue = PhGetOpaqueXmlNodeText(currentNode);
 
             PhAcquireQueuedLockExclusive(&PhSettingsLock);
 
@@ -849,29 +811,35 @@ NTSTATUS PhLoadSettings(
             PhDereferenceObject(settingName);
         }
 
-        currentNode = currentNode->next;
+        currentNode = PhGetXmlNodeNextChild(currentNode);
     }
 
-    mxmlDelete(topNode);
+    PhFreeXmlObject(topNode);
 
     PhUpdateCachedSettings();
 
     return STATUS_SUCCESS;
 }
 
-char *PhpSettingsSaveCallback(
-    _In_ mxml_node_t *node,
-    _In_ int position
+PSTR PhpSettingsSaveCallback(
+    _In_ PVOID node,
+    _In_ INT position
     )
 {
-    if (PhEqualBytesZ(node->value.element.name, "setting", TRUE))
+#define MXML_WS_AFTER_OPEN 1
+#define MXML_WS_AFTER_CLOSE 3
+
+    PSTR elementName;
+
+    if (!(elementName = PhGetXmlNodeElementText(node)))
+        return NULL;
+
+    if (PhEqualBytesZ(elementName, "setting", TRUE))
     {
-        if (position == MXML_WS_BEFORE_OPEN)
-            return "  ";
-        else if (position == MXML_WS_AFTER_CLOSE)
+        if (position == MXML_WS_AFTER_CLOSE)
             return "\r\n";
     }
-    else if (PhEqualBytesZ(node->value.element.name, "settings", TRUE))
+    else if (PhEqualBytesZ(elementName, "settings", TRUE))
     {
         if (position == MXML_WS_AFTER_OPEN)
             return "\r\n";
@@ -880,29 +848,28 @@ char *PhpSettingsSaveCallback(
     return NULL;
 }
 
-mxml_node_t *PhpCreateSettingElement(
-    _Inout_ mxml_node_t *ParentNode,
+PVOID PhpCreateSettingElement(
+    _Inout_ PVOID ParentNode,
     _In_ PPH_STRINGREF SettingName,
     _In_ PPH_STRINGREF SettingValue
     )
 {
-    mxml_node_t *settingNode;
-    mxml_node_t *textNode;
+    PVOID settingNode;
     PPH_BYTES settingNameUtf8;
     PPH_BYTES settingValueUtf8;
 
     // Create the setting element.
 
-    settingNode = mxmlNewElement(ParentNode, "setting");
+    settingNode = PhCreateXmlNode(ParentNode, "setting");
 
     settingNameUtf8 = PhConvertUtf16ToUtf8Ex(SettingName->Buffer, SettingName->Length);
-    mxmlElementSetAttr(settingNode, "name", settingNameUtf8->Buffer);
+    PhSetXmlNodeAttributeText(settingNode, "name", settingNameUtf8->Buffer);
     PhDereferenceObject(settingNameUtf8);
 
     // Set the value.
 
     settingValueUtf8 = PhConvertUtf16ToUtf8Ex(SettingValue->Buffer, SettingValue->Length);
-    textNode = mxmlNewOpaque(settingNode, settingValueUtf8->Buffer);
+    PhCreateXmlOpaqueNode(settingNode, settingValueUtf8->Buffer);
     PhDereferenceObject(settingValueUtf8);
 
     return settingNode;
@@ -913,12 +880,11 @@ NTSTATUS PhSaveSettings(
     )
 {
     NTSTATUS status;
-    HANDLE fileHandle;
-    mxml_node_t *topNode;
+    PVOID topNode;
     PH_HASHTABLE_ENUM_CONTEXT enumContext;
     PPH_SETTING setting;
 
-    topNode = mxmlNewElement(MXML_NO_PARENT, "settings");
+    topNode = PhCreateXmlNode(NULL, "settings");
 
     PhAcquireQueuedLockShared(&PhSettingsLock);
 
@@ -934,63 +900,26 @@ NTSTATUS PhSaveSettings(
     }
 
     // Write the ignored settings.
+
+    for (ULONG i = 0; i < PhIgnoredSettings->Count; i++)
     {
-        ULONG i;
+        PPH_STRING settingValue;
 
-        for (i = 0; i < PhIgnoredSettings->Count; i++)
-        {
-            PPH_STRING settingValue;
-
-            setting = PhIgnoredSettings->Items[i];
-            settingValue = setting->u.Pointer;
-            PhpCreateSettingElement(topNode, &setting->Name, &settingValue->sr);
-        }
+        setting = PhIgnoredSettings->Items[i];
+        settingValue = setting->u.Pointer;
+        PhpCreateSettingElement(topNode, &setting->Name, &settingValue->sr);
     }
 
     PhReleaseQueuedLockShared(&PhSettingsLock);
 
-    // Create the directory if it does not exist.
-    {
-        PPH_STRING fullPath;
-        ULONG indexOfFileName;
-        PPH_STRING directoryName;
-
-        fullPath = PhGetFullPath(FileName, &indexOfFileName);
-
-        if (fullPath)
-        {
-            if (indexOfFileName != -1)
-            {
-                directoryName = PhSubstring(fullPath, 0, indexOfFileName);
-                //PhCreateDirectory(directoryName);
-                PhDereferenceObject(directoryName);
-            }
-
-            PhDereferenceObject(fullPath);
-        }
-    }
-
-    status = PhCreateFileWin32(
-        &fileHandle,
+    status = PhSaveXmlObjectToFile(
         FileName,
-        FILE_GENERIC_WRITE,
-        0,
-        FILE_SHARE_READ,
-        FILE_OVERWRITE_IF,
-        FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT
+        topNode,
+        PhpSettingsSaveCallback
         );
+    PhFreeXmlObject(topNode);
 
-    if (!NT_SUCCESS(status))
-    {
-        mxmlDelete(topNode);
-        return status;
-    }
-
-    mxmlSaveFd(topNode, fileHandle, PhpSettingsSaveCallback);
-    mxmlDelete(topNode);
-    NtClose(fileHandle);
-
-    return STATUS_SUCCESS;
+    return status;
 }
 
 VOID PhResetSettings(
@@ -1103,11 +1032,22 @@ VOID PhLoadWindowPlacementFromSetting(
         }
         else
         {
-            size.X = 16;
-            size.Y = 16;
+            RECT windowRect;
+
+            // Make sure the window doesn't get positioned on disconnected monitors. (dmex)
+            //size.X = 16;
+            //size.Y = 16;
+            GetWindowRect(WindowHandle, &windowRect);
+            size.X = windowRect.right - windowRect.left;
+            size.Y = windowRect.bottom - windowRect.top;
         }
 
-        SetWindowPos(WindowHandle, NULL, position.X, position.Y, size.X, size.Y, flags);
+        // Make sure the window doesn't get positioned on disconnected monitors. (dmex) 
+        windowRectangle.Position = position;
+        windowRectangle.Size = size;
+        PhAdjustRectangleToWorkingArea(NULL, &windowRectangle);
+
+        SetWindowPos(WindowHandle, NULL, windowRectangle.Left, windowRectangle.Top, size.X, size.Y, flags);
     }
 }
 
@@ -1149,7 +1089,7 @@ BOOLEAN PhLoadListViewColumnSettings(
     ULONG maxOrder;
     ULONG scale;
 
-    if (Settings->Length == 0)
+    if (PhIsNullOrEmptyString(Settings))
         return FALSE;
 
     remainingPart = Settings->sr;
@@ -1157,13 +1097,13 @@ BOOLEAN PhLoadListViewColumnSettings(
     memset(orderArray, 0, sizeof(orderArray));
     maxOrder = 0;
 
-    if (remainingPart.Length != 0 && remainingPart.Buffer[0] == '@')
+    if (remainingPart.Length != 0 && remainingPart.Buffer[0] == L'@')
     {
         PH_STRINGREF scalePart;
         ULONG64 integer;
 
         PhSkipStringRef(&remainingPart, sizeof(WCHAR));
-        PhSplitStringRefAtChar(&remainingPart, '|', &scalePart, &remainingPart);
+        PhSplitStringRefAtChar(&remainingPart, L'|', &scalePart, &remainingPart);
 
         if (scalePart.Length == 0 || !PhStringToInteger64(&scalePart, 10, &integer))
             return FALSE;
@@ -1185,12 +1125,12 @@ BOOLEAN PhLoadListViewColumnSettings(
         ULONG width;
         LVCOLUMN lvColumn;
 
-        PhSplitStringRefAtChar(&remainingPart, '|', &columnPart, &remainingPart);
+        PhSplitStringRefAtChar(&remainingPart, L'|', &columnPart, &remainingPart);
 
         if (columnPart.Length == 0)
             return FALSE;
 
-        PhSplitStringRefAtChar(&columnPart, ',', &orderPart, &widthPart);
+        PhSplitStringRefAtChar(&columnPart, L',', &orderPart, &widthPart);
 
         if (orderPart.Length == 0 || widthPart.Length == 0)
             return FALSE;
@@ -1242,7 +1182,7 @@ PPH_STRING PhSaveListViewColumnSettings(
 
     PhInitializeStringBuilder(&stringBuilder, 20);
 
-    PhAppendFormatStringBuilder(&stringBuilder, L"@%u|", PhGlobalDpi);
+    PhAppendFormatStringBuilder(&stringBuilder, L"@%lu|", PhGlobalDpi);
 
     lvColumn.mask = LVCF_WIDTH | LVCF_ORDER;
 
@@ -1285,4 +1225,178 @@ VOID PhSaveListViewColumnsToSetting(
     string = PhSaveListViewColumnSettings(ListViewHandle);
     PhSetStringSetting2(Name, &string->sr);
     PhDereferenceObject(string);
+}
+
+VOID PhLoadListViewSortColumnsFromSetting(
+    _In_ PWSTR Name,
+    _In_ HWND ListViewHandle
+    )
+{
+    PPH_STRING string;
+    ULONG sortColumn = 0;
+    PH_SORT_ORDER sortOrder = AscendingSortOrder;
+    PH_STRINGREF remainingPart;
+
+    string = PhGetStringSetting(Name);
+
+    if (PhIsNullOrEmptyString(string))
+        return;
+
+    remainingPart = string->sr;
+
+    if (remainingPart.Length != 0)
+    {
+        PH_STRINGREF columnPart;
+        PH_STRINGREF orderPart;
+        ULONG64 integer;
+
+        if (!PhSplitStringRefAtChar(&remainingPart, L',', &columnPart, &orderPart))
+            return;
+
+        if (!PhStringToInteger64(&columnPart, 10, &integer))
+            return;
+
+        sortColumn = (ULONG)integer;
+
+        if (!PhStringToInteger64(&orderPart, 10, &integer))
+            return;
+
+        sortOrder = (ULONG)integer;
+    }
+
+    ExtendedListView_SetSort(ListViewHandle, sortColumn, sortOrder);
+
+    PhDereferenceObject(string);
+}
+
+VOID PhSaveListViewSortColumnsToSetting(
+    _In_ PWSTR Name,
+    _In_ HWND ListViewHandle
+    )
+{
+    PPH_STRING string;
+    ULONG sortColumn = 0;
+    PH_SORT_ORDER sortOrder = AscendingSortOrder;
+
+    if (ExtendedListView_GetSort(ListViewHandle, &sortColumn, &sortOrder))
+    {
+        PH_FORMAT format[3];
+
+        // %lu,%lu
+        PhInitFormatU(&format[0], sortColumn);
+        PhInitFormatC(&format[1], L',');
+        PhInitFormatU(&format[2], sortOrder);
+
+        string = PhFormat(format, RTL_NUMBER_OF(format), 16);
+    }
+    else
+    {
+        string = PhCreateString(L"0,0");
+    }
+
+    PhSetStringSetting2(Name, &string->sr);
+    PhDereferenceObject(string);
+}
+
+VOID PhLoadListViewGroupStatesFromSetting(
+    _In_ PWSTR Name,
+    _In_ HWND ListViewHandle
+    )
+{
+    ULONG64 countInteger;
+    PPH_STRING settingsString;
+    PH_STRINGREF remaining;
+    PH_STRINGREF part;
+
+    settingsString = PhaGetStringSetting(Name);
+    remaining = settingsString->sr;
+
+    if (remaining.Length == 0)
+        return;
+
+    if (!PhSplitStringRefAtChar(&remaining, L'|', &part, &remaining))
+        return;
+
+    if (!PhStringToInteger64(&part, 10, &countInteger))
+        return;
+
+    for (INT index = 0; index < (INT)countInteger; index++)
+    {
+        ULONG64 groupId;
+        ULONG64 stateMask;
+        PH_STRINGREF groupIdPart;
+        PH_STRINGREF stateMaskPart;
+
+        if (remaining.Length == 0)
+            break;
+
+        PhSplitStringRefAtChar(&remaining, L'|', &groupIdPart, &remaining);
+
+        if (groupIdPart.Length == 0)
+            break;
+
+        PhSplitStringRefAtChar(&remaining, L'|', &stateMaskPart, &remaining);
+
+        if (stateMaskPart.Length == 0)
+            break;
+
+        if (!PhStringToInteger64(&groupIdPart, 10, &groupId))
+            break;
+        if (!PhStringToInteger64(&stateMaskPart, 10, &stateMask))
+            break;
+
+        ListView_SetGroupState(
+            ListViewHandle,
+            (INT)groupId,
+            LVGS_NORMAL | LVGS_COLLAPSED,
+            (UINT)stateMask
+            );
+    }
+}
+
+VOID PhSaveListViewGroupStatesToSetting(
+    _In_ PWSTR Name,
+    _In_ HWND ListViewHandle
+    )
+{
+    INT index;
+    INT count;
+    PPH_STRING settingsString;
+    PH_STRING_BUILDER stringBuilder;
+
+    PhInitializeStringBuilder(&stringBuilder, 100);
+
+    count = (INT)ListView_GetGroupCount(ListViewHandle);
+
+    PhAppendFormatStringBuilder(
+        &stringBuilder,
+        L"%d|",
+        count
+        );
+
+    for (index = 0; index < count; index++)
+    {
+        LVGROUP group;
+
+        memset(&group, 0, sizeof(LVGROUP));
+        group.cbSize = sizeof(LVGROUP);
+        group.mask = LVGF_GROUPID | LVGF_STATE;
+        group.stateMask = LVGS_NORMAL | LVGS_COLLAPSED;
+
+        if (ListView_GetGroupInfoByIndex(ListViewHandle, index, &group) == -1)
+            continue;
+
+        PhAppendFormatStringBuilder(
+            &stringBuilder,
+            L"%d|%u|",
+            group.iGroupId,
+            group.state
+            );
+    }
+
+    if (stringBuilder.String->Length != 0)
+        PhRemoveEndStringBuilder(&stringBuilder, 1);
+
+    settingsString = PH_AUTO(PhFinalStringBuilderString(&stringBuilder));
+    PhSetStringSetting2(Name, &settingsString->sr);
 }

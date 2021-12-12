@@ -42,6 +42,11 @@
 #define ASSUME_NO_DEFAULT __assume(FALSE)
 #endif
 
+// Math
+
+#define UInt32Add32To64(a, b) ((unsigned __int64)((unsigned __int64)(a) + ((unsigned __int64)(b)))) // Avoids warning C26451 (dmex)
+#define UInt32Mul32To64(a, b) ((unsigned __int64)((unsigned __int64)(a) * ((unsigned __int64)(b))))
+
 // Time
 
 #define PH_TICKS_PER_NS ((LONG64)1 * 10)
@@ -51,6 +56,7 @@
 #define PH_TICKS_PER_HOUR (PH_TICKS_PER_MIN * 60)
 #define PH_TICKS_PER_DAY (PH_TICKS_PER_HOUR * 24)
 
+#define PH_TICKS_PARTIAL_NS(Ticks) (((ULONG64)(Ticks) / PH_TICKS_PER_NS) % 1000000)
 #define PH_TICKS_PARTIAL_MS(Ticks) (((ULONG64)(Ticks) / PH_TICKS_PER_MS) % 1000)
 #define PH_TICKS_PARTIAL_SEC(Ticks) (((ULONG64)(Ticks) / PH_TICKS_PER_SEC) % 60)
 #define PH_TICKS_PARTIAL_MIN(Ticks) (((ULONG64)(Ticks) / PH_TICKS_PER_MIN) % 60)
@@ -432,8 +438,8 @@ FORCEINLINE VOID PhPrintPointer(
     _In_ PVOID Pointer
     )
 {
-    Destination[0] = '0';
-    Destination[1] = 'x';
+    Destination[0] = L'0';
+    Destination[1] = L'x';
 #ifdef _WIN64
     _ui64tow((ULONG64)Pointer, &Destination[2], 16);
 #else
@@ -510,7 +516,7 @@ FORCEINLINE VOID PhProbeAddress(
 }
 
 FORCEINLINE PLARGE_INTEGER PhTimeoutFromMilliseconds(
-    _Out_ PLARGE_INTEGER Timeout,
+    _Inout_ PLARGE_INTEGER Timeout,
     _In_ ULONG Milliseconds
     )
 {
@@ -522,7 +528,12 @@ FORCEINLINE PLARGE_INTEGER PhTimeoutFromMilliseconds(
     return Timeout;
 }
 
-FORCEINLINE NTSTATUS PhGetLastWin32ErrorAsNtStatus()
+#define PhTimeoutFromMillisecondsEx(Milliseconds) \
+    &(LARGE_INTEGER) { .QuadPart = -(LONGLONG)UInt32x32To64(((ULONG)Milliseconds), PH_TIMEOUT_MS) }
+
+FORCEINLINE NTSTATUS PhGetLastWin32ErrorAsNtStatus(
+    VOID
+    )
 {
     ULONG win32Result;
 

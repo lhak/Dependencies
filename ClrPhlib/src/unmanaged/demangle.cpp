@@ -219,7 +219,7 @@ bool UndecorateSymbolDemangleName(
 		return false;
 	}
 
-	PhUndecoratedName = PhUndecorateNameW(
+	PhUndecoratedName = PhUndecorateSymbolName(
 		obj->m_SymbolProvider,
 		DecoratedName
 	);

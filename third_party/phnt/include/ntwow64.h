@@ -1,3 +1,23 @@
+/*
+ * Process Hacker -
+ *   Windows on Windows support functions
+ *
+ * This file is part of Process Hacker.
+ *
+ * Process Hacker is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Process Hacker is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Process Hacker.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef _NTWOW64_H
 #define _NTWOW64_H
 
@@ -141,7 +161,8 @@ typedef struct _LDR_DATA_TABLE_ENTRY32
             ULONG CorImage : 1;
             ULONG DontRelocate : 1;
             ULONG CorILOnly : 1;
-            ULONG ReservedFlags5 : 3;
+            ULONG ChpeImage : 1;
+            ULONG ReservedFlags5 : 2;
             ULONG Redirected : 1;
             ULONG ReservedFlags6 : 2;
             ULONG CompatDatabaseProcessed : 1;
@@ -225,6 +246,11 @@ typedef struct _RTL_USER_PROCESS_PARAMETERS32
     WOW64_POINTER(PVOID) PackageDependencyData;
     ULONG ProcessGroupId;
     ULONG LoaderThreads;
+
+    UNICODE_STRING32 RedirectionDllName; // REDSTONE4
+    UNICODE_STRING32 HeapPartitionName; // 19H1
+    WOW64_POINTER(ULONG_PTR) DefaultThreadpoolCpuSetMasks;
+    ULONG DefaultThreadpoolCpuSetMaskCount;
 } RTL_USER_PROCESS_PARAMETERS32, *PRTL_USER_PROCESS_PARAMETERS32;
 
 typedef struct _PEB32
@@ -275,7 +301,7 @@ typedef struct _PEB32
         WOW64_POINTER(PVOID) KernelCallbackTable;
         WOW64_POINTER(PVOID) UserSharedInfoPtr;
     };
-    ULONG SystemReserved[1];
+    ULONG SystemReserved;
     ULONG AtlThunkSListPtr32;
     WOW64_POINTER(PVOID) ApiSetMap;
     ULONG TlsExpansionCounter;
@@ -338,11 +364,13 @@ typedef struct _PEB32
 
     WOW64_POINTER(SIZE_T) MinimumStackCommit;
 
-    WOW64_POINTER(PVOID *) FlsCallback;
-    LIST_ENTRY32 FlsListHead;
-    WOW64_POINTER(PVOID) FlsBitmap;
-    ULONG FlsBitmapBits[FLS_MAXIMUM_AVAILABLE_OLD / (sizeof(ULONG) * 8)];
-    ULONG FlsHighIndex;
+    WOW64_POINTER(PVOID) SparePointers[4];
+    ULONG SpareUlongs[5];
+    //WOW64_POINTER(PVOID *) FlsCallback;
+    //LIST_ENTRY32 FlsListHead;
+    //WOW64_POINTER(PVOID) FlsBitmap;
+    //ULONG FlsBitmapBits[FLS_MAXIMUM_AVAILABLE / (sizeof(ULONG) * 8)];
+    //ULONG FlsHighIndex;
 
     WOW64_POINTER(PVOID) WerRegistrationData;
     WOW64_POINTER(PVOID) WerShipAssertPtr;
@@ -363,6 +391,11 @@ typedef struct _PEB32
     WOW64_POINTER(PVOID) TppWorkerpListLock;
     LIST_ENTRY32 TppWorkerpList;
     WOW64_POINTER(PVOID) WaitOnAddressHashTable[128];
+    WOW64_POINTER(PVOID) TelemetryCoverageHeader; // REDSTONE3
+    ULONG CloudFileFlags;
+    ULONG CloudFileDiagFlags; // REDSTONE4
+    CHAR PlaceholderCompatibilityMode;
+    CHAR PlaceholderCompatibilityModeReserved[7];
 } PEB32, *PPEB32;
 
 C_ASSERT(FIELD_OFFSET(PEB32, IFEOKey) == 0x024);
@@ -370,7 +403,11 @@ C_ASSERT(FIELD_OFFSET(PEB32, UnicodeCaseTableData) == 0x060);
 C_ASSERT(FIELD_OFFSET(PEB32, SystemAssemblyStorageMap) == 0x204);
 C_ASSERT(FIELD_OFFSET(PEB32, pImageHeaderHash) == 0x23c);
 C_ASSERT(FIELD_OFFSET(PEB32, WaitOnAddressHashTable) == 0x25c);
-C_ASSERT(sizeof(PEB32) == 0x460);
+//C_ASSERT(sizeof(PEB32) == 0x460); // REDSTONE3
+C_ASSERT(sizeof(PEB32) == 0x470);
+
+// Note: Use PhGetProcessPeb32 instead. (dmex)
+//#define WOW64_GET_PEB32(peb64) ((PPEB32)PTR_ADD_OFFSET((peb64), ALIGN_UP_BY(sizeof(PEB), PAGE_SIZE)))
 
 #define GDI_BATCH_BUFFER_SIZE 310
 
@@ -542,6 +579,11 @@ C_ASSERT(FIELD_OFFSET(TEB32, MuiImpersonation) == 0xfc4);
 C_ASSERT(FIELD_OFFSET(TEB32, ReservedForCrt) == 0xfe8);
 C_ASSERT(FIELD_OFFSET(TEB32, EffectiveContainerId) == 0xff0);
 C_ASSERT(sizeof(TEB32) == 0x1000);
+
+// Get the 32-bit TEB without doing a memory reference
+// modified from public SDK /10.0.10240.0/um/minwin/wow64t.h (dmex)
+#define WOW64_GET_TEB32(teb64) ((PTEB32)PTR_ADD_OFFSET((teb64), ALIGN_UP_BY(sizeof(TEB), PAGE_SIZE)))
+#define WOW64_TEB32_POINTER_ADDRESS(teb64) (PVOID)&((teb64)->NtTib.ExceptionList)
 
 // Conversion
 

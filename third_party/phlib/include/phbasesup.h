@@ -43,84 +43,19 @@ PhCreateThread(
 PHLIBAPI
 NTSTATUS
 NTAPI
-PhCreateThread2(
+PhCreateThreadEx(
+    _Out_ PHANDLE ThreadHandle,
     _In_ PUSER_THREAD_START_ROUTINE StartAddress,
     _In_opt_ PVOID Parameter
     );
 
-// DLLs
-
-FORCEINLINE
-PVOID
-PhGetDllHandle(
-    _In_ PWSTR DllName
-    )
-{
-    UNICODE_STRING dllName;
-    PVOID dllHandle;
-
-    RtlInitUnicodeString(&dllName, DllName);
-
-    if (NT_SUCCESS(LdrGetDllHandle(NULL, NULL, &dllName, &dllHandle)))
-        return dllHandle;
-    else
-        return NULL;
-}
-
-FORCEINLINE
-PVOID
-PhGetProcedureAddress(
-    _In_ PVOID DllHandle,
-    _In_opt_ PSTR ProcedureName,
-    _In_opt_ ULONG ProcedureNumber
-    )
-{
-    NTSTATUS status;
-    ANSI_STRING procedureName;
-    PVOID procedureAddress;
-
-    if (ProcedureName)
-    {
-        RtlInitAnsiString(&procedureName, ProcedureName);
-        status = LdrGetProcedureAddress(
-            DllHandle,
-            &procedureName,
-            0,
-            &procedureAddress
-            );
-    }
-    else
-    {
-        status = LdrGetProcedureAddress(
-            DllHandle,
-            NULL,
-            ProcedureNumber,
-            &procedureAddress
-            );
-    }
-
-    if (!NT_SUCCESS(status))
-        return NULL;
-
-    return procedureAddress;
-}
-
-FORCEINLINE
-PVOID
-PhGetModuleProcAddress(
-    _In_ PWSTR ModuleName,
-    _In_ PSTR ProcName
-    )
-{
-    PVOID module;
-
-    module = (HMODULE) PhGetDllHandle(ModuleName);
-
-    if (module)
-        return PhGetProcedureAddress(module, ProcName, 0);
-    else
-        return NULL;
-}
+PHLIBAPI
+NTSTATUS
+NTAPI
+PhCreateThread2(
+    _In_ PUSER_THREAD_START_ROUTINE StartAddress,
+    _In_opt_ PVOID Parameter
+    );
 
 // Misc. system
 
@@ -157,8 +92,6 @@ PhLocalTimeToSystemTime(
 // Heap
 
 _May_raise_
-_Check_return_
-_Ret_notnull_
 _Post_writable_byte_size_(Size)
 PHLIBAPI
 PVOID
@@ -167,6 +100,9 @@ PhAllocate(
     _In_ SIZE_T Size
     );
 
+_Must_inspect_result_
+_Ret_maybenull_
+_Post_writable_byte_size_(Size)
 PHLIBAPI
 PVOID
 NTAPI
@@ -174,6 +110,9 @@ PhAllocateSafe(
     _In_ SIZE_T Size
     );
 
+_Must_inspect_result_
+_Ret_maybenull_
+_Post_writable_byte_size_(Size)
 PHLIBAPI
 PVOID
 NTAPI
@@ -195,7 +134,7 @@ PHLIBAPI
 PVOID
 NTAPI
 PhReAllocate(
-    _Frees_ptr_ PVOID Memory,
+    _Frees_ptr_opt_ PVOID Memory,
     _In_ SIZE_T Size
     );
 
@@ -209,6 +148,7 @@ PhReAllocateSafe(
 
 _Check_return_
 _Ret_maybenull_
+_Success_(return != NULL)
 PHLIBAPI
 PVOID
 NTAPI
@@ -221,7 +161,7 @@ PHLIBAPI
 VOID
 NTAPI
 PhFreePage(
-    _Frees_ptr_opt_ PVOID Memory
+    _In_ _Post_invalid_ PVOID Memory
     );
 
 FORCEINLINE
@@ -237,6 +177,37 @@ PhAllocateCopy(
     memcpy(copy, Data, Size);
 
     return copy;
+}
+
+FORCEINLINE
+PVOID
+PhAllocateZero(
+    _In_ SIZE_T Size
+    )
+{
+    PVOID buffer;
+
+    buffer = PhAllocate(Size);
+    memset(buffer, 0, Size);
+
+    return buffer;
+}
+
+FORCEINLINE
+PVOID
+PhAllocateZeroSafe(
+    _In_ SIZE_T Size
+    )
+{
+    PVOID buffer;
+
+    if (buffer = PhAllocateSafe(Size))
+    {
+        memset(buffer, 0, Size);
+        return buffer;
+    }
+
+    return NULL;
 }
 
 // Event
@@ -604,6 +575,7 @@ PhDuplicateStringZ(
     );
 
 PHLIBAPI
+_Success_(return)
 BOOLEAN
 NTAPI
 PhCopyBytesZ(
@@ -615,6 +587,7 @@ PhCopyBytesZ(
     );
 
 PHLIBAPI
+_Success_(return)
 BOOLEAN
 NTAPI
 PhCopyStringZ(
@@ -626,6 +599,7 @@ PhCopyStringZ(
     );
 
 PHLIBAPI
+_Success_(return)
 BOOLEAN
 NTAPI
 PhCopyStringZFromBytes(
@@ -637,6 +611,7 @@ PhCopyStringZFromBytes(
     );
 
 PHLIBAPI
+_Success_(return)
 BOOLEAN
 NTAPI
 PhCopyStringZFromMultiByte(
@@ -772,8 +747,8 @@ typedef struct _PH_RELATIVE_BYTESREF
     ULONG Offset;
 } PH_RELATIVE_BYTESREF, *PPH_RELATIVE_BYTESREF, PH_RELATIVE_STRINGREF, *PPH_RELATIVE_STRINGREF;
 
-#define PH_STRINGREF_INIT(String) { sizeof(String) - sizeof(WCHAR), (String) }
-#define PH_BYTESREF_INIT(String) { sizeof(String) - sizeof(CHAR), (String) }
+#define PH_STRINGREF_INIT(String) { sizeof(String) - sizeof(UNICODE_NULL), (String) }
+#define PH_BYTESREF_INIT(String) { sizeof(String) - sizeof(ANSI_NULL), (String) }
 
 FORCEINLINE
 VOID
@@ -826,7 +801,7 @@ PhStringRefToUnicodeString(
     )
 {
     UnicodeString->Length = (USHORT)String->Length;
-    UnicodeString->MaximumLength = (USHORT)String->Length;
+    UnicodeString->MaximumLength = (USHORT)String->Length + sizeof(UNICODE_NULL);
     UnicodeString->Buffer = String->Buffer;
 
     return String->Length <= UNICODE_STRING_MAX_BYTES;
@@ -1204,6 +1179,20 @@ PhConcatStringRef3(
     _In_ PPH_STRINGREF String3
     );
 
+FORCEINLINE
+PPH_STRING
+PhConcatStringRefZ(
+    _In_ PPH_STRINGREF String1,
+    _In_ PWSTR String2
+    )
+{
+    PH_STRINGREF string;
+
+    PhInitializeStringRef(&string, String2);
+
+    return PhConcatStringRef2(String1, &string);
+}
+
 PHLIBAPI
 PPH_STRING
 NTAPI
@@ -1273,7 +1262,7 @@ PhGetStringOrEmpty(
     if (String)
         return String->Buffer;
     else
-        return L"";
+        return (PWSTR)TEXT(""); // HACK fixes VS2019 conformance mode warning (dmex)
 }
 
 /**
@@ -1303,14 +1292,19 @@ PhGetStringOrDefault(
  *
  * \param String A pointer to a string object.
  */
-FORCEINLINE
-BOOLEAN
-PhIsNullOrEmptyString(
-    _In_opt_ PPH_STRING String
-    )
-{
-    return !String || String->Length == 0;
-}
+//FORCEINLINE
+//BOOLEAN
+//PhIsNullOrEmptyString(
+//    _In_opt_ PPH_STRING String
+//    )
+//{
+//    return !String || String->Length == 0;
+//}
+
+// VS2019 can't parse the inline bool check for the above PhIsNullOrEmptyString
+// inline function creating invalid C6387 warnings using the input string (dmex)
+#define PhIsNullOrEmptyString(string) \
+    (!(string) || (string)->Length == 0)
 
 /**
  * Duplicates a string.
@@ -1393,11 +1387,35 @@ PhCompareStringWithNull(
     }
     else if (!String1)
     {
-        return !String2 ? 0 : -1;
+        return !String2 ? 0 : 1;
     }
     else
     {
-        return 1;
+        return -1;
+    }
+}
+
+// dmex: Compares two strings, always sorting NULL strings after all other strings.
+FORCEINLINE
+LONG
+PhCompareStringWithNullSortOrder(
+    _In_opt_ PPH_STRING String1,
+    _In_opt_ PPH_STRING String2,
+    _In_ PH_SORT_ORDER Order,
+    _In_ BOOLEAN IgnoreCase
+    )
+{
+    if (String1 && String2)
+    {
+        return PhCompareString(String1, String2, IgnoreCase);
+    }
+    else if (!String1)
+    {
+        return !String2 ? 0 : (Order == AscendingSortOrder ? 1 : -1);
+    }
+    else
+    {
+        return (Order == AscendingSortOrder ? -1 : 1);
     }
 }
 
@@ -1559,10 +1577,10 @@ PhFindCharInString(
         PhSkipStringRef(&sr, StartIndex * sizeof(WCHAR));
         r = PhFindCharInStringRef(&sr, Char, FALSE);
 
-        if (r != -1)
+        if (r != SIZE_MAX)
             return r + StartIndex;
         else
-            return -1;
+            return SIZE_MAX;
     }
     else
     {
@@ -1597,10 +1615,10 @@ PhFindLastCharInString(
         PhSkipStringRef(&sr, StartIndex * sizeof(WCHAR));
         r = PhFindLastCharInStringRef(&sr, Char, FALSE);
 
-        if (r != -1)
+        if (r != SIZE_MAX)
             return r + StartIndex;
         else
-            return -1;
+            return SIZE_MAX;
     }
     else
     {
@@ -1639,10 +1657,10 @@ PhFindStringInString(
         PhSkipStringRef(&sr1, StartIndex * sizeof(WCHAR));
         r = PhFindStringInStringRef(&sr1, &sr2, FALSE);
 
-        if (r != -1)
+        if (r != SIZE_MAX)
             return r + StartIndex;
         else
-            return -1;
+            return SIZE_MAX;
     }
     else
     {
@@ -1746,6 +1764,16 @@ PhCreateBytes2(
     return PhCreateBytesEx(Bytes->Buffer, Bytes->Length);
 }
 
+PPH_BYTES PhFormatBytes_V(
+    _In_ _Printf_format_string_ PSTR Format,
+    _In_ va_list ArgPtr
+    );
+
+PPH_BYTES PhFormatBytes(
+    _In_ _Printf_format_string_ PSTR Format,
+    ...
+    );
+
 // Unicode
 
 #define PH_UNICODE_BYTE_ORDER_MARK 0xfeff
@@ -1815,6 +1843,7 @@ PhWriteUnicodeDecoder(
     );
 
 PHLIBAPI
+_Success_(return)
 BOOLEAN
 NTAPI
 PhDecodeUnicodeDecoder(
@@ -1823,6 +1852,7 @@ PhDecodeUnicodeDecoder(
     );
 
 PHLIBAPI
+_Success_(return)
 BOOLEAN
 NTAPI
 PhEncodeUnicode(
@@ -1918,8 +1948,10 @@ PhConvertUtf16ToMultiByteEx(
     );
 
 // UTF-8 to UTF-16
+// In-place: RtlUTF8ToUnicodeN
 
 PHLIBAPI
+_Success_(return)
 BOOLEAN
 NTAPI
 PhConvertUtf8ToUtf16Size(
@@ -1929,6 +1961,7 @@ PhConvertUtf8ToUtf16Size(
     );
 
 PHLIBAPI
+_Success_(return)
 BOOLEAN
 NTAPI
 PhConvertUtf8ToUtf16Buffer(
@@ -1955,8 +1988,10 @@ PhConvertUtf8ToUtf16Ex(
     );
 
 // UTF-16 to UTF-8
+// In-place: RtlUnicodeToUTF8N
 
 PHLIBAPI
+_Success_(return)
 BOOLEAN
 NTAPI
 PhConvertUtf16ToUtf8Size(
@@ -1966,6 +2001,7 @@ PhConvertUtf16ToUtf8Size(
     );
 
 PHLIBAPI
+_Success_(return)
 BOOLEAN
 NTAPI
 PhConvertUtf16ToUtf8Buffer(
@@ -2332,6 +2368,17 @@ typedef struct _PH_LIST
     PVOID *Items;
 } PH_LIST, *PPH_LIST;
 
+
+FORCEINLINE
+PVOID
+PhItemList(
+    _In_ PPH_LIST List,
+    _In_ ULONG Index
+    )
+{
+    return List->Items[Index];
+}
+
 PHLIBAPI
 PPH_LIST
 NTAPI
@@ -2474,6 +2521,7 @@ PhAddItemPointerList(
     );
 
 PHLIBAPI
+_Success_(return)
 BOOLEAN
 NTAPI
 PhEnumPointerListEx(
@@ -2499,6 +2547,7 @@ PhRemoveItemPointerList(
     _In_ HANDLE PointerHandle
     );
 
+_Success_(return != FALSE)
 FORCEINLINE
 BOOLEAN
 PhEnumPointerList(
@@ -2847,13 +2896,9 @@ typedef struct _PH_HASHTABLE
     ULONG NextEntry;
 } PH_HASHTABLE, *PPH_HASHTABLE;
 
-#define PH_HASHTABLE_ENTRY_SIZE(InnerSize) (FIELD_OFFSET(PH_HASHTABLE_ENTRY, Body) + (InnerSize))
-#define PH_HASHTABLE_GET_ENTRY(Hashtable, Index) \
-    ((PPH_HASHTABLE_ENTRY)PTR_ADD_OFFSET((Hashtable)->Entries, \
-    PH_HASHTABLE_ENTRY_SIZE((Hashtable)->EntrySize) * (Index)))
-#define PH_HASHTABLE_GET_ENTRY_INDEX(Hashtable, Entry) \
-    ((ULONG)(PTR_ADD_OFFSET(Entry, -(Hashtable)->Entries) / \
-    PH_HASHTABLE_ENTRY_SIZE((Hashtable)->EntrySize)))
+#define PH_HASHTABLE_ENTRY_SIZE(InnerSize) (UInt32Add32To64(UFIELD_OFFSET(PH_HASHTABLE_ENTRY, Body), (InnerSize)))
+#define PH_HASHTABLE_GET_ENTRY(Hashtable, Index) ((PPH_HASHTABLE_ENTRY)PTR_ADD_OFFSET((Hashtable)->Entries, UInt32Mul32To64(PH_HASHTABLE_ENTRY_SIZE((Hashtable)->EntrySize), (Index))))
+#define PH_HASHTABLE_GET_ENTRY_INDEX(Hashtable, Entry) ((ULONG)(PTR_ADD_OFFSET(Entry, -(Hashtable)->Entries) / PH_HASHTABLE_ENTRY_SIZE((Hashtable)->EntrySize)))
 
 PHLIBAPI
 PPH_HASHTABLE
@@ -2890,6 +2935,7 @@ PhClearHashtable(
     );
 
 PHLIBAPI
+_Success_(return)
 BOOLEAN
 NTAPI
 PhEnumHashtable(
@@ -2931,7 +2977,7 @@ PhBeginEnumHashtable(
     )
 {
     Context->Current = (ULONG_PTR)Hashtable->Entries;
-    Context->Step = PH_HASHTABLE_ENTRY_SIZE(Hashtable->EntrySize);
+    Context->Step = PH_HASHTABLE_ENTRY_SIZE((ULONG_PTR)Hashtable->EntrySize);
     Context->End = Context->Current + (ULONG_PTR)Hashtable->NextEntry * Context->Step;
 }
 
@@ -2948,7 +2994,7 @@ PhNextEnumHashtable(
         entry = (PPH_HASHTABLE_ENTRY)Context->Current;
         Context->Current += Context->Step;
 
-        if (entry->HashCode != -1)
+        if (entry->HashCode != ULONG_MAX)
             return &entry->Body;
     }
 
@@ -2969,6 +3015,22 @@ NTAPI
 PhHashStringRef(
     _In_ PPH_STRINGREF String,
     _In_ BOOLEAN IgnoreCase
+    );
+
+typedef enum _PH_STRING_HASH
+{
+    PH_STRING_HASH_DEFAULT,
+    PH_STRING_HASH_FNV1A,
+    PH_STRING_HASH_X65599,
+} PH_STRING_HASH;
+
+PHLIBAPI
+ULONG
+NTAPI
+PhHashStringRefEx(
+    _In_ PPH_STRINGREF String,
+    _In_ BOOLEAN IgnoreCase,
+    _In_ PH_STRING_HASH HashAlgorithm
     );
 
 FORCEINLINE
@@ -3266,6 +3328,15 @@ PhHexStringToBuffer(
     );
 
 PHLIBAPI
+BOOLEAN
+NTAPI
+PhHexStringToBufferEx(
+    _In_ PPH_STRINGREF String,
+    _In_ ULONG BufferLength,
+    _Out_writes_bytes_(BufferLength) PVOID Buffer
+    );
+
+PHLIBAPI
 PPH_STRING
 NTAPI
 PhBufferToHexString(
@@ -3282,6 +3353,7 @@ PhBufferToHexStringEx(
     );
 
 PHLIBAPI
+_Success_(return)
 BOOLEAN
 NTAPI
 PhStringToInteger64(
@@ -3314,6 +3386,7 @@ PhIntegerToString64(
 #define PH_TIMESPAN_HMS 0
 #define PH_TIMESPAN_HMSM 1
 #define PH_TIMESPAN_DHMS 2
+#define PH_TIMESPAN_DHMSM 3
 
 PHLIBAPI
 VOID
@@ -3322,6 +3395,17 @@ PhPrintTimeSpan(
     _Out_writes_(PH_TIMESPAN_STR_LEN_1) PWSTR Destination,
     _In_ ULONG64 Ticks,
     _In_opt_ ULONG Mode
+    );
+
+PHLIBAPI
+BOOLEAN
+NTAPI
+PhPrintTimeSpanToBuffer(
+    _In_ ULONG64 Ticks,
+    _In_opt_ ULONG Mode,
+    _Out_writes_bytes_(BufferLength) PWSTR Buffer,
+    _In_ SIZE_T BufferLength,
+    _Out_opt_ PSIZE_T ReturnLength
     );
 
 PHLIBAPI
@@ -3412,6 +3496,20 @@ PhaFormatString(
 
 FORCEINLINE
 PPH_STRING
+PhLowerString(
+    _In_ PPH_STRING String
+    )
+{
+    PPH_STRING newString;
+
+    newString = PhDuplicateString(String);
+    _wcslwr(newString->Buffer);
+
+    return newString;
+}
+
+FORCEINLINE
+PPH_STRING
 PhaLowerString(
     _In_ PPH_STRING String
     )
@@ -3420,6 +3518,21 @@ PhaLowerString(
 
     newString = PhaDuplicateString(String);
     _wcslwr(newString->Buffer);
+
+    return newString;
+}
+
+FORCEINLINE
+PPH_STRING
+NTAPI
+PhUpperString(
+    _In_ PPH_STRING String
+    )
+{
+    PPH_STRING newString;
+
+    newString = PhDuplicateString(String);
+    _wcsupr(newString->Buffer);
 
     return newString;
 }
@@ -3565,6 +3678,8 @@ typedef struct _PH_FORMAT
 #define PhInitFormatX(f, v) do { (f)->Type = UInt32FormatType | FormatUseRadix; (f)->u.UInt32 = (v); (f)->Radix = 16; } while (0)
 #define PhInitFormatI64D(f, v) do { (f)->Type = Int64FormatType; (f)->u.Int64 = (v); } while (0)
 #define PhInitFormatI64U(f, v) do { (f)->Type = UInt64FormatType; (f)->u.UInt64 = (v); } while (0)
+#define PhInitFormatI64UGroupDigits(f, v) do { (f)->Type = UInt64FormatType | FormatGroupDigits; (f)->u.UInt64 = (v); } while (0)
+#define PhInitFormatI64UWithWidth(f, v, w) do { (f)->Type = UInt64FormatType | FormatPadZeros; (f)->u.UInt64 = (v); (f)->Width = (w); } while (0)
 #define PhInitFormatI64X(f, v) do { (f)->Type = UInt64FormatType | FormatUseRadix; (f)->u.UInt64 = (v); (f)->Radix = 16; } while (0)
 #define PhInitFormatIU(f, v) do { (f)->Type = UIntPtrFormatType; (f)->u.UIntPtr = (v); } while (0)
 #define PhInitFormatIX(f, v) do { (f)->Type = UIntPtrFormatType | FormatUseRadix; (f)->u.UIntPtr = (v); (f)->Radix = 16; } while (0)
@@ -3572,6 +3687,7 @@ typedef struct _PH_FORMAT
 #define PhInitFormatE(f, v, p) do { (f)->Type = DoubleFormatType | FormatStandardForm | FormatUsePrecision; (f)->u.Double = (v); (f)->Precision = (p); } while (0)
 #define PhInitFormatA(f, v, p) do { (f)->Type = DoubleFormatType | FormatHexadecimalForm | FormatUsePrecision; (f)->u.Double = (v); (f)->Precision = (p); } while (0)
 #define PhInitFormatSize(f, v) do { (f)->Type = SizeFormatType; (f)->u.Size = (v); } while (0)
+#define PhInitFormatSizeWithPrecision(f, v, p) do { (f)->Type = SizeFormatType | FormatUsePrecision; (f)->u.Size = (v); (f)->Precision = (p); } while (0)
 
 PHLIBAPI
 PPH_STRING
@@ -3589,6 +3705,19 @@ PhFormatToBuffer(
     _In_reads_(Count) PPH_FORMAT Format,
     _In_ ULONG Count,
     _Out_writes_bytes_opt_(BufferLength) PWSTR Buffer,
+    _In_opt_ SIZE_T BufferLength,
+    _Out_opt_ PSIZE_T ReturnLength
+    );
+
+PHLIBAPI
+_Success_(return)
+BOOLEAN
+NTAPI
+PhFormatDoubleToUtf8(
+    _In_ DOUBLE Value,
+    _In_ ULONG Type,
+    _In_ ULONG Precision,
+    _Out_writes_bytes_opt_(BufferLength) PSTR Buffer,
     _In_opt_ SIZE_T BufferLength,
     _Out_opt_ PSIZE_T ReturnLength
     );

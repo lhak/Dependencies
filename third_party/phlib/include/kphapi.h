@@ -120,13 +120,19 @@ typedef struct _ETWREG_BASIC_INFORMATION
 
 // Parameters
 
+//
+// deprecated 1-2-21, to be removed
+//
+// Driver will now always enforce the highest security level. This is left
+// during the transition period until we deliver the updated driver.
+//
 typedef enum _KPH_SECURITY_LEVEL
 {
-    KphSecurityNone = 0, // all clients are allowed
-    KphSecurityPrivilegeCheck = 1, // require SeDebugPrivilege
-    KphSecuritySignatureCheck = 2, // require trusted signature
-    KphSecuritySignatureAndPrivilegeCheck = 3, // require trusted signature and SeDebugPrivilege
-    KphMaxSecurityLevel
+    KphSecurityNone = 0, // deprecated 1-2-21, to be removed
+    KphSecurityPrivilegeCheck = 1, // deprecated 1-2-21, to be removed
+    KphSecuritySignatureCheck = 2, // deprecated 1-2-21, to be removed
+    KphSecuritySignatureAndPrivilegeCheck = 3, // deprecated 1-2-21, to be removed
+    KphMaxSecurityLevel // deprecated 1-2-21, to be removed
 } KPH_SECURITY_LEVEL, *PKPH_SECURITY_LEVEL;
 
 typedef struct _KPH_DYN_STRUCT_DATA
@@ -190,6 +196,7 @@ typedef enum _KPH_KEY_LEVEL
 #define KPH_THREAD_READ_ACCESS (STANDARD_RIGHTS_READ | SYNCHRONIZE | THREAD_QUERY_INFORMATION | \
     THREAD_QUERY_LIMITED_INFORMATION | THREAD_GET_CONTEXT)
 #define KPH_TOKEN_READ_ACCESS TOKEN_READ
+#define KPH_JOB_READ_ACCESS (STANDARD_RIGHTS_READ | SYNCHRONIZE | JOB_OBJECT_QUERY)
 
 // Features
 

@@ -10,41 +10,87 @@ typedef struct
 
     ULONG RefCount;
 
-    PPH_STRING ObjectName;
-    PPH_GET_OBJECT_SECURITY GetObjectSecurity;
-    PPH_SET_OBJECT_SECURITY SetObjectSecurity;
-    PVOID Context;
+    HWND WindowHandle;
+    BOOLEAN IsPage;
+    PPH_ACCESS_ENTRY AccessEntriesArray;
     PSI_ACCESS AccessEntries;
     ULONG NumberOfAccessEntries;
-    BOOLEAN IsPage;
+
+    PPH_STRING ObjectName;
+    PPH_STRING ObjectType;
+    PPH_OPEN_OBJECT OpenObject;
+    PPH_CLOSE_OBJECT CloseObject;
+    PVOID Context;
 } PhSecurityInformation;
 
 typedef struct
 {
     ISecurityInformation2Vtbl *VTable;
 
+    PhSecurityInformation *Context;
     ULONG RefCount;
 } PhSecurityInformation2;
 
 typedef struct
 {
+    ISecurityInformation3Vtbl *VTable;
+
+    PhSecurityInformation *Context;
+    ULONG RefCount;
+} PhSecurityInformation3;
+
+typedef struct
+{
     IDataObjectVtbl *VTable;
 
+    PhSecurityInformation *Context;
     ULONG RefCount;
-
     ULONG SidCount;
     PSID *Sids;
-
     PPH_LIST NameCache;
 } PhSecurityIDataObject;
 
+typedef struct
+{
+    IEffectivePermissionVtbl *VTable;
+
+    PhSecurityInformation *Context;
+    ULONG RefCount;
+} PhEffectivePermission;
+
+#undef INTERFACE
+#define INTERFACE   ISecurityObjectTypeInfoEx
+DECLARE_INTERFACE_IID_(ISecurityObjectTypeInfoEx, IUnknown, "FC3066EB-79EF-444b-9111-D18A75EBF2FA")
+{
+    // *** IUnknown methods ***
+    STDMETHOD(QueryInterface) (THIS_ _In_ REFIID riid, _Outptr_ void** ppvObj) PURE;
+    STDMETHOD_(ULONG, AddRef) (THIS)  PURE;
+    STDMETHOD_(ULONG, Release) (THIS) PURE;
+
+    // *** ISecurityInformation methods ***
+    STDMETHOD(GetInheritSource)(THIS_ SECURITY_INFORMATION si,
+        PACL pACL,
+        PINHERITED_FROM * ppInheritArray) PURE;
+};
+typedef ISecurityObjectTypeInfoEx* LPSecurityObjectTypeInfoEx;
+
+typedef struct
+{
+    ISecurityObjectTypeInfoExVtbl* VTable;
+
+    PhSecurityInformation* Context;
+    ULONG RefCount;
+} PhSecurityObjectTypeInfo;
+
+// ISecurityInformation
+
 ISecurityInformation *PhSecurityInformation_Create(
+    _In_opt_ HWND WindowHandle,
     _In_ PWSTR ObjectName,
-    _In_ PPH_GET_OBJECT_SECURITY GetObjectSecurity,
-    _In_ PPH_SET_OBJECT_SECURITY SetObjectSecurity,
+    _In_ PWSTR ObjectType,
+    _In_ PPH_OPEN_OBJECT OpenObject,
+    _In_opt_ PPH_CLOSE_OBJECT CloseObject,
     _In_opt_ PVOID Context,
-    _In_ PPH_ACCESS_ENTRY AccessEntries,
-    _In_ ULONG NumberOfAccessEntries,
     _In_ BOOLEAN IsPage
     );
 
@@ -109,6 +155,8 @@ HRESULT STDMETHODCALLTYPE PhSecurityInformation_PropertySheetPageCallback(
     _In_ SI_PAGE_TYPE uPage
     );
 
+// ISecurityInformation2
+
 HRESULT STDMETHODCALLTYPE PhSecurityInformation2_QueryInterface(
     _In_ ISecurityInformation2 *This,
     _In_ REFIID Riid,
@@ -135,10 +183,39 @@ HRESULT STDMETHODCALLTYPE PhSecurityInformation2_LookupSids(
     _Out_ LPDATAOBJECT *ppdo
     );
 
+// ISecurityInformation3
+
+HRESULT STDMETHODCALLTYPE PhSecurityInformation3_QueryInterface(
+    _In_ ISecurityInformation3 *This,
+    _In_ REFIID Riid,
+    _Out_ PVOID *Object
+    );
+
+ULONG STDMETHODCALLTYPE PhSecurityInformation3_AddRef(
+    _In_ ISecurityInformation3 *This
+    );
+
+ULONG STDMETHODCALLTYPE PhSecurityInformation3_Release(
+    _In_ ISecurityInformation3 *This
+    );
+
+HRESULT STDMETHODCALLTYPE PhSecurityInformation3_GetFullResourceName(
+    _In_ ISecurityInformation3 *This,
+    _Outptr_ PWSTR *ppszResourceName
+    );
+
+HRESULT STDMETHODCALLTYPE PhSecurityInformation3_OpenElevatedEditor(
+    _In_ ISecurityInformation3 *This,
+    _In_ HWND hWnd,
+    _In_ SI_PAGE_TYPE uPage
+    );
+
+// IDataObject
+
 HRESULT STDMETHODCALLTYPE PhSecurityDataObject_QueryInterface(
     _In_ IDataObject *This,
     _In_ REFIID Riid,
-    _Out_ PVOID *Object
+    _COM_Outptr_ PVOID *Object
     );
 
 ULONG STDMETHODCALLTYPE PhSecurityDataObject_AddRef(
@@ -155,7 +232,7 @@ HRESULT STDMETHODCALLTYPE PhSecurityDataObject_GetData(
     _Out_ STGMEDIUM *pmedium);
 
 HRESULT STDMETHODCALLTYPE PhSecurityDataObject_GetDataHere(
-    IDataObject *This,
+    _In_ IDataObject *This,
     _In_ FORMATETC *pformatetc,
     _Inout_ STGMEDIUM *pmedium
     );
@@ -200,6 +277,87 @@ HRESULT STDMETHODCALLTYPE PhSecurityDataObject_DUnadvise(
 HRESULT STDMETHODCALLTYPE PhSecurityDataObject_EnumDAdvise(
     _In_ IDataObject *This,
     _Out_opt_ IEnumSTATDATA **ppenumAdvise
+    );
+
+// ISecurityObjectTypeInfo
+
+HRESULT STDMETHODCALLTYPE PhSecurityObjectTypeInfo_QueryInterface(
+    _In_ ISecurityObjectTypeInfoEx* This,
+    _In_ REFIID Riid,
+    _Out_ PVOID* Object
+    );
+
+ULONG STDMETHODCALLTYPE PhSecurityObjectTypeInfo_AddRef(
+    _In_ ISecurityObjectTypeInfoEx* This
+    );
+
+ULONG STDMETHODCALLTYPE PhSecurityObjectTypeInfo_Release(
+    _In_ ISecurityObjectTypeInfoEx* This
+    );
+
+HRESULT STDMETHODCALLTYPE PhSecurityObjectTypeInfo_GetInheritSource(
+    _In_ ISecurityObjectTypeInfoEx* This,
+    _In_ SECURITY_INFORMATION SecurityInfo,
+    _In_ PACL Acl,
+    _Out_ PINHERITED_FROM *InheritArray
+    );
+
+// IEffectivePermission
+
+HRESULT STDMETHODCALLTYPE PhEffectivePermission_QueryInterface(
+    _In_ IEffectivePermission* This,
+    _In_ REFIID Riid,
+    _Out_ PVOID* Object
+    );
+
+ULONG STDMETHODCALLTYPE PhEffectivePermission_AddRef(
+    _In_ IEffectivePermission* This
+    );
+
+ULONG STDMETHODCALLTYPE PhEffectivePermission_Release(
+    _In_ IEffectivePermission* This
+    );
+
+HRESULT STDMETHODCALLTYPE PhEffectivePermission_GetEffectivePermission(
+    _In_ IEffectivePermission* This,
+    _In_ const GUID* GuidObjectType,
+    _In_ PSID UserSid,
+    _In_ LPCWSTR ServerName,
+    _In_ PSECURITY_DESCRIPTOR SecurityDescriptor,
+    _Out_ POBJECT_TYPE_LIST* ObjectTypeList,
+    _Out_ PULONG ObjectTypeListLength,
+    _Out_ PACCESS_MASK* GrantedAccessList,
+    _Out_ PULONG GrantedAccessListLength
+    );
+
+// Power policy (Todo: Move to better location) (dmex)
+
+NTSTATUS PhpGetPowerPolicySecurityDescriptor(
+    _Out_ PPH_STRING* StringSecurityDescriptor
+    );
+
+NTSTATUS PhpSetPowerPolicySecurityDescriptor(
+    _In_ PPH_STRING StringSecurityDescriptor
+    );
+
+// Terminal server policy (Todo: Move to better location) (dmex)
+
+NTSTATUS PhpGetRemoteDesktopSecurityDescriptor(
+    _Out_ PSECURITY_DESCRIPTOR* SecurityDescriptor
+    );
+
+NTSTATUS PhpSetRemoteDesktopSecurityDescriptor(
+    _In_ PSECURITY_DESCRIPTOR SecurityDescriptor
+    );
+
+// Wbem namespace policy (Todo: Move to better location) (dmex)
+
+NTSTATUS PhGetWmiNamespaceSecurityDescriptor(
+    _Out_ PSECURITY_DESCRIPTOR* SecurityDescriptor
+    );
+
+NTSTATUS PhSetWmiNamespaceSecurityDescriptor(
+    _In_ PSECURITY_DESCRIPTOR SecurityDescriptor
     );
 
 #endif

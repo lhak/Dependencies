@@ -1,3 +1,23 @@
+/*
+ * Process Hacker -
+ *   Process and Thread Environment Block support functions
+ *
+ * This file is part of Process Hacker.
+ *
+ * Process Hacker is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Process Hacker is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Process Hacker.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef _NTPEBTEB_H
 #define _NTPEBTEB_H
 
@@ -13,6 +33,46 @@ typedef struct _ACTIVATION_CONTEXT_STACK
     ULONG NextCookieSequenceNumber;
     ULONG StackId;
 } ACTIVATION_CONTEXT_STACK, *PACTIVATION_CONTEXT_STACK;
+
+// private
+typedef struct _API_SET_NAMESPACE
+{
+    ULONG Version;
+    ULONG Size;
+    ULONG Flags;
+    ULONG Count;
+    ULONG EntryOffset;
+    ULONG HashOffset;
+    ULONG HashFactor;
+} API_SET_NAMESPACE, *PAPI_SET_NAMESPACE;
+
+// private
+typedef struct _API_SET_HASH_ENTRY
+{
+    ULONG Hash;
+    ULONG Index;
+} API_SET_HASH_ENTRY, *PAPI_SET_HASH_ENTRY;
+
+// private
+typedef struct _API_SET_NAMESPACE_ENTRY
+{
+    ULONG Flags;
+    ULONG NameOffset;
+    ULONG NameLength;
+    ULONG HashedLength;
+    ULONG ValueOffset;
+    ULONG ValueCount;
+} API_SET_NAMESPACE_ENTRY, *PAPI_SET_NAMESPACE_ENTRY;
+
+// private
+typedef struct _API_SET_VALUE_ENTRY 
+{
+    ULONG Flags;
+    ULONG NameOffset;
+    ULONG NameLength;
+    ULONG ValueOffset;
+    ULONG ValueLength;
+} API_SET_VALUE_ENTRY, *PAPI_SET_VALUE_ENTRY;
 
 // symbols
 typedef struct _PEB
@@ -44,8 +104,9 @@ typedef struct _PEB
     PVOID SubSystemData;
     PVOID ProcessHeap;
     PRTL_CRITICAL_SECTION FastPebLock;
-    PVOID AtlThunkSListPtr;
+    PSLIST_HEADER AtlThunkSListPtr;
     PVOID IFEOKey;
+
     union
     {
         ULONG CrossProcessFlags;
@@ -58,7 +119,8 @@ typedef struct _PEB
             ULONG ProcessUsingFTH : 1;
             ULONG ProcessPreviouslyThrottled : 1;
             ULONG ProcessCurrentlyThrottled : 1;
-            ULONG ReservedBits0 : 25;
+            ULONG ProcessImagesHotPatched : 1; // REDSTONE5
+            ULONG ReservedBits0 : 24;
         };
     };
     union
@@ -66,9 +128,9 @@ typedef struct _PEB
         PVOID KernelCallbackTable;
         PVOID UserSharedInfoPtr;
     };
-    ULONG SystemReserved[1];
+    ULONG SystemReserved;
     ULONG AtlThunkSListPtr32;
-    PVOID ApiSetMap;
+    PAPI_SET_NAMESPACE ApiSetMap;
     ULONG TlsExpansionCounter;
     PVOID TlsBitmap;
     ULONG TlsBitmapBits[2];
@@ -84,7 +146,7 @@ typedef struct _PEB
     ULONG NumberOfProcessors;
     ULONG NtGlobalFlag;
 
-    LARGE_INTEGER CriticalSectionTimeout;
+    ULARGE_INTEGER CriticalSectionTimeout;
     SIZE_T HeapSegmentReserve;
     SIZE_T HeapSegmentCommit;
     SIZE_T HeapDeCommitTotalFreeThreshold;
@@ -131,11 +193,13 @@ typedef struct _PEB
 
     SIZE_T MinimumStackCommit;
 
-    PVOID *FlsCallback;
-    LIST_ENTRY FlsListHead;
-    PVOID FlsBitmap;
-    ULONG FlsBitmapBits[FLS_MAXIMUM_AVAILABLE_OLD / (sizeof(ULONG) * 8)];
-    ULONG FlsHighIndex;
+    PVOID SparePointers[4]; // 19H1 (previously FlsCallback to FlsHighIndex)
+    ULONG SpareUlongs[5]; // 19H1
+    //PVOID* FlsCallback;
+    //LIST_ENTRY FlsListHead;
+    //PVOID FlsBitmap;
+    //ULONG FlsBitmapBits[FLS_MAXIMUM_AVAILABLE / (sizeof(ULONG) * 8)];
+    //ULONG FlsHighIndex;
 
     PVOID WerRegistrationData;
     PVOID WerShipAssertPtr;
@@ -153,12 +217,38 @@ typedef struct _PEB
         };
     };
     ULONGLONG CsrServerReadOnlySharedMemoryBase;
-    PVOID TppWorkerpListLock;
+    PRTL_CRITICAL_SECTION TppWorkerpListLock;
     LIST_ENTRY TppWorkerpList;
     PVOID WaitOnAddressHashTable[128];
     PVOID TelemetryCoverageHeader; // REDSTONE3
     ULONG CloudFileFlags;
+    ULONG CloudFileDiagFlags; // REDSTONE4
+    CHAR PlaceholderCompatibilityMode;
+    CHAR PlaceholderCompatibilityModeReserved[7];
+    struct _LEAP_SECOND_DATA *LeapSecondData; // REDSTONE5
+    union
+    {
+        ULONG LeapSecondFlags;
+        struct
+        {
+            ULONG SixtySecondEnabled : 1;
+            ULONG Reserved : 31;
+        };
+    };
+    ULONG NtGlobalFlag2;
 } PEB, *PPEB;
+
+#ifdef _WIN64
+C_ASSERT(FIELD_OFFSET(PEB, SessionId) == 0x2C0);
+//C_ASSERT(sizeof(PEB) == 0x7B0); // REDSTONE3
+//C_ASSERT(sizeof(PEB) == 0x7B8); // REDSTONE4
+C_ASSERT(sizeof(PEB) == 0x7C8); // REDSTONE5 // 19H1
+#else
+C_ASSERT(FIELD_OFFSET(PEB, SessionId) == 0x1D4);
+//C_ASSERT(sizeof(PEB) == 0x468); // REDSTONE3
+//C_ASSERT(sizeof(PEB) == 0x470); // REDSTONE4
+C_ASSERT(sizeof(PEB) == 0x480); // REDSTONE5 // 19H1
+#endif
 
 #define GDI_BATCH_BUFFER_SIZE 310
 
@@ -209,7 +299,9 @@ typedef struct _TEB
 #endif
     
     CHAR PlaceholderCompatibilityMode;
-    CHAR PlaceholderReserved[11];
+    BOOLEAN PlaceholderHydrationAlwaysExplicit;
+    CHAR PlaceholderReserved[10];
+
     ULONG ProxiedProcessId;
     ACTIVATION_CONTEXT_STACK ActivationStack;
     
@@ -225,6 +317,9 @@ typedef struct _TEB
 #endif
 
     BOOLEAN InstrumentationCallbackDisabled;
+#ifdef _WIN64
+    BOOLEAN UnalignedLoadStoreExceptions;
+#endif
 #ifndef _WIN64
     UCHAR SpareBytes[23];
     ULONG TxFsContext;
@@ -300,8 +395,7 @@ typedef struct _TEB
     ULONG IsImpersonating;
     PVOID NlsCache;
     PVOID pShimData;
-    USHORT HeapVirtualAffinity;
-    USHORT LowFragHeapDataSlot;
+    ULONG HeapData;
     HANDLE CurrentTransactionHandle;
     PTEB_ACTIVE_FRAME ActiveFrame;
     PVOID FlsData;
@@ -349,6 +443,9 @@ typedef struct _TEB
     PVOID ReservedForWdf;
     ULONGLONG ReservedForCrt;
     GUID EffectiveContainerId;
+    ULONGLONG LastSleepCounter; // Win11
+    ULONG SpinCallCount;
+    ULONGLONG ExtendedFeatureDisableMask;
 } TEB, *PTEB;
 
 #endif

@@ -1,17 +1,12 @@
 /*
- * "$Id: mxml.h 464 2016-06-12 21:16:14Z msweet $"
+ * Header file for Mini-XML, a small XML file parsing library.
  *
- * Header file for Mini-XML, a small XML-like file parsing library.
+ * https://www.msweet.org/mxml
  *
- * Copyright 2003-2016 by Michael R Sweet.
+ * Copyright © 2003-2019 by Michael R Sweet.
  *
- * These coded instructions, statements, and computer programs are the
- * property of Michael R Sweet and are protected by Federal copyright
- * law.  Distribution and use rights are outlined in the file "COPYING"
- * which should have been included with this file.  If this file is
- * missing or damaged, see the license at:
- *
- *     http://www.msweet.org/projects.php/Mini-XML
+ * Licensed under Apache License v2.0.  See the file "LICENSE" for more
+ * information.
  */
 
 /*
@@ -30,33 +25,29 @@
 #  include <string.h>
 #  include <ctype.h>
 #  include <errno.h>
-#  include <windows.h>
 
-#ifdef _PHAPP_
-#define PHMXMLAPI __declspec(dllexport)
-#else
-#define PHMXMLAPI
-#endif
+ // dmex: custom headers.
+#include <phbase.h>
 
 /*
  * Constants...
  */
 
-#  define MXML_MAJOR_VERSION	2	/* Major version number */
-#  define MXML_MINOR_VERSION	10	/* Minor version number */
+#  define MXML_MAJOR_VERSION	3	/* Major version number */
+#  define MXML_MINOR_VERSION	1	/* Minor version number */
 
 #  define MXML_TAB		8	/* Tabs every N columns */
 
 #  define MXML_NO_CALLBACK	0	/* Don't use a type callback */
 #  define MXML_INTEGER_CALLBACK	mxml_integer_cb
-					/* Treat all data as integers */
+                    /* Treat all data as integers */
 #  define MXML_OPAQUE_CALLBACK	mxml_opaque_cb
-					/* Treat all data as opaque */
+                    /* Treat all data as opaque */
 #  define MXML_REAL_CALLBACK	mxml_real_cb
-					/* Treat all data as real numbers */
+                    /* Treat all data as real numbers */
 #  define MXML_TEXT_CALLBACK	0	/* Treat all data as text */
 #  define MXML_IGNORE_CALLBACK	mxml_ignore_cb
-					/* Ignore all non-element content */
+                    /* Ignore all non-element content */
 
 #  define MXML_NO_PARENT	0	/* No parent for the node */
 
@@ -100,90 +91,33 @@ typedef enum mxml_type_e		/**** The XML node type. ****/
 } mxml_type_t;
 
 typedef void (*mxml_custom_destroy_cb_t)(void *);
-					/**** Custom data destructor ****/
+                    /**** Custom data destructor ****/
 
 typedef void (*mxml_error_cb_t)(const char *);
-					/**** Error callback function ****/
+                    /**** Error callback function ****/
 
-typedef struct mxml_attr_s		/**** An XML element attribute value. @private@ ****/
-{
-  char			*name;		/* Attribute name */
-  char			*value;		/* Attribute value */
-} mxml_attr_t;
+typedef struct _mxml_node_s mxml_node_t;	/**** An XML node. ****/
 
-typedef struct mxml_element_s		/**** An XML element value. @private@ ****/
-{
-  char			*name;		/* Name of element */
-  int			num_attrs;	/* Number of attributes */
-  mxml_attr_t		*attrs;		/* Attributes */
-} mxml_element_t;
-
-typedef struct mxml_text_s		/**** An XML text value. @private@ ****/
-{
-  int			whitespace;	/* Leading whitespace? */
-  char			*string;	/* Fragment string */
-} mxml_text_t;
-
-typedef struct mxml_custom_s		/**** An XML custom value. @private@ ****/
-{
-  void			*data;		/* Pointer to (allocated) custom data */
-  mxml_custom_destroy_cb_t destroy;	/* Pointer to destructor function */
-} mxml_custom_t;
-
-typedef union mxml_value_u		/**** An XML node value. @private@ ****/
-{
-  mxml_element_t	element;	/* Element */
-  int			integer;	/* Integer number */
-  char			*opaque;	/* Opaque string */
-  double		real;		/* Real number */
-  mxml_text_t		text;		/* Text fragment */
-  mxml_custom_t		custom;		/* Custom data @since Mini-XML 2.1@ */
-} mxml_value_t;
-
-struct mxml_node_s			/**** An XML node. @private@ ****/
-{
-  mxml_type_t		type;		/* Node type */
-  struct mxml_node_s	*next;		/* Next node under same parent */
-  struct mxml_node_s	*prev;		/* Previous node under same parent */
-  struct mxml_node_s	*parent;	/* Parent node */
-  struct mxml_node_s	*child;		/* First child node */
-  struct mxml_node_s	*last_child;	/* Last child node */
-  mxml_value_t		value;		/* Node value */
-  int			ref_count;	/* Use count */
-  void			*user_data;	/* User data */
-};
-
-typedef struct mxml_node_s mxml_node_t;	/**** An XML node. ****/
-
-struct mxml_index_s			 /**** An XML node index. @private@ ****/
-{
-  char			*attr;		/* Attribute used for indexing or NULL */
-  int			num_nodes;	/* Number of nodes in index */
-  int			alloc_nodes;	/* Allocated nodes in index */
-  int			cur_node;	/* Current node */
-  mxml_node_t		**nodes;	/* Node array */
-};
-
-typedef struct mxml_index_s mxml_index_t;
-					/**** An XML node index. ****/
+typedef struct _mxml_index_s mxml_index_t;
+                    /**** An XML node index. ****/
 
 typedef int (*mxml_custom_load_cb_t)(mxml_node_t *, const char *);
-					/**** Custom data load callback function ****/
+                    /**** Custom data load callback function ****/
 
 typedef char *(*mxml_custom_save_cb_t)(mxml_node_t *);
-					/**** Custom data save callback function ****/
+                    /**** Custom data save callback function ****/
 
 typedef int (*mxml_entity_cb_t)(const char *);
-					/**** Entity callback function */
+                    /**** Entity callback function */
 
 typedef mxml_type_t (*mxml_load_cb_t)(mxml_node_t *);
-					/**** Load callback function ****/
+                    /**** Load callback function ****/
 
 typedef const char *(*mxml_save_cb_t)(mxml_node_t *, int);
-					/**** Save callback function ****/
+                    /**** Save callback function ****/
 
 typedef void (*mxml_sax_cb_t)(mxml_node_t *, mxml_sax_event_t, void *);
-					/**** SAX callback function ****/
+                    /**** SAX callback function ****/
 
 
 /*
@@ -198,16 +132,18 @@ extern "C" {
  * Prototypes...
  */
 
-PHMXMLAPI extern void		mxmlAdd(mxml_node_t *parent, int where,
-			        mxml_node_t *child, mxml_node_t *node);
-PHMXMLAPI extern void		mxmlDelete(mxml_node_t *node);
-PHMXMLAPI extern void		mxmlElementDeleteAttr(mxml_node_t *node,
-			                      const char *name);
-PHMXMLAPI extern const char	*mxmlElementGetAttr(mxml_node_t *node, const char *name);
-PHMXMLAPI extern void		mxmlElementSetAttr(mxml_node_t *node, const char *name,
-			                   const char *value);
+extern void		mxmlAdd(mxml_node_t *parent, int where,
+                    mxml_node_t *child, mxml_node_t *node);
+extern void		mxmlDelete(mxml_node_t *node);
+extern void		mxmlElementDeleteAttr(mxml_node_t *node,
+                                  const char *name);
+extern const char	*mxmlElementGetAttr(mxml_node_t *node, const char *name);
+extern const char       *mxmlElementGetAttrByIndex(mxml_node_t *node, int idx, const char **name);
+extern int              mxmlElementGetAttrCount(mxml_node_t *node);
+extern void		mxmlElementSetAttr(mxml_node_t *node, const char *name,
+                               const char *value);
 extern void		mxmlElementSetAttrf(mxml_node_t *node, const char *name,
-			                    const char *format, ...)
+                                const char *format, ...)
 #    ifdef __GNUC__
 __attribute__ ((__format__ (__printf__, 3, 4)))
 #    endif /* __GNUC__ */
@@ -216,9 +152,9 @@ extern int		mxmlEntityAddCallback(mxml_entity_cb_t cb);
 extern const char	*mxmlEntityGetName(int val);
 extern int		mxmlEntityGetValue(const char *name);
 extern void		mxmlEntityRemoveCallback(mxml_entity_cb_t cb);
-PHMXMLAPI extern mxml_node_t	*mxmlFindElement(mxml_node_t *node, mxml_node_t *top,
-			                 const char *name, const char *attr,
-					 const char *value, int descend);
+extern mxml_node_t	*mxmlFindElement(mxml_node_t *node, mxml_node_t *top,
+                             const char *element, const char *attr,
+                     const char *value, int descend);
 extern mxml_node_t	*mxmlFindPath(mxml_node_t *node, const char *path);
 extern const char	*mxmlGetCDATA(mxml_node_t *node);
 extern const void	*mxmlGetCustom(mxml_node_t *node);
@@ -238,89 +174,101 @@ extern void		*mxmlGetUserData(mxml_node_t *node);
 extern void		mxmlIndexDelete(mxml_index_t *ind);
 extern mxml_node_t	*mxmlIndexEnum(mxml_index_t *ind);
 extern mxml_node_t	*mxmlIndexFind(mxml_index_t *ind,
-			               const char *element,
-			               const char *value);
+                           const char *element,
+                           const char *value);
 extern int		mxmlIndexGetCount(mxml_index_t *ind);
 extern mxml_index_t	*mxmlIndexNew(mxml_node_t *node, const char *element,
-			              const char *attr);
+                          const char *attr);
 extern mxml_node_t	*mxmlIndexReset(mxml_index_t *ind);
-PHMXMLAPI extern mxml_node_t	*mxmlLoadFd(mxml_node_t *top, HANDLE fd,
-			            mxml_type_t (*cb)(mxml_node_t *));
+extern mxml_node_t	*mxmlLoadFd(mxml_node_t *top, HANDLE fd,
+                        mxml_type_t (*cb)(mxml_node_t *));
 extern mxml_node_t	*mxmlLoadFile(mxml_node_t *top, FILE *fp,
-			              mxml_type_t (*cb)(mxml_node_t *));
-PHMXMLAPI extern mxml_node_t	*mxmlLoadString(mxml_node_t *top, const char *s,
-			                mxml_type_t (*cb)(mxml_node_t *));
-PHMXMLAPI extern mxml_node_t	*mxmlNewCDATA(mxml_node_t *parent, const char *string);
-PHMXMLAPI extern mxml_node_t	*mxmlNewCustom(mxml_node_t *parent, void *data,
-			               mxml_custom_destroy_cb_t destroy);
-PHMXMLAPI extern mxml_node_t	*mxmlNewElement(mxml_node_t *parent, const char *name);
-PHMXMLAPI extern mxml_node_t	*mxmlNewInteger(mxml_node_t *parent, int integer);
-PHMXMLAPI extern mxml_node_t	*mxmlNewOpaque(mxml_node_t *parent, const char *opaque);
-PHMXMLAPI extern mxml_node_t	*mxmlNewReal(mxml_node_t *parent, double real);
-PHMXMLAPI extern mxml_node_t	*mxmlNewText(mxml_node_t *parent, int whitespace,
-			             const char *string);
-extern mxml_node_t	*mxmlNewTextf(mxml_node_t *parent, int whitespace,
-			              const char *format, ...)
+                          mxml_type_t (*cb)(mxml_node_t *));
+extern mxml_node_t	*mxmlLoadString(mxml_node_t *top, const char *s,
+                            mxml_type_t (*cb)(mxml_node_t *));
+extern mxml_node_t	*mxmlNewCDATA(mxml_node_t *parent, const char *string);
+extern mxml_node_t	*mxmlNewCustom(mxml_node_t *parent, void *data,
+                           mxml_custom_destroy_cb_t destroy);
+extern mxml_node_t	*mxmlNewElement(mxml_node_t *parent, const char *name);
+extern mxml_node_t	*mxmlNewInteger(mxml_node_t *parent, int integer);
+extern mxml_node_t	*mxmlNewOpaque(mxml_node_t *parent, const char *opaque);
+extern mxml_node_t	*mxmlNewOpaquef(mxml_node_t *parent, const char *format, ...)
+#    ifdef __GNUC__
+__attribute__ ((__format__ (__printf__, 2, 3)))
+#    endif /* __GNUC__ */
+;
+extern mxml_node_t	*mxmlNewReal(mxml_node_t *parent, double real);
+extern mxml_node_t	*mxmlNewText(mxml_node_t *parent, int whitespace, const char *string);
+extern mxml_node_t	*mxmlNewTextf(mxml_node_t *parent, int whitespace, const char *format, ...)
 #    ifdef __GNUC__
 __attribute__ ((__format__ (__printf__, 3, 4)))
 #    endif /* __GNUC__ */
 ;
-PHMXMLAPI extern mxml_node_t	*mxmlNewXML(const char *version);
-PHMXMLAPI extern int		mxmlRelease(mxml_node_t *node);
-PHMXMLAPI extern void		mxmlRemove(mxml_node_t *node);
-PHMXMLAPI extern int		mxmlRetain(mxml_node_t *node);
-PHMXMLAPI extern char		*mxmlSaveAllocString(mxml_node_t *node,
-			        	     mxml_save_cb_t cb);
-PHMXMLAPI extern int		mxmlSaveFd(mxml_node_t *node, HANDLE fd,
-			           mxml_save_cb_t cb);
+extern mxml_node_t	*mxmlNewXML(const char *version);
+extern int		mxmlRelease(mxml_node_t *node);
+extern void		mxmlRemove(mxml_node_t *node);
+extern int		mxmlRetain(mxml_node_t *node);
+extern char		*mxmlSaveAllocString(mxml_node_t *node,
+                             mxml_save_cb_t cb);
+extern int		mxmlSaveFd(mxml_node_t *node, HANDLE fd,
+                       mxml_save_cb_t cb);
 extern int		mxmlSaveFile(mxml_node_t *node, FILE *fp,
-			             mxml_save_cb_t cb);
-PHMXMLAPI extern int		mxmlSaveString(mxml_node_t *node, char *buffer,
-			               int bufsize, mxml_save_cb_t cb);
+                         mxml_save_cb_t cb);
+extern int		mxmlSaveString(mxml_node_t *node, char *buffer,
+                           int bufsize, mxml_save_cb_t cb);
 extern mxml_node_t	*mxmlSAXLoadFd(mxml_node_t *top, HANDLE fd,
-			               mxml_type_t (*cb)(mxml_node_t *),
-			               mxml_sax_cb_t sax, void *sax_data);
+                           mxml_type_t (*cb)(mxml_node_t *),
+                           mxml_sax_cb_t sax, void *sax_data);
 extern mxml_node_t	*mxmlSAXLoadFile(mxml_node_t *top, FILE *fp,
-			                 mxml_type_t (*cb)(mxml_node_t *),
-			                 mxml_sax_cb_t sax, void *sax_data);
+                             mxml_type_t (*cb)(mxml_node_t *),
+                             mxml_sax_cb_t sax, void *sax_data);
 extern mxml_node_t	*mxmlSAXLoadString(mxml_node_t *top, const char *s,
-			                   mxml_type_t (*cb)(mxml_node_t *),
-			                   mxml_sax_cb_t sax, void *sax_data);
-PHMXMLAPI extern int		mxmlSetCDATA(mxml_node_t *node, const char *data);
-PHMXMLAPI extern int		mxmlSetCustom(mxml_node_t *node, void *data,
-			              mxml_custom_destroy_cb_t destroy);
-PHMXMLAPI extern void		mxmlSetCustomHandlers(mxml_custom_load_cb_t load,
-			                      mxml_custom_save_cb_t save);
-PHMXMLAPI extern int		mxmlSetElement(mxml_node_t *node, const char *name);
-PHMXMLAPI extern void		mxmlSetErrorCallback(mxml_error_cb_t cb);
+                               mxml_type_t (*cb)(mxml_node_t *),
+                               mxml_sax_cb_t sax, void *sax_data);
+extern int		mxmlSetCDATA(mxml_node_t *node, const char *data);
+extern int		mxmlSetCustom(mxml_node_t *node, void *data,
+                          mxml_custom_destroy_cb_t destroy);
+extern void		mxmlSetCustomHandlers(mxml_custom_load_cb_t load,
+                                  mxml_custom_save_cb_t save);
+extern int		mxmlSetElement(mxml_node_t *node, const char *name);
+extern void		mxmlSetErrorCallback(mxml_error_cb_t cb);
 extern int		mxmlSetInteger(mxml_node_t *node, int integer);
-PHMXMLAPI extern int		mxmlSetOpaque(mxml_node_t *node, const char *opaque);
+extern int		mxmlSetOpaque(mxml_node_t *node, const char *opaque);
+extern int		mxmlSetOpaquef(mxml_node_t *node, const char *format, ...)
+#    ifdef __GNUC__
+__attribute__ ((__format__ (__printf__, 2, 3)))
+#    endif /* __GNUC__ */
+;
 extern int		mxmlSetReal(mxml_node_t *node, double real);
-PHMXMLAPI extern int		mxmlSetText(mxml_node_t *node, int whitespace,
-			            const char *string);
+extern int		mxmlSetText(mxml_node_t *node, int whitespace,
+                        const char *string);
 extern int		mxmlSetTextf(mxml_node_t *node, int whitespace,
-			             const char *format, ...)
+                         const char *format, ...)
 #    ifdef __GNUC__
 __attribute__ ((__format__ (__printf__, 3, 4)))
 #    endif /* __GNUC__ */
 ;
-PHMXMLAPI extern int		mxmlSetUserData(mxml_node_t *node, void *data);
+extern int		mxmlSetUserData(mxml_node_t *node, void *data);
 extern void		mxmlSetWrapMargin(int column);
-PHMXMLAPI extern mxml_node_t	*mxmlWalkNext(mxml_node_t *node, mxml_node_t *top,
-			              int descend);
-PHMXMLAPI extern mxml_node_t	*mxmlWalkPrev(mxml_node_t *node, mxml_node_t *top,
-			              int descend);
+extern mxml_node_t	*mxmlWalkNext(mxml_node_t *node, mxml_node_t *top,
+                          int descend);
+extern mxml_node_t	*mxmlWalkPrev(mxml_node_t *node, mxml_node_t *top,
+                          int descend);
 
 
 /*
  * Semi-private functions...
  */
 
-extern void		mxml_error(const char *format, ...);
-PHMXMLAPI extern mxml_type_t	mxml_ignore_cb(mxml_node_t *node);
-PHMXMLAPI extern mxml_type_t	mxml_integer_cb(mxml_node_t *node);
-PHMXMLAPI extern mxml_type_t	mxml_opaque_cb(mxml_node_t *node);
-PHMXMLAPI extern mxml_type_t	mxml_real_cb(mxml_node_t *node);
+extern void		mxml_error(const char *format, ...)
+#    ifdef __GNUC__
+__attribute__ ((__format__ (__printf__, 1, 2)))
+#    endif /* __GNUC__ */
+;
+extern mxml_type_t	mxml_ignore_cb(mxml_node_t *node);
+extern mxml_type_t	mxml_integer_cb(mxml_node_t *node);
+extern mxml_type_t	mxml_opaque_cb(mxml_node_t *node);
+extern mxml_type_t	mxml_real_cb(mxml_node_t *node);
 
 
 /*
@@ -331,8 +279,3 @@ PHMXMLAPI extern mxml_type_t	mxml_real_cb(mxml_node_t *node);
 }
 #  endif /* __cplusplus */
 #endif /* !_mxml_h_ */
-
-
-/*
- * End of "$Id: mxml.h 464 2016-06-12 21:16:14Z msweet $".
- */

@@ -3,7 +3,7 @@
  *   tree new (tree list control)
  *
  * Copyright (C) 2011-2016 wj32
- * Copyright (C) 2017 dmex
+ * Copyright (C) 2017-2021 dmex
  *
  * This file is part of Process Hacker.
  *
@@ -46,10 +46,9 @@
 
 #include <uxtheme.h>
 #include <vssym32.h>
-#include <windowsx.h>
 
+#include <apiimport.h>
 #include <guisup.h>
-
 #include <treenewp.h>
 
 static PVOID ComCtl32Handle;
@@ -77,9 +76,9 @@ BOOLEAN PhTreeNewInitialization(
     if (!RegisterClassEx(&c))
         return FALSE;
 
-    ComCtl32Handle = PhGetDllHandle(L"comctl32.dll");
-    SmallIconWidth = GetSystemMetrics(SM_CXSMICON);
-    SmallIconHeight = GetSystemMetrics(SM_CYSMICON);
+    ComCtl32Handle = PhGetLoaderEntryDllBase(L"comctl32.dll");
+    SmallIconWidth = PhSmallIconSize.X; //GetSystemMetrics(SM_CXSMICON);
+    SmallIconHeight = PhSmallIconSize.Y; //GetSystemMetrics(SM_CYSMICON);
 
     return TRUE;
 }
@@ -93,12 +92,12 @@ LRESULT CALLBACK PhTnpWndProc(
 {
     PPH_TREENEW_CONTEXT context;
 
-    context = (PPH_TREENEW_CONTEXT)GetWindowLongPtr(hwnd, 0);
+    context = PhGetWindowContext(hwnd, MAXCHAR);
 
     if (uMsg == WM_CREATE)
     {
         PhTnpCreateTreeNewContext(&context);
-        SetWindowLongPtr(hwnd, 0, (LONG_PTR)context);
+        PhSetWindowContext(hwnd, MAXCHAR, context);
     }
 
     if (!context)
@@ -124,7 +123,7 @@ LRESULT CALLBACK PhTnpWndProc(
         {
             context->Callback(hwnd, TreeNewDestroying, NULL, NULL, context->CallbackContext);
             PhTnpDestroyTreeNewContext(context);
-            SetWindowLongPtr(hwnd, 0, (LONG_PTR)NULL);
+            PhRemoveWindowContext(hwnd, MAXCHAR);
         }
         return 0;
     case WM_SIZE:
@@ -183,7 +182,11 @@ LRESULT CALLBACK PhTnpWndProc(
         return 0;
     case WM_KILLFOCUS:
         {
+            //if (!context->ContextMenuActive && !(context->Style & TN_STYLE_ALWAYS_SHOW_SELECTION))
+            //    PhTnpSelectRange(context, -1, -1, TN_SELECT_RESET, NULL, NULL);
+
             context->HasFocus = FALSE;
+
             InvalidateRect(context->Handle, NULL, FALSE);
         }
         return 0;
@@ -208,6 +211,20 @@ LRESULT CALLBACK PhTnpWndProc(
         break;
     case WM_MOUSELEAVE:
         {
+            //if (!context->ContextMenuActive && !(context->Style & TN_STYLE_ALWAYS_SHOW_SELECTION))
+            //{
+            //    ULONG changedStart;
+            //    ULONG changedEnd;
+            //    RECT rect;
+            //
+            //    PhTnpSelectRange(context, -1, -1, TN_SELECT_RESET, &changedStart, &changedEnd);
+            //
+            //    if (PhTnpGetRowRects(context, changedStart, changedEnd, TRUE, &rect))
+            //    {
+            //        InvalidateRect(context->Handle, &rect, FALSE);
+            //    }
+            //}
+
             if (!context->SuspendUpdateStructure)
                 PhTnpOnMouseLeave(hwnd, context);
         }
@@ -277,6 +294,14 @@ LRESULT CALLBACK PhTnpWndProc(
                 return result;
         }
         break;
+    case WM_MEASUREITEM:
+        if (context->ThemeSupport && PhThemeWindowMeasureItem(hwnd, (LPMEASUREITEMSTRUCT)lParam))
+            return TRUE;
+        break;
+    case WM_DRAWITEM:
+        if (context->ThemeSupport && PhThemeWindowDrawItem((LPDRAWITEMSTRUCT)lParam))
+            return TRUE;
+        break;
     }
 
     if (uMsg >= TNM_FIRST && uMsg <= TNM_LAST)
@@ -328,9 +353,7 @@ VOID PhTnpCreateTreeNewContext(
 {
     PPH_TREENEW_CONTEXT context;
 
-    context = PhAllocate(sizeof(PH_TREENEW_CONTEXT));
-    memset(context, 0, sizeof(PH_TREENEW_CONTEXT));
-
+    context = PhAllocateZero(sizeof(PH_TREENEW_CONTEXT));
     context->FixedWidthMinimum = 20;
     context->RowHeight = 1; // must never be 0
     context->HotNodeIndex = -1;
@@ -350,11 +373,9 @@ VOID PhTnpDestroyTreeNewContext(
     _In_ PPH_TREENEW_CONTEXT Context
     )
 {
-    ULONG i;
-
     if (Context->Columns)
     {
-        for (i = 0; i < Context->NextId; i++)
+        for (ULONG i = 0; i < Context->NextId; i++)
         {
             if (Context->Columns[i])
                 PhFree(Context->Columns[i]);
@@ -369,7 +390,7 @@ VOID PhTnpDestroyTreeNewContext(
     PhDereferenceObject(Context->FlatList);
 
     if (Context->FontOwned)
-        DeleteObject(Context->Font);
+        DeleteFont(Context->Font);
 
     if (Context->ThemeData)
         CloseThemeData(Context->ThemeData);
@@ -384,7 +405,7 @@ VOID PhTnpDestroyTreeNewContext(
         PhTnpDestroyBufferedContext(Context);
 
     if (Context->SuspendUpdateRegion)
-        DeleteObject(Context->SuspendUpdateRegion);
+        DeleteRgn(Context->SuspendUpdateRegion);
 
     PhFree(Context);
 }
@@ -396,11 +417,13 @@ BOOLEAN PhTnpOnCreate(
     )
 {
     ULONG headerStyle;
+    PPH_TREENEW_CREATEPARAMS createParamaters;
 
     Context->Handle = hwnd;
     Context->InstanceHandle = CreateStruct->hInstance;
     Context->Style = CreateStruct->style;
     Context->ExtendedStyle = CreateStruct->dwExStyle;
+    createParamaters = CreateStruct->lpCreateParams;
 
     if (Context->Style & TN_STYLE_DOUBLE_BUFFERED)
         Context->DoubleBuffered = TRUE;
@@ -413,6 +436,19 @@ BOOLEAN PhTnpOnCreate(
         headerStyle |= HDS_BUTTONS;
     if (!(Context->Style & TN_STYLE_NO_COLUMN_HEADER))
         headerStyle |= WS_VISIBLE;
+
+    if (Context->Style & TN_STYLE_CUSTOM_COLORS)
+    {
+        Context->CustomTextColor = createParamaters->TextColor ? createParamaters->TextColor : RGB(0xff, 0xff, 0xff);
+        Context->CustomFocusColor = createParamaters->FocusColor ? createParamaters->FocusColor : RGB(0x0, 0x0, 0xff);
+        Context->CustomSelectedColor = createParamaters->SelectionColor ? createParamaters->SelectionColor : RGB(0x0, 0x0, 0x80);
+        Context->CustomColors = TRUE;
+    }
+    else
+    {
+        Context->CustomFocusColor = GetSysColor(COLOR_HOTLIGHT);
+        Context->CustomSelectedColor = GetSysColor(COLOR_HIGHLIGHT);
+    }
 
     if (!(Context->FixedHeaderHandle = CreateWindow(
         WC_HEADER,
@@ -621,7 +657,7 @@ VOID PhTnpOnPaint(
             else
             {
                 CombineRgn(Context->SuspendUpdateRegion, Context->SuspendUpdateRegion, updateRegion, RGN_OR);
-                DeleteObject(updateRegion);
+                DeleteRgn(updateRegion);
             }
 
             // Pretend we painted something; this ensures the update region is validated properly.
@@ -1295,7 +1331,9 @@ VOID PhTnpOnContextMenu(
     contextMenu.Node = hitTest.Node;
     contextMenu.Column = hitTest.Column;
     contextMenu.KeyboardInvoked = keyboardInvoked;
+    Context->ContextMenuActive = TRUE;
     Context->Callback(hwnd, TreeNewContextMenu, &contextMenu, NULL, Context->CallbackContext);
+    Context->ContextMenuActive = FALSE;
 }
 
 VOID PhTnpOnVScroll(
@@ -1535,6 +1573,13 @@ BOOLEAN PhTnpOnNotify(
                 PhTnpUpdateColumnMaps(Context);
                 Context->Callback(Context->Handle, TreeNewColumnReordered, NULL, NULL, Context->CallbackContext);
                 InvalidateRect(Context->Handle, NULL, FALSE);
+            }
+
+            // We need to invalidate the header but hwndFrom doesn't match HeaderHandle,
+            // instead we'll always invalidate? (dmex)
+            if (Context->ThemeSupport)
+            {
+                InvalidateRect(Context->HeaderHandle, NULL, FALSE);
             }
         }
         break;
@@ -1965,6 +2010,15 @@ ULONG_PTR PhTnpOnUserMessage(
         return TRUE;
     case TNM_ISFLATNODEVALID:
         return !Context->SuspendUpdateStructure;
+    case TNM_THEMESUPPORT:
+        Context->ThemeSupport = !!WParam;
+        return TRUE;
+    case TNM_SETIMAGELIST:
+        {
+            Context->ImageListSupport = !!WParam;
+            Context->ImageListHandle = (HIMAGELIST)WParam;
+        }
+        return TRUE;
     }
 
     return 0;
@@ -1978,7 +2032,7 @@ VOID PhTnpSetFont(
 {
     if (Context->FontOwned)
     {
-        DeleteObject(Context->Font);
+        DeleteFont(Context->Font);
         Context->FontOwned = FALSE;
     }
 
@@ -1995,12 +2049,12 @@ VOID PhTnpSetFont(
         }
     }
 
-    SendMessage(Context->FixedHeaderHandle, WM_SETFONT, (WPARAM)Context->Font, Redraw);
-    SendMessage(Context->HeaderHandle, WM_SETFONT, (WPARAM)Context->Font, Redraw);
+    SetWindowFont(Context->FixedHeaderHandle, Context->Font, Redraw);
+    SetWindowFont(Context->HeaderHandle, Context->Font, Redraw);
 
     if (Context->TooltipsHandle)
     {
-        SendMessage(Context->TooltipsHandle, WM_SETFONT, (WPARAM)Context->Font, FALSE);
+        SetWindowFont(Context->TooltipsHandle, Context->Font, FALSE);
         Context->TooltipFont = Context->Font;
     }
 
@@ -2034,7 +2088,7 @@ VOID PhTnpUpdateTextMetrics(
 
     if (hdc = GetDC(Context->Handle))
     {
-        SelectObject(hdc, Context->Font);
+        SelectFont(hdc, Context->Font);
         GetTextMetrics(hdc, &Context->TextMetrics);
 
         if (!Context->CustomRowHeight)
@@ -2069,6 +2123,8 @@ VOID PhTnpUpdateThemeData(
     _In_ PPH_TREENEW_CONTEXT Context
     )
 {
+    Context->DefaultBackColor = GetSysColor(COLOR_WINDOW);
+    Context->DefaultForeColor = GetSysColor(COLOR_WINDOWTEXT);
     Context->ThemeActive = !!IsThemeActive();
 
     if (Context->ThemeData)
@@ -2077,7 +2133,7 @@ VOID PhTnpUpdateThemeData(
         Context->ThemeData = NULL;
     }
 
-    Context->ThemeData = OpenThemeData(Context->Handle, L"TREEVIEW");
+    Context->ThemeData = OpenThemeData(Context->Handle, VSCLASS_TREEVIEW);
 
     if (Context->ThemeData)
     {
@@ -2291,7 +2347,7 @@ VOID PhTnpSetRedraw(
         if (Context->SuspendUpdateRegion)
         {
             InvalidateRgn(Context->Handle, Context->SuspendUpdateRegion, FALSE);
-            DeleteObject(Context->SuspendUpdateRegion);
+            DeleteRgn(Context->SuspendUpdateRegion);
             Context->SuspendUpdateRegion = NULL;
         }
     }
@@ -3085,6 +3141,31 @@ VOID PhTnpAutoSizeColumnHeader(
 
         if (Column->Fixed)
             newWidth++;
+
+        // Check the column header text width.
+        if (Column->Text)
+        {
+            PWSTR text;
+            SIZE_T textCount;
+            HDC hdc;
+            SIZE textSize;
+
+            text = Column->Text;
+            textCount = PhCountStringZ(text);
+
+            if (hdc = GetDC(Context->Handle))
+            {
+                SelectFont(hdc, Context->Font);
+
+                if (GetTextExtentPoint32(hdc, text, (ULONG)textCount, &textSize))
+                {
+                    if (newWidth < textSize.cx + 6 + 6) // HACK: Magic values (same as our cell margins?)
+                        newWidth = textSize.cx + 6 + 6;
+                }
+
+                ReleaseDC(Context->Handle, hdc);
+            }
+        }
     }
 
     item.mask = HDI_WIDTH;
@@ -3437,7 +3518,7 @@ BOOLEAN PhTnpGetCellParts(
                 else
                     font = Context->Font;
 
-                SelectObject(hdc, font);
+                SelectFont(hdc, font);
 
                 if (GetTextExtentPoint32(hdc, text.Buffer, (ULONG)text.Length / sizeof(WCHAR), &textSize))
                 {
@@ -4470,7 +4551,10 @@ VOID PhTnpProcessSearchKey(
         // The search string has become too long. Fail the search.
         if (!Context->SearchFailed)
         {
-            MessageBeep(0);
+            if (MessageBeep_Import())
+            {
+                MessageBeep_Import()(MB_OK);
+            }
             Context->SearchFailed = TRUE;
             return;
         }
@@ -4533,9 +4617,12 @@ VOID PhTnpProcessSearchKey(
         // No search result. Beep to indicate an error, and set the flag so we don't beep again. But
         // don't beep if the first character was a space, because that's used for other purposes
         // elsewhere (see PhTnpProcessNodeKey).
-        if (searchEvent.String.Buffer[0] != ' ')
+        if (searchEvent.String.Buffer[0] != L' ')
         {
-            MessageBeep(0);
+            if (MessageBeep_Import())
+            {
+                MessageBeep_Import()(MB_OK);
+            }
         }
 
         Context->SearchFailed = TRUE;
@@ -4924,7 +5011,6 @@ VOID PhTnpPaint(
     LONG normalUpdateRightIndex;
     LONG normalTotalX;
     RECT cellRect;
-    HBRUSH backBrush;
     HRGN oldClipRegion;
 
     PhTnpInitializeThemeData(Context);
@@ -5001,7 +5087,7 @@ VOID PhTnpPaint(
 
     // Paint the rows.
 
-    SelectObject(hdc, Context->Font);
+    SelectFont(hdc, Context->Font);
     SetBkMode(hdc, TRANSPARENT);
 
     for (i = firstRowToUpdate; i <= lastRowToUpdate; i++)
@@ -5012,30 +5098,125 @@ VOID PhTnpPaint(
 
         PhTnpPrepareRowForDraw(Context, hdc, node);
 
-        if (node->Selected && !Context->ThemeHasItemBackground)
+        if (Context->ThemeSupport)
         {
-            // Non-themed background
-            if (Context->HasFocus)
+            HDC tempDc;
+            BITMAPINFOHEADER header;
+            HBITMAP bitmap;
+            HBITMAP oldBitmap;
+            PVOID bits;
+            RECT tempRect;
+            BLENDFUNCTION blendFunction;
+
+            SetTextColor(hdc, RGB(0xff, 0xff, 0xff));
+            SetDCBrushColor(hdc, RGB(30, 30, 30));
+            FillRect(hdc, &rowRect, GetStockBrush(DC_BRUSH));
+
+            if (tempDc = CreateCompatibleDC(hdc))
             {
-                SetTextColor(hdc, GetSysColor(COLOR_HIGHLIGHTTEXT));
-                backBrush = GetSysColorBrush(COLOR_HIGHLIGHT);
-            }
-            else
-            {
-                SetTextColor(hdc, GetSysColor(COLOR_BTNTEXT));
-                backBrush = GetSysColorBrush(COLOR_BTNFACE);
+                memset(&header, 0, sizeof(BITMAPINFOHEADER));
+                header.biSize = sizeof(BITMAPINFOHEADER);
+                header.biWidth = 1;
+                header.biHeight = 1;
+                header.biPlanes = 1;
+                header.biBitCount = 24;
+                bitmap = CreateDIBSection(tempDc, (BITMAPINFO *)&header, DIB_RGB_COLORS, &bits, NULL, 0);
+
+                if (bitmap)
+                {
+                    // Draw the outline of the selection rectangle.
+                    //FrameRect(hdc, &rowRect, GetSysColorBrush(COLOR_HIGHLIGHT));
+
+                    // Fill in the selection rectangle.
+                    oldBitmap = SelectBitmap(tempDc, bitmap);
+                    tempRect.left = 0;
+                    tempRect.top = 0;
+                    tempRect.right = 1;
+                    tempRect.bottom = 1;
+
+                    SetTextColor(tempDc, node->s.DrawForeColor);
+
+                    if (node->s.DrawBackColor != 16777215)
+                    {
+                        SetDCBrushColor(tempDc, node->s.DrawBackColor);
+                        FillRect(tempDc, &tempRect, GetStockBrush(DC_BRUSH));
+                    }
+                    else
+                    {
+                        SetDCBrushColor(tempDc, RGB(30, 30, 30));
+                        FillRect(tempDc, &tempRect, GetStockBrush(DC_BRUSH));
+                    }
+
+                    blendFunction.BlendOp = AC_SRC_OVER;
+                    blendFunction.BlendFlags = 0;
+                    blendFunction.SourceConstantAlpha = 96;
+                    blendFunction.AlphaFormat = 0;
+
+                    GdiAlphaBlend(
+                        hdc,
+                        rowRect.left,
+                        rowRect.top,
+                        rowRect.right - rowRect.left,
+                        rowRect.bottom - rowRect.top,
+                        tempDc,
+                        0,
+                        0,
+                        1,
+                        1,
+                        blendFunction
+                        );
+
+                    SelectBitmap(tempDc, oldBitmap);
+                    DeleteBitmap(bitmap);
+                }
+
+                DeleteDC(tempDc);
             }
         }
         else
         {
-            SetTextColor(hdc, node->s.DrawForeColor);
-            SetDCBrushColor(hdc, node->s.DrawBackColor);
-            backBrush = GetStockObject(DC_BRUSH);
+            if (node->Selected && (Context->CustomColors || !Context->ThemeHasItemBackground))
+            {
+                // Non-themed background
+
+                if (Context->HasFocus)
+                {
+                    if (Context->CustomColors)
+                    {
+                        SetTextColor(hdc, Context->CustomTextColor);
+                        SetDCBrushColor(hdc, Context->CustomFocusColor);
+                        FillRect(hdc, &rowRect, GetStockBrush(DC_BRUSH));
+                    }
+                    else
+                    {
+                        SetTextColor(hdc, GetSysColor(COLOR_HIGHLIGHTTEXT));
+                        FillRect(hdc, &rowRect, GetSysColorBrush(COLOR_HIGHLIGHT));
+                    }
+                }
+                else
+                {
+                    if (Context->CustomColors)
+                    {
+                        SetTextColor(hdc, Context->CustomTextColor);
+                        SetDCBrushColor(hdc, Context->CustomSelectedColor);
+                        FillRect(hdc, &rowRect, GetStockBrush(DC_BRUSH));
+                    }
+                    else
+                    {
+                        SetTextColor(hdc, GetSysColor(COLOR_BTNTEXT));
+                        FillRect(hdc, &rowRect, GetSysColorBrush(COLOR_BTNFACE));
+                    }
+                }
+            }
+            else
+            {
+                SetTextColor(hdc, node->s.DrawForeColor);
+                SetDCBrushColor(hdc, node->s.DrawBackColor);
+                FillRect(hdc, &rowRect, GetStockBrush(DC_BRUSH));
+            }
         }
 
-        FillRect(hdc, &rowRect, backBrush);
-
-        if (Context->ThemeHasItemBackground)
+        if (!Context->CustomColors && Context->ThemeHasItemBackground)
         {
             INT stateId;
 
@@ -5055,10 +5236,12 @@ VOID PhTnpPaint(
                 if (i == Context->HotNodeIndex)
                     stateId = TREIS_HOT;
                 else
-                    stateId = -1;
+                    stateId = INT_MAX;
             }
 
-            if (stateId != -1)
+            // Themed background
+
+            if (stateId != INT_MAX)
             {
                 if (!Context->FixedColumnVisible)
                 {
@@ -5099,7 +5282,7 @@ VOID PhTnpPaint(
 
             if (GetClipRgn(hdc, oldClipRegion) != 1)
             {
-                DeleteObject(oldClipRegion);
+                DeleteRgn(oldClipRegion);
                 oldClipRegion = NULL;
             }
 
@@ -5118,7 +5301,7 @@ VOID PhTnpPaint(
 
             if (oldClipRegion)
             {
-                DeleteObject(oldClipRegion);
+                DeleteRgn(oldClipRegion);
             }
         }
 
@@ -5130,7 +5313,17 @@ VOID PhTnpPaint(
     {
         // Fill the rest of the space on the bottom with the window color.
         rowRect.bottom = viewRect.bottom;
-        FillRect(hdc, &rowRect, GetSysColorBrush(COLOR_WINDOW));
+
+        if (Context->ThemeSupport)
+        {
+            SetTextColor(hdc, RGB(0xff, 0xff, 0xff));
+            SetDCBrushColor(hdc, RGB(30, 30, 30));
+            FillRect(hdc, &rowRect, GetStockBrush(DC_BRUSH));
+        }
+        else
+        {
+            FillRect(hdc, &rowRect, GetSysColorBrush(COLOR_WINDOW));
+        }
     }
 
     if (normalTotalX < viewRect.right && viewRect.right > PaintRect->left && normalTotalX < PaintRect->right)
@@ -5140,7 +5333,17 @@ VOID PhTnpPaint(
         rowRect.top = Context->HeaderHeight;
         rowRect.right = viewRect.right;
         rowRect.bottom = viewRect.bottom;
-        FillRect(hdc, &rowRect, GetSysColorBrush(COLOR_WINDOW));
+
+        if (Context->ThemeSupport)
+        {
+            SetTextColor(hdc, RGB(0xff, 0xff, 0xff));
+            SetDCBrushColor(hdc, RGB(30, 30, 30));
+            FillRect(hdc, &rowRect, GetStockBrush(DC_BRUSH));
+        }
+        else
+        {
+            FillRect(hdc, &rowRect, GetSysColorBrush(COLOR_WINDOW));
+        }
     }
 
     if (Context->FlatList->Count == 0 && Context->EmptyText.Length != 0)
@@ -5152,7 +5355,15 @@ VOID PhTnpPaint(
         textRect.right = viewRect.right - 20;
         textRect.bottom = viewRect.bottom - 5;
 
-        SetTextColor(hdc, GetSysColor(COLOR_GRAYTEXT));
+        if (Context->ThemeSupport)
+        {
+            SetTextColor(hdc, RGB(0xff, 0xff, 0xff));
+        }
+        else
+        {
+            SetTextColor(hdc, GetSysColor(COLOR_GRAYTEXT));
+        }
+
         DrawText(
             hdc,
             Context->EmptyText.Buffer,
@@ -5314,8 +5525,8 @@ VOID PhTnpDrawCell(
 
     if (Column == Context->FirstColumn)
     {
-        BOOLEAN needsClip;
-        HRGN oldClipRegion;
+        BOOLEAN needsClip = FALSE;
+        HRGN oldClipRegion = NULL;
 
         textRect.left += Node->Level * SmallIconWidth;
 
@@ -5328,7 +5539,7 @@ VOID PhTnpDrawCell(
 
             if (GetClipRgn(hdc, oldClipRegion) != 1)
             {
-                DeleteObject(oldClipRegion);
+                DeleteRgn(oldClipRegion);
                 oldClipRegion = NULL;
             }
 
@@ -5391,7 +5602,25 @@ VOID PhTnpDrawCell(
         }
 
         // Draw the icon.
-        if (Node->Icon)
+
+        if (Context->ImageListSupport)
+        {
+            PhImageListDrawEx(
+                Context->ImageListHandle,
+                (ULONG)(ULONG_PTR)Node->Icon, // HACK (dmex)
+                hdc,
+                textRect.left,
+                textRect.top,
+                SmallIconWidth,
+                SmallIconHeight,
+                CLR_DEFAULT,
+                CLR_NONE,
+                ILD_NORMAL | ILD_TRANSPARENT
+                );
+
+            textRect.left += SmallIconWidth + TNP_ICON_RIGHT_PADDING;
+        }
+        else if (Node->Icon)
         {
             DrawIconEx(
                 hdc,
@@ -5413,7 +5642,7 @@ VOID PhTnpDrawCell(
             SelectClipRgn(hdc, oldClipRegion);
 
             if (oldClipRegion)
-                DeleteObject(oldClipRegion);
+                DeleteRgn(oldClipRegion);
         }
 
         if (textRect.left > textRect.right)
@@ -5457,7 +5686,7 @@ VOID PhTnpDrawCell(
         textRect.bottom = CellRect->bottom;
 
         if (font)
-            oldFont = SelectObject(hdc, font);
+            oldFont = SelectFont(hdc, font);
 
         DrawText(
             hdc,
@@ -5468,7 +5697,7 @@ VOID PhTnpDrawCell(
             );
 
         if (font)
-            SelectObject(hdc, oldFont);
+            SelectFont(hdc, oldFont);
     }
 }
 
@@ -5497,7 +5726,7 @@ VOID PhTnpDrawDivider(
             points[1].x = Context->ClientRect.right;
             points[1].y = Context->ClientRect.bottom;
             SetDCPenColor(Context->BufferedContext, RGB(0x77, 0x77, 0x77));
-            SelectObject(Context->BufferedContext, GetStockObject(DC_PEN));
+            SelectPen(Context->BufferedContext, GetStockPen(DC_PEN));
             Polyline(Context->BufferedContext, points, 2);
 
             blendFunction.BlendOp = AC_SRC_OVER;
@@ -5534,7 +5763,7 @@ VOID PhTnpDrawDivider(
     points[1].x = Context->FixedWidth;
     points[1].y = Context->ClientRect.bottom;
     SetDCPenColor(hdc, RGB(0x77, 0x77, 0x77));
-    SelectObject(hdc, GetStockObject(DC_PEN));
+    SelectPen(hdc, GetStockPen(DC_PEN));
     Polyline(hdc, points, 2);
 }
 
@@ -5551,9 +5780,9 @@ VOID PhTnpDrawPlusMinusGlyph(
 
     savedDc = SaveDC(hdc);
 
-    SelectObject(hdc, GetStockObject(DC_PEN));
+    SelectPen(hdc, GetStockPen(DC_PEN));
     SetDCPenColor(hdc, RGB(0x55, 0x55, 0x55));
-    SelectObject(hdc, GetStockObject(DC_BRUSH));
+    SelectBrush(hdc, GetStockBrush(DC_BRUSH));
     SetDCBrushColor(hdc, RGB(0xff, 0xff, 0xff));
 
     width = Rect->right - Rect->left;
@@ -5631,7 +5860,7 @@ VOID PhTnpDrawSelectionRectangle(
 
                 // Fill in the selection rectangle.
 
-                oldBitmap = SelectObject(tempDc, bitmap);
+                oldBitmap = SelectBitmap(tempDc, bitmap);
                 tempRect.left = 0;
                 tempRect.top = 0;
                 tempRect.right = 1;
@@ -5659,8 +5888,8 @@ VOID PhTnpDrawSelectionRectangle(
 
                 drewWithAlpha = TRUE;
 
-                SelectObject(tempDc, oldBitmap);
-                DeleteObject(bitmap);
+                SelectBitmap(tempDc, oldBitmap);
+                DeleteBitmap(bitmap);
             }
 
             DeleteDC(tempDc);
@@ -5775,13 +6004,18 @@ VOID PhTnpInitializeTooltips(
     toolInfo.lParam = TNP_TOOLTIPS_HEADER;
     SendMessage(Context->TooltipsHandle, TTM_ADDTOOL, 0, (LPARAM)&toolInfo);
 
-    // Hook the header control window procedures so we can forward mouse messages to the tooltip
-    // control.
-    SetWindowSubclass(Context->FixedHeaderHandle, PhTnpHeaderHookWndProc, 0, (ULONG_PTR)Context);
-    SetWindowSubclass(Context->HeaderHandle, PhTnpHeaderHookWndProc, 0, (ULONG_PTR)Context);
+    // Hook the header control window procedures so we can forward mouse messages to the tooltip control.
+    Context->HeaderWindowProc = (WNDPROC)GetWindowLongPtr(Context->HeaderHandle, GWLP_WNDPROC);
+    Context->FixedHeaderWindowProc = (WNDPROC)GetWindowLongPtr(Context->FixedHeaderHandle, GWLP_WNDPROC);
+    
+    PhSetWindowContext(Context->HeaderHandle, 0xF, Context);
+    PhSetWindowContext(Context->FixedHeaderHandle, 0xF, Context);
+
+    SetWindowLongPtr(Context->FixedHeaderHandle, GWLP_WNDPROC, (LONG_PTR)PhTnpHeaderHookWndProc);
+    SetWindowLongPtr(Context->HeaderHandle, GWLP_WNDPROC, (LONG_PTR)PhTnpHeaderHookWndProc);
 
     SendMessage(Context->TooltipsHandle, TTM_SETMAXTIPWIDTH, 0, MAXSHORT); // no limit
-    SendMessage(Context->TooltipsHandle, WM_SETFONT, (WPARAM)Context->Font, FALSE);
+    SetWindowFont(Context->TooltipsHandle, Context->Font, FALSE);
     Context->TooltipFont = Context->Font;
 }
 
@@ -5904,7 +6138,7 @@ BOOLEAN PhTnpPrepareTooltipShow(
     if (Context->TooltipFont != Context->NewTooltipFont)
     {
         Context->TooltipFont = Context->NewTooltipFont;
-        SendMessage(Context->TooltipsHandle, WM_SETFONT, (WPARAM)Context->TooltipFont, FALSE);
+        SetWindowFont(Context->TooltipsHandle, Context->TooltipFont, FALSE);
     }
 
     if (!Context->TooltipUnfolding)
@@ -6042,7 +6276,7 @@ VOID PhTnpGetHeaderTooltipText(
         if (!(hdc = GetDC(Context->Handle)))
             return;
 
-        SelectObject(hdc, Context->Font);
+        SelectFont(hdc, Context->Font);
 
         result = GetTextExtentPoint32(hdc, text, (ULONG)textCount, &textSize);
         ReleaseDC(Context->Handle, hdc);
@@ -6069,17 +6303,26 @@ LRESULT CALLBACK PhTnpHeaderHookWndProc(
     _In_ HWND hwnd,
     _In_ UINT uMsg,
     _In_ WPARAM wParam,
-    _In_ LPARAM lParam,
-    _In_ UINT_PTR uIdSubclass,
-    _In_ ULONG_PTR dwRefData
+    _In_ LPARAM lParam
     )
 {
-    PPH_TREENEW_CONTEXT context = (PPH_TREENEW_CONTEXT)dwRefData;
+    PPH_TREENEW_CONTEXT context;
+    WNDPROC oldWndProc;
+
+    context = PhGetWindowContext(hwnd, 0xF);
+
+    if (hwnd == context->FixedHeaderHandle)
+        oldWndProc = context->FixedHeaderWindowProc;
+    else
+        oldWndProc = context->HeaderWindowProc;
 
     switch (uMsg)
     {
     case WM_DESTROY:
-        RemoveWindowSubclass(hwnd, PhTnpHeaderHookWndProc, uIdSubclass);
+        {
+            SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)oldWndProc);
+            PhRemoveWindowContext(hwnd, 0xF);
+        }
         break;
     case WM_MOUSEMOVE:
         {
@@ -6165,7 +6408,7 @@ LRESULT CALLBACK PhTnpHeaderHookWndProc(
         break;
     }
 
-    return DefSubclassProc(hwnd, uMsg, wParam, lParam);
+    return CallWindowProc(oldWndProc, hwnd, uMsg, wParam, lParam);
 }
 
 BOOLEAN PhTnpDetectDrag(
@@ -6612,7 +6855,7 @@ VOID PhTnpCreateBufferedContext(
         }
 
         ReleaseDC(Context->Handle, hdc);
-        Context->BufferedOldBitmap = SelectObject(Context->BufferedContext, Context->BufferedBitmap);
+        Context->BufferedOldBitmap = SelectBitmap(Context->BufferedContext, Context->BufferedBitmap);
     }
 }
 
@@ -6622,8 +6865,8 @@ VOID PhTnpDestroyBufferedContext(
 {
     // The original bitmap must be selected back into the context, otherwise the bitmap can't be
     // deleted.
-    SelectObject(Context->BufferedContext, Context->BufferedOldBitmap);
-    DeleteObject(Context->BufferedBitmap);
+    SelectBitmap(Context->BufferedContext, Context->BufferedOldBitmap);
+    DeleteBitmap(Context->BufferedBitmap);
     DeleteDC(Context->BufferedContext);
 
     Context->BufferedContext = NULL;

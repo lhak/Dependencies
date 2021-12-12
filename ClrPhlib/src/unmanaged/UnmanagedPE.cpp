@@ -29,7 +29,6 @@ bool UnmanagedPE::LoadPE(LPWSTR Filepath)
     m_bImageLoaded = NT_SUCCESS(PhLoadMappedImage(
         Filepath,
         NULL,
-        TRUE,
         &m_PvMappedImage
     ));
 

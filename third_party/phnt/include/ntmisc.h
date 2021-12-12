@@ -1,17 +1,25 @@
+/*
+ * Process Hacker -
+ *   Trace Control support functions
+ *
+ * This file is part of Process Hacker.
+ *
+ * Process Hacker is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Process Hacker is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Process Hacker.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef _NTMISC_H
 #define _NTMISC_H
-
-// Boot graphics
-
-#if (PHNT_VERSION >= PHNT_WIN7)
-// rev
-NTSYSCALLAPI
-NTSTATUS
-NTAPI
-NtDrawText(
-    _In_ PUNICODE_STRING Text
-    );
-#endif
 
 // Filter manager
 
@@ -36,7 +44,8 @@ typedef enum _VDMSERVICECLASS
     VdmSetProcessLdtInfo,
     VdmAdlibEmulation,
     VdmPMCliControl,
-    VdmQueryVdmProcess
+    VdmQueryVdmProcess,
+    VdmPreInitialize
 } VDMSERVICECLASS, *PVDMSERVICECLASS;
 
 NTSYSCALLAPI
@@ -59,17 +68,60 @@ NtTraceEvent(
     _In_ PVOID Fields
     );
 
+typedef enum _TRACE_CONTROL_INFORMATION_CLASS
+{
+    TraceControlStartLogger = 1,
+    TraceControlStopLogger = 2,
+    TraceControlQueryLogger = 3,
+    TraceControlUpdateLogger = 4,
+    TraceControlFlushLogger = 5,
+    TraceControlIncrementLoggerFile = 6,
+
+    TraceControlRealtimeConnect = 11,
+    TraceControlActivityIdCreate = 12,
+    TraceControlWdiDispatchControl = 13,
+    TraceControlRealtimeDisconnectConsumerByHandle = 14,
+    TraceControlRegisterGuidsCode = 15,
+    TraceControlReceiveNotification = 16,
+    TraceControlSendDataBlock = 17, // EnableGuid
+    TraceControlSendReplyDataBlock = 18,
+    TraceControlReceiveReplyDataBlock = 19,
+    TraceControlWdiUpdateSem = 20,
+    TraceControlEnumTraceGuidList = 21,
+    TraceControlGetTraceGuidInfo = 22,
+    TraceControlEnumerateTraceGuids = 23,
+    TraceControlRegisterSecurityProv = 24,
+    TraceControlQueryReferenceTime = 25,
+    TraceControlTrackProviderBinary = 26,
+    TraceControlAddNotificationEvent = 27,
+    TraceControlUpdateDisallowList = 28,
+    TraceControlSetEnableAllKeywordsCode = 29,
+    TraceControlSetProviderTraitsCode = 30,
+    TraceControlUseDescriptorTypeCode = 31,
+    TraceControlEnumTraceGroupList = 32,
+    TraceControlGetTraceGroupInfo = 33,
+    TraceControlTraceSetDisallowList= 34,
+    TraceControlSetCompressionSettings = 35,
+    TraceControlGetCompressionSettings= 36,
+    TraceControlUpdatePeriodicCaptureState = 37,
+    TraceControlGetPrivateSessionTraceHandle = 38,
+    TraceControlRegisterPrivateSession = 39,
+    TraceControlQuerySessionDemuxObject = 40,
+    TraceControlSetProviderBinaryTracking = 41,
+    TraceControlMaxLoggers = 42,
+    TraceControlMaxPmcCounter = 43
+} TRACE_CONTROL_INFORMATION_CLASS;
+
 #if (PHNT_VERSION >= PHNT_VISTA)
-// private
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
 NtTraceControl(
-    _In_ ULONG FunctionCode,
-    _In_reads_bytes_opt_(InBufferLen) PVOID InBuffer,
-    _In_ ULONG InBufferLen,
-    _Out_writes_bytes_opt_(OutBufferLen) PVOID OutBuffer,
-    _In_ ULONG OutBufferLen,
+    _In_ TRACE_CONTROL_INFORMATION_CLASS TraceInformationClass,
+    _In_reads_bytes_opt_(InputBufferLength) PVOID InputBuffer,
+    _In_ ULONG InputBufferLength,
+    _Out_writes_bytes_opt_(TraceInformationLength) PVOID TraceInformation,
+    _In_ ULONG TraceInformationLength,
     _Out_ PULONG ReturnLength
     );
 #endif

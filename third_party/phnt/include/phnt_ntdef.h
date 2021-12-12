@@ -1,3 +1,23 @@
+/*
+ * Process Hacker -
+ *   Native definition support
+ *
+ * This file is part of Process Hacker.
+ *
+ * Process Hacker is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Process Hacker is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Process Hacker.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef _PHNT_NTDEF_H
 #define _PHNT_NTDEF_H
 
@@ -32,7 +52,7 @@ typedef struct DECLSPEC_ALIGN(MEMORY_ALLOCATION_ALIGNMENT) _QUAD_PTR
 typedef ULONG LOGICAL;
 typedef ULONG *PLOGICAL;
 
-typedef _Success_(return >= 0) LONG NTSTATUS;
+typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
 typedef NTSTATUS *PNTSTATUS;
 
 // Cardinal types
@@ -55,6 +75,11 @@ typedef USHORT RTL_ATOM, *PRTL_ATOM;
 
 typedef LARGE_INTEGER PHYSICAL_ADDRESS, *PPHYSICAL_ADDRESS;
 
+typedef struct _LARGE_INTEGER_128
+{
+    LONGLONG QuadPart[2];
+} LARGE_INTEGER_128, *PLARGE_INTEGER_128;
+
 // NT status macros
 
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
@@ -71,9 +96,7 @@ typedef LARGE_INTEGER PHYSICAL_ADDRESS, *PPHYSICAL_ADDRESS;
 
 // Functions
 
-#ifdef _MANAGED
-#define FASTCALL __stdcall
-#elif !defined(_WIN64)
+#ifndef _WIN64
 #define FASTCALL __fastcall
 #else
 #define FASTCALL
@@ -108,6 +131,9 @@ typedef struct _STRING
     USHORT MaximumLength;
     _Field_size_bytes_part_opt_(MaximumLength, Length) PCHAR Buffer;
 } STRING, *PSTRING, ANSI_STRING, *PANSI_STRING, OEM_STRING, *POEM_STRING;
+
+typedef STRING UTF8_STRING;
+typedef PSTRING PUTF8_STRING;
 
 typedef const STRING *PCSTRING;
 typedef const ANSI_STRING *PCANSI_STRING;
@@ -179,7 +205,9 @@ typedef STRING64 ANSI_STRING64, *PANSI_STRING64;
 
 // Object attributes
 
+#define OBJ_PROTECT_CLOSE 0x00000001
 #define OBJ_INHERIT 0x00000002
+#define OBJ_AUDIT_OBJECT_CLOSE 0x00000004
 #define OBJ_PERMANENT 0x00000010
 #define OBJ_EXCLUSIVE 0x00000020
 #define OBJ_CASE_INSENSITIVE 0x00000040
@@ -214,6 +242,8 @@ typedef const OBJECT_ATTRIBUTES *PCOBJECT_ATTRIBUTES;
 
 #define RTL_CONSTANT_OBJECT_ATTRIBUTES(n, a) { sizeof(OBJECT_ATTRIBUTES), NULL, n, a, NULL, NULL }
 #define RTL_INIT_OBJECT_ATTRIBUTES(n, a) RTL_CONSTANT_OBJECT_ATTRIBUTES(n, a)
+
+#define OBJ_NAME_PATH_SEPARATOR ((WCHAR)L'\\')
 
 // Portability
 

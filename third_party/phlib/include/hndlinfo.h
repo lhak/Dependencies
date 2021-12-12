@@ -21,6 +21,13 @@ PhSetHandleClientIdFunction(
 PHLIBAPI
 PPH_STRING
 NTAPI
+PhGetEtwPublisherName(
+    _In_ PGUID Guid
+    );
+
+PHLIBAPI
+PPH_STRING
+NTAPI
 PhFormatNativeKeyName(
     _In_ PPH_STRING Name
     );
@@ -38,6 +45,14 @@ _Callback_ PPH_STRING
 NTAPI
 PhStdGetClientIdName(
     _In_ PCLIENT_ID ClientId
+    );
+
+PHLIBAPI
+PPH_STRING
+NTAPI
+PhStdGetClientIdNameEx(
+    _In_ PCLIENT_ID ClientId,
+    _In_opt_ PPH_STRING ProcessName
     );
 
 PHLIBAPI
@@ -87,7 +102,14 @@ PHLIBAPI
 ULONG
 NTAPI
 PhGetObjectTypeNumber(
-    _In_ PUNICODE_STRING TypeName
+    _In_ PPH_STRINGREF TypeName
+    );
+
+PHLIBAPI
+PPH_STRING
+NTAPI
+PhGetObjectTypeName(
+    _In_ ULONG TypeIndex
     );
 
 PHLIBAPI
@@ -129,6 +151,16 @@ PhCallNtSetSecurityObjectWithTimeout(
     _In_ HANDLE Handle,
     _In_ SECURITY_INFORMATION SecurityInformation,
     _In_ PSECURITY_DESCRIPTOR SecurityDescriptor
+    );
+
+PHLIBAPI
+NTSTATUS
+NTAPI
+PhCallNtQueryFileInformationWithTimeout(
+    _In_ HANDLE Handle,
+    _In_ FILE_INFORMATION_CLASS FileInformationClass,
+    _Out_writes_bytes_opt_(FileInformationLength) PVOID FileInformation,
+    _In_ ULONG FileInformationLength
     );
 
 #ifdef __cplusplus

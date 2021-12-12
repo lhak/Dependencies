@@ -9,7 +9,7 @@ extern "C" {
 
 typedef struct _KPH_PARAMETERS
 {
-    KPH_SECURITY_LEVEL SecurityLevel;
+    KPH_SECURITY_LEVEL SecurityLevel; // deprecated 1-2-21, to be removed
     BOOLEAN CreateDynamicConfiguration;
 } KPH_PARAMETERS, *PKPH_PARAMETERS;
 
@@ -23,15 +23,8 @@ KphConnect(
 PHLIBAPI
 NTSTATUS
 NTAPI
-KphConnect2(
-    _In_opt_ PWSTR DeviceName,
-    _In_ PWSTR FileName
-    );
-
-PHLIBAPI
-NTSTATUS
-NTAPI
 KphConnect2Ex(
+    _In_opt_ PWSTR ServiceName,
     _In_opt_ PWSTR DeviceName,
     _In_ PWSTR FileName,
     _In_opt_ PKPH_PARAMETERS Parameters
@@ -62,8 +55,15 @@ PHLIBAPI
 NTSTATUS
 NTAPI
 KphSetParameters(
-    _In_opt_ PWSTR DeviceName,
+    _In_opt_ PWSTR ServiceName,
     _In_ PKPH_PARAMETERS Parameters
+    );
+
+PHLIBAPI
+NTSTATUS
+NTAPI
+KphResetParameters(
+    _In_opt_ PWSTR ServiceName
     );
 
 PHLIBAPI
@@ -77,7 +77,7 @@ PHLIBAPI
 NTSTATUS
 NTAPI
 KphInstall(
-    _In_opt_ PWSTR DeviceName,
+    _In_opt_ PWSTR ServiceName,
     _In_ PWSTR FileName
     );
 
@@ -85,7 +85,7 @@ PHLIBAPI
 NTSTATUS
 NTAPI
 KphInstallEx(
-    _In_opt_ PWSTR DeviceName,
+    _In_opt_ PWSTR ServiceName,
     _In_ PWSTR FileName,
     _In_opt_ PKPH_PARAMETERS Parameters
     );
@@ -94,14 +94,14 @@ PHLIBAPI
 NTSTATUS
 NTAPI
 KphUninstall(
-    _In_opt_ PWSTR DeviceName
+    _In_opt_ PWSTR ServiceName
     );
 
 PHLIBAPI
 NTSTATUS
 NTAPI
 KphGetFeatures(
-    _Out_ PULONG Features
+    _Inout_ PULONG Features
     );
 
 PHLIBAPI
@@ -116,7 +116,7 @@ PHLIBAPI
 NTSTATUS
 NTAPI
 KphOpenProcess(
-    _Out_ PHANDLE ProcessHandle,
+    _Inout_ PHANDLE ProcessHandle,
     _In_ ACCESS_MASK DesiredAccess,
     _In_ PCLIENT_ID ClientId
     );
@@ -127,7 +127,7 @@ NTAPI
 KphOpenProcessToken(
     _In_ HANDLE ProcessHandle,
     _In_ ACCESS_MASK DesiredAccess,
-    _Out_ PHANDLE TokenHandle
+    _Inout_ PHANDLE TokenHandle
     );
 
 PHLIBAPI
@@ -136,7 +136,7 @@ NTAPI
 KphOpenProcessJob(
     _In_ HANDLE ProcessHandle,
     _In_ ACCESS_MASK DesiredAccess,
-    _Out_ PHANDLE JobHandle
+    _Inout_ PHANDLE JobHandle
     );
 
 PHLIBAPI
@@ -155,7 +155,7 @@ KphReadVirtualMemoryUnsafe(
     _In_ PVOID BaseAddress,
     _Out_writes_bytes_(BufferSize) PVOID Buffer,
     _In_ SIZE_T BufferSize,
-    _Out_opt_ PSIZE_T NumberOfBytesRead
+    _Inout_opt_ PSIZE_T NumberOfBytesRead
     );
 
 PHLIBAPI
@@ -166,7 +166,7 @@ KphQueryInformationProcess(
     _In_ KPH_PROCESS_INFORMATION_CLASS ProcessInformationClass,
     _Out_writes_bytes_(ProcessInformationLength) PVOID ProcessInformation,
     _In_ ULONG ProcessInformationLength,
-    _Out_opt_ PULONG ReturnLength
+    _Inout_opt_ PULONG ReturnLength
     );
 
 PHLIBAPI
@@ -183,7 +183,7 @@ PHLIBAPI
 NTSTATUS
 NTAPI
 KphOpenThread(
-    _Out_ PHANDLE ThreadHandle,
+    _Inout_ PHANDLE ThreadHandle,
     _In_ ACCESS_MASK DesiredAccess,
     _In_ PCLIENT_ID ClientId
     );
@@ -194,7 +194,7 @@ NTAPI
 KphOpenThreadProcess(
     _In_ HANDLE ThreadHandle,
     _In_ ACCESS_MASK DesiredAccess,
-    _Out_ PHANDLE ProcessHandle
+    _Inout_ PHANDLE ProcessHandle
     );
 
 PHLIBAPI
@@ -205,8 +205,8 @@ KphCaptureStackBackTraceThread(
     _In_ ULONG FramesToSkip,
     _In_ ULONG FramesToCapture,
     _Out_writes_(FramesToCapture) PVOID *BackTrace,
-    _Out_opt_ PULONG CapturedFrames,
-    _Out_opt_ PULONG BackTraceHash
+    _Inout_opt_ PULONG CapturedFrames,
+    _Inout_opt_ PULONG BackTraceHash
     );
 
 PHLIBAPI
@@ -217,7 +217,7 @@ KphQueryInformationThread(
     _In_ KPH_THREAD_INFORMATION_CLASS ThreadInformationClass,
     _Out_writes_bytes_(ThreadInformationLength) PVOID ThreadInformation,
     _In_ ULONG ThreadInformationLength,
-    _Out_opt_ PULONG ReturnLength
+    _Inout_opt_ PULONG ReturnLength
     );
 
 PHLIBAPI
@@ -237,7 +237,7 @@ KphEnumerateProcessHandles(
     _In_ HANDLE ProcessHandle,
     _Out_writes_bytes_(BufferLength) PVOID Buffer,
     _In_opt_ ULONG BufferLength,
-    _Out_opt_ PULONG ReturnLength
+    _Inout_opt_ PULONG ReturnLength
     );
 
 PHLIBAPI
@@ -257,7 +257,7 @@ KphQueryInformationObject(
     _In_ KPH_OBJECT_INFORMATION_CLASS ObjectInformationClass,
     _Out_writes_bytes_(ObjectInformationLength) PVOID ObjectInformation,
     _In_ ULONG ObjectInformationLength,
-    _Out_opt_ PULONG ReturnLength
+    _Inout_opt_ PULONG ReturnLength
     );
 
 PHLIBAPI
@@ -275,7 +275,7 @@ PHLIBAPI
 NTSTATUS
 NTAPI
 KphOpenDriver(
-    _Out_ PHANDLE DriverHandle,
+    _Inout_ PHANDLE DriverHandle,
     _In_ ACCESS_MASK DesiredAccess,
     _In_ POBJECT_ATTRIBUTES ObjectAttributes
     );
@@ -288,7 +288,7 @@ KphQueryInformationDriver(
     _In_ DRIVER_INFORMATION_CLASS DriverInformationClass,
     _Out_writes_bytes_(DriverInformationLength) PVOID DriverInformation,
     _In_ ULONG DriverInformationLength,
-    _Out_opt_ PULONG ReturnLength
+    _Inout_opt_ PULONG ReturnLength
     );
 
 // kphdata

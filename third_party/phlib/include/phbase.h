@@ -1,8 +1,6 @@
 #ifndef _PH_PHBASE_H
 #define _PH_PHBASE_H
 
-#pragma once
-
 #ifndef PHLIB_NO_DEFAULT_LIB
 #pragma comment(lib, "ntdll.lib")
 #pragma comment(lib, "comctl32.lib")
@@ -17,23 +15,19 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#if defined(_PHLIB_)
-#define PHLIBAPI
-#elif defined(_PHDLL_)
-#define PHLIBAPI __declspec(dllexport)
-#else
-#if defined(__cplusplus)
+#if !defined(_PHLIB_)
 #define PHLIBAPI __declspec(dllimport)
 #else
-#define PHLIBAPI 
-#endif //  defined(__cplusplus)
-#endif //  defined(_PHLIB_)
+#define PHLIBAPI
+#endif
 
 #include <phnt_windows.h>
+#include <banned.h>
 #include <phnt.h>
 #include <phsup.h>
 #include <ref.h>
 #include <queuedlock.h>
+
 #include <stdlib.h>
 
 #include <phconfig.h>

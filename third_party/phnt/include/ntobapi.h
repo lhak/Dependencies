@@ -1,3 +1,23 @@
+/*
+ * Process Hacker -
+ *   Object Manager support functions
+ *
+ * This file is part of Process Hacker.
+ *
+ * Process Hacker is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Process Hacker is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Process Hacker.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef _NTOBAPI_H
 #define _NTOBAPI_H
 
@@ -19,29 +39,35 @@
 #define SYMBOLIC_LINK_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | 0x1)
 #endif
 
+#ifndef OBJ_PROTECT_CLOSE
 #define OBJ_PROTECT_CLOSE 0x00000001
+#endif
 #ifndef OBJ_INHERIT
 #define OBJ_INHERIT 0x00000002
 #endif
+#ifndef OBJ_AUDIT_OBJECT_CLOSE
 #define OBJ_AUDIT_OBJECT_CLOSE 0x00000004
+#endif
 
 #if (PHNT_MODE != PHNT_MODE_KERNEL)
 typedef enum _OBJECT_INFORMATION_CLASS
 {
-    ObjectBasicInformation, // OBJECT_BASIC_INFORMATION
-    ObjectNameInformation, // OBJECT_NAME_INFORMATION
-    ObjectTypeInformation, // OBJECT_TYPE_INFORMATION
-    ObjectTypesInformation, // OBJECT_TYPES_INFORMATION
-    ObjectHandleFlagInformation, // OBJECT_HANDLE_FLAG_INFORMATION
-    ObjectSessionInformation,
-    ObjectSessionObjectInformation,
+    ObjectBasicInformation, // q: OBJECT_BASIC_INFORMATION
+    ObjectNameInformation, // q: OBJECT_NAME_INFORMATION
+    ObjectTypeInformation, // q: OBJECT_TYPE_INFORMATION
+    ObjectTypesInformation, // q: OBJECT_TYPES_INFORMATION
+    ObjectHandleFlagInformation, // qs: OBJECT_HANDLE_FLAG_INFORMATION
+    ObjectSessionInformation, // s: void // change object session // (requires SeTcbPrivilege)
+    ObjectSessionObjectInformation, // s: void // change object session // (requires SeTcbPrivilege)
     MaxObjectInfoClass
 } OBJECT_INFORMATION_CLASS;
 #else
+#define ObjectBasicInformation 0
 #define ObjectNameInformation 1
 #define ObjectTypesInformation 3
 #define ObjectHandleFlagInformation 4
 #define ObjectSessionInformation 5
+#define ObjectSessionObjectInformation 6
 #endif
 
 typedef struct _OBJECT_BASIC_INFORMATION
@@ -112,7 +138,7 @@ NTSYSCALLAPI
 NTSTATUS
 NTAPI
 NtQueryObject(
-    _In_ HANDLE Handle,
+    _In_opt_ HANDLE Handle,
     _In_ OBJECT_INFORMATION_CLASS ObjectInformationClass,
     _Out_writes_bytes_opt_(ObjectInformationLength) PVOID ObjectInformation,
     _In_ ULONG ObjectInformationLength,
@@ -227,7 +253,7 @@ NTSYSCALLAPI
 NTSTATUS
 NTAPI
 NtClose(
-    _In_ HANDLE Handle
+    _In_ _Post_ptr_invalid_ HANDLE Handle
     );
 
 #if (PHNT_VERSION >= PHNT_THRESHOLD)
@@ -304,14 +330,50 @@ NtQueryDirectoryObject(
 
 #if (PHNT_VERSION >= PHNT_VISTA)
 
+// private
+typedef enum _BOUNDARY_ENTRY_TYPE
+{
+    OBNS_Invalid,
+    OBNS_Name,
+    OBNS_SID,
+    OBNS_IL
+} BOUNDARY_ENTRY_TYPE;
+
+// private
+typedef struct _OBJECT_BOUNDARY_ENTRY
+{
+    BOUNDARY_ENTRY_TYPE EntryType;
+    ULONG EntrySize;
+} OBJECT_BOUNDARY_ENTRY, *POBJECT_BOUNDARY_ENTRY;
+
+// rev
+#define OBJECT_BOUNDARY_DESCRIPTOR_VERSION 1
+
+// private
+typedef struct _OBJECT_BOUNDARY_DESCRIPTOR
+{
+    ULONG Version;
+    ULONG Items;
+    ULONG TotalSize;
+    union
+    {
+        ULONG Flags;
+        struct
+        {
+            ULONG AddAppContainerSid : 1;
+            ULONG Reserved : 31;
+        };
+    };
+} OBJECT_BOUNDARY_DESCRIPTOR, *POBJECT_BOUNDARY_DESCRIPTOR;
+
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
 NtCreatePrivateNamespace(
     _Out_ PHANDLE NamespaceHandle,
     _In_ ACCESS_MASK DesiredAccess,
-    _In_ POBJECT_ATTRIBUTES ObjectAttributes,
-    _In_ PVOID BoundaryDescriptor
+    _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
+    _In_ POBJECT_BOUNDARY_DESCRIPTOR BoundaryDescriptor
     );
 
 NTSYSCALLAPI
@@ -321,7 +383,7 @@ NtOpenPrivateNamespace(
     _Out_ PHANDLE NamespaceHandle,
     _In_ ACCESS_MASK DesiredAccess,
     _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
-    _In_ PVOID BoundaryDescriptor
+    _In_ POBJECT_BOUNDARY_DESCRIPTOR BoundaryDescriptor
     );
 
 NTSYSCALLAPI
@@ -365,6 +427,23 @@ NtQuerySymbolicLinkObject(
     _In_ HANDLE LinkHandle,
     _Inout_ PUNICODE_STRING LinkTarget,
     _Out_opt_ PULONG ReturnedLength
+    );
+
+typedef enum _SYMBOLIC_LINK_INFO_CLASS
+{
+    SymbolicLinkGlobalInformation = 1, // s: ULONG
+    SymbolicLinkAccessMask, // s: ACCESS_MASK
+    MaxnSymbolicLinkInfoClass
+} SYMBOLIC_LINK_INFO_CLASS;
+
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtSetInformationSymbolicLink(
+    _In_ HANDLE LinkHandle,
+    _In_ SYMBOLIC_LINK_INFO_CLASS SymbolicLinkInformationClass,
+    _In_reads_bytes_(SymbolicLinkInformationLength) PVOID SymbolicLinkInformation,
+    _In_ ULONG SymbolicLinkInformationLength
     );
 
 #endif

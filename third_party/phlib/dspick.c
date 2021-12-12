@@ -22,18 +22,14 @@
 
 #include <ph.h>
 #include <dspick.h>
-
-#include <ole2.h>
-#define CINTERFACE
-#define COBJMACROS
-#include <objsel.h>
-
-#include <guisup.h>
 #include <lsasup.h>
 
-#define IDataObject_AddRef(This) ((This)->lpVtbl->AddRef(This))
-#define IDataObject_Release(This) ((This)->lpVtbl->Release(This))
-#define IDataObject_GetData(This, pformatetcIn, pmedium) ((This)->lpVtbl->GetData(This, pformatetcIn, pmedium))
+#include <ole2.h>
+#include <objsel.h>
+
+//#define IDataObject_AddRef(This) ((This)->lpVtbl->AddRef(This))
+//#define IDataObject_Release(This) ((This)->lpVtbl->Release(This))
+//#define IDataObject_GetData(This, pformatetcIn, pmedium) ((This)->lpVtbl->GetData(This, pformatetcIn, pmedium))
 
 #define IDsObjectPicker_QueryInterface(This, riid, ppvObject) ((This)->lpVtbl->QueryInterface(This, riid, ppvObject))
 #define IDsObjectPicker_AddRef(This) ((This)->lpVtbl->AddRef(This))
@@ -47,13 +43,11 @@ IDsObjectPicker *PhpCreateDsObjectPicker(
 {
     static CLSID CLSID_DsObjectPicker_I = { 0x17d6ccd8, 0x3b7b, 0x11d2, { 0xb9, 0xe0, 0x00, 0xc0, 0x4f, 0xd8, 0xdb, 0xf7 } };
     static IID IID_IDsObjectPicker_I = { 0x0c87e64e, 0x3b7a, 0x11d2, { 0xb9, 0xe0, 0x00, 0xc0, 0x4f, 0xd8, 0xdb, 0xf7 } };
-
     IDsObjectPicker *picker;
 
-    if (SUCCEEDED(CoCreateInstance(
+    if (SUCCEEDED(PhGetClassObject(
+        L"objsel.dll",
         &CLSID_DsObjectPicker_I,
-        NULL,
-        CLSCTX_INPROC_SERVER,
         &IID_IDsObjectPicker_I,
         &picker
         )))
@@ -134,7 +128,7 @@ PDS_SELECTION_LIST PhpGetDsSelectionList(
 
     format.cfFormat = (CLIPFORMAT)RegisterClipboardFormat(L"CFSTR_DSOP_DS_SELECTION_LIST");
     format.ptd = NULL;
-    format.dwAspect = -1;
+    format.dwAspect = ULONG_MAX;
     format.lindex = -1;
     format.tymed = TYMED_HGLOBAL;
 
@@ -151,6 +145,7 @@ PDS_SELECTION_LIST PhpGetDsSelectionList(
     }
 }
 
+_Success_(return)
 BOOLEAN PhShowDsObjectPickerDialog(
     _In_ HWND hWnd,
     _In_ PVOID PickerDialog,

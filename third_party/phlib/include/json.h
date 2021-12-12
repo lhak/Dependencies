@@ -43,7 +43,7 @@ PhCreateJsonParser(
 PHLIBAPI
 VOID
 NTAPI
-PhFreeJsonParser(
+PhFreeJsonObject(
     _In_ PVOID Object
     );
 
@@ -56,9 +56,17 @@ PhGetJsonValueAsString(
     );
 
 PHLIBAPI
-INT64
+LONGLONG
 NTAPI
-PhGetJsonValueAsLong64(
+PhGetJsonValueAsInt64(
+    _In_ PVOID Object,
+    _In_ PSTR Key
+    );
+
+PHLIBAPI
+ULONGLONG
+NTAPI
+PhGetJsonValueAsUInt64(
     _In_ PVOID Object,
     _In_ PSTR Key
     );
@@ -76,6 +84,25 @@ NTAPI
 PhGetJsonObject(
     _In_ PVOID Object,
     _In_ PSTR Key
+    );
+
+typedef enum _PH_JSON_OBJECT_TYPE
+{
+    PH_JSON_OBJECT_TYPE_NULL,
+    PH_JSON_OBJECT_TYPE_BOOLEAN,
+    PH_JSON_OBJECT_TYPE_DOUBLE,
+    PH_JSON_OBJECT_TYPE_INT,
+    PH_JSON_OBJECT_TYPE_OBJECT,
+    PH_JSON_OBJECT_TYPE_ARRAY,
+    PH_JSON_OBJECT_TYPE_STRING,
+    PH_JSON_OBJECT_TYPE_UNKNOWN
+} PH_JSON_OBJECT_TYPE;
+
+PHLIBAPI
+PH_JSON_OBJECT_TYPE
+NTAPI
+PhGetJsonObjectType(
+    _In_ PVOID Object
     );
 
 PHLIBAPI
@@ -96,10 +123,56 @@ PhGetJsonObjectBool(
 PHLIBAPI
 VOID
 NTAPI
+PhAddJsonObjectValue(
+    _In_ PVOID Object,
+    _In_ PCSTR Key,
+    _In_ PVOID Value
+    );
+
+PHLIBAPI
+VOID
+NTAPI
 PhAddJsonObject(
     _In_ PVOID Object,
-    _In_ PSTR Key,
+    _In_ PCSTR Key,
     _In_ PSTR Value
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhAddJsonObject2(
+    _In_ PVOID Object,
+    _In_ PCSTR Key,
+    _In_ PSTR Value,
+    _In_ SIZE_T Length
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhAddJsonObjectInt64(
+    _In_ PVOID Object,
+    _In_ PCSTR Key,
+    _In_ LONGLONG Value
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhAddJsonObjectUInt64(
+    _In_ PVOID Object,
+    _In_ PCSTR Key,
+    _In_ ULONGLONG Value
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhAddJsonObjectDouble(
+    _In_ PVOID Object,
+    _In_ PCSTR Key,
+    _In_ DOUBLE Value
     );
 
 PHLIBAPI
@@ -118,10 +191,11 @@ PhAddJsonArrayObject(
     );
 
 PHLIBAPI
-PPH_STRING
+PVOID
 NTAPI
 PhGetJsonArrayString(
-    _In_ PVOID Object
+    _In_ PVOID Object,
+    _In_ BOOLEAN Unicode
     );
 
 PHLIBAPI
@@ -129,11 +203,11 @@ INT64
 NTAPI
 PhGetJsonArrayLong64(
     _In_ PVOID Object,
-    _In_ INT Index
+    _In_ ULONG Index
     );
 
 PHLIBAPI
-INT
+ULONG
 NTAPI
 PhGetJsonArrayLength(
     _In_ PVOID Object
@@ -144,11 +218,11 @@ PVOID
 NTAPI
 PhGetJsonArrayIndexObject(
     _In_ PVOID Object,
-    _In_ INT Index
+    _In_ ULONG Index
     );
 
 PHLIBAPI
-PPH_LIST
+PVOID
 NTAPI
 PhGetJsonObjectAsArrayList(
     _In_ PVOID Object
@@ -167,6 +241,122 @@ NTAPI
 PhSaveJsonObjectToFile(
     _In_ PWSTR FileName,
     _In_ PVOID Object
+    );
+
+PHLIBAPI
+NTSTATUS
+NTAPI
+PhLoadXmlObjectFromFile(
+    _In_ PWSTR FileName,
+    _Out_opt_ PVOID* XmlRootNode
+    );
+
+PHLIBAPI
+NTSTATUS
+NTAPI
+PhSaveXmlObjectToFile(
+    _In_ PWSTR FileName,
+    _In_ PVOID XmlRootObject,
+    _In_opt_ PVOID XmlSaveCallback
+    );
+
+PVOID PhLoadXmlObjectFromString(
+    _In_ PWSTR String
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhFreeXmlObject(
+    _In_ PVOID XmlRootObject
+    );
+
+PHLIBAPI
+PPH_STRING
+NTAPI
+PhGetOpaqueXmlNodeText(
+    _In_ PVOID XmlNodeObject
+    );
+
+PHLIBAPI
+PSTR
+NTAPI
+PhGetXmlNodeElementText(
+    _In_ PVOID XmlNodeObject
+    );
+
+PHLIBAPI
+PPH_STRING
+NTAPI
+PhGetXmlNodeAttributeText(
+    _In_ PVOID XmlNodeObject,
+    _In_ PSTR AttributeName
+    );
+
+PHLIBAPI
+PSTR
+NTAPI
+PhGetXmlNodeAttributeByIndex(
+    _In_ PVOID XmlNodeObject,
+    _In_ INT Index,
+    _Out_ PSTR* AttributeName
+    );
+
+PHLIBAPI
+VOID
+NTAPI
+PhSetXmlNodeAttributeText(
+    _In_ PVOID XmlNodeObject,
+    _In_ PSTR Name,
+    _In_ PSTR Value
+    );
+
+PHLIBAPI
+INT
+NTAPI
+PhGetXmlNodeAttributeCount(
+    _In_ PVOID XmlNodeObject
+    );
+
+PHLIBAPI
+PVOID
+NTAPI
+PhGetXmlNodeFirstChild(
+    _In_ PVOID XmlNodeObject
+    );
+
+PHLIBAPI
+PVOID
+NTAPI
+PhGetXmlNodeNextChild(
+    _In_ PVOID XmlNodeObject
+    );
+
+PHLIBAPI
+PVOID
+NTAPI
+PhCreateXmlNode(
+    _In_opt_ PVOID ParentNode,
+    _In_ PSTR Name
+    );
+
+PHLIBAPI
+PVOID
+NTAPI
+PhCreateXmlOpaqueNode(
+    _In_opt_ PVOID ParentNode,
+    _In_ PSTR Value
+    );
+
+typedef BOOLEAN (NTAPI* PPH_ENUM_XML_NODE_CALLBACK)(
+    _In_ PVOID XmlNodeObject,
+    _In_opt_ PVOID Context
+    );
+
+BOOLEAN PhEnumXmlNode(
+    _In_ PVOID XmlNodeObject,
+    _In_ PPH_ENUM_XML_NODE_CALLBACK Callback,
+    _In_opt_ PVOID Context
     );
 
 #ifdef __cplusplus

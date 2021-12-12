@@ -1,8 +1,6 @@
 #ifndef _PH_PHNATINL_H
 #define _PH_PHNATINL_H
 
-#pragma once
-
 // This file contains inlined native API wrapper functions. These functions were previously
 // exported, but are now inlined because they are extremely simple wrappers around equivalent native
 // API functions.
@@ -178,35 +176,24 @@ PhGetProcessPeb32(
     return status;
 }
 
-/**
- * Gets whether a process is being debugged.
- *
- * \param ProcessHandle A handle to a process. The handle must have PROCESS_QUERY_INFORMATION
- * access.
- * \param IsBeingDebugged A variable which receives a boolean indicating whether the process is
- * being debugged.
- */
 FORCEINLINE
 NTSTATUS
-PhGetProcessIsBeingDebugged(
+PhGetProcessPeb(
     _In_ HANDLE ProcessHandle,
-    _Out_ PBOOLEAN IsBeingDebugged
+    _Out_ PVOID* PebBaseAddress
     )
 {
     NTSTATUS status;
-    PVOID debugPort;
+    PROCESS_BASIC_INFORMATION basicInfo;
 
-    status = NtQueryInformationProcess(
+    status = PhGetProcessBasicInformation(
         ProcessHandle,
-        ProcessDebugPort,
-        &debugPort,
-        sizeof(PVOID),
-        NULL
+        &basicInfo
         );
 
     if (NT_SUCCESS(status))
     {
-        *IsBeingDebugged = !!debugPort;
+        *PebBaseAddress = (PVOID)basicInfo.PebBaseAddress;
     }
 
     return status;
@@ -238,6 +225,37 @@ PhGetProcessDebugObject(
         );
 }
 
+FORCEINLINE
+NTSTATUS
+PhGetProcessErrorMode(
+    _In_ HANDLE ProcessHandle,
+    _Out_ PULONG ErrorMode
+    )
+{
+    return NtQueryInformationProcess(
+        ProcessHandle,
+        ProcessDefaultHardErrorMode,
+        ErrorMode,
+        sizeof(ULONG),
+        NULL
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhSetProcessErrorMode(
+    _In_ HANDLE ProcessHandle,
+    _In_ ULONG ErrorMode
+    )
+{
+    return NtSetInformationProcess(
+        ProcessHandle,
+        ProcessDefaultHardErrorMode,
+        &ErrorMode,
+        sizeof(ULONG)
+        );
+}
+
 /**
  * Gets a process' no-execute status.
  *
@@ -261,6 +279,37 @@ PhGetProcessExecuteFlags(
         );
 }
 
+FORCEINLINE
+NTSTATUS
+PhGetProcessPriority(
+    _In_ HANDLE ProcessHandle,
+    _Out_ PPROCESS_PRIORITY_CLASS PriorityClass
+    )
+{
+    return NtQueryInformationProcess(
+        ProcessHandle,
+        ProcessPriorityClass,
+        PriorityClass,
+        sizeof(PROCESS_PRIORITY_CLASS),
+        NULL
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhSetProcessPriority(
+    _In_ HANDLE ProcessHandle,
+    _In_ PROCESS_PRIORITY_CLASS PriorityClass
+    )
+{
+    return NtSetInformationProcess(
+        ProcessHandle, 
+        ProcessPriorityClass, 
+        &PriorityClass,
+        sizeof(PROCESS_PRIORITY_CLASS)
+        );
+}
+
 /**
  * Gets a process' I/O priority.
  *
@@ -281,6 +330,27 @@ PhGetProcessIoPriority(
         IoPriority,
         sizeof(IO_PRIORITY_HINT),
         NULL
+        );
+}
+
+/**
+ * Sets a process' I/O priority.
+ *
+ * \param ProcessHandle A handle to a process. The handle must have PROCESS_SET_INFORMATION access.
+ * \param IoPriority The new I/O priority.
+ */
+FORCEINLINE
+NTSTATUS
+PhSetProcessIoPriority(
+    _In_ HANDLE ProcessHandle,
+    _In_ IO_PRIORITY_HINT IoPriority
+    )
+{
+    return NtSetInformationProcess(
+        ProcessHandle,
+        ProcessIoPriority,
+        &IoPriority,
+        sizeof(IO_PRIORITY_HINT)
         );
 }
 
@@ -317,6 +387,70 @@ PhGetProcessPagePriority(
     return status;
 }
 
+FORCEINLINE
+NTSTATUS
+PhSetProcessPagePriority(
+    _In_ HANDLE ProcessHandle,
+    _In_ ULONG PagePriority
+    )
+{
+    PAGE_PRIORITY_INFORMATION pagePriorityInfo;
+
+    pagePriorityInfo.PagePriority = PagePriority;
+
+    return NtSetInformationProcess(
+        ProcessHandle,
+        ProcessPagePriority,
+        &pagePriorityInfo,
+        sizeof(PAGE_PRIORITY_INFORMATION)
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetProcessPriorityBoost(
+    _In_ HANDLE ProcessHandle,
+    _Out_ PBOOLEAN PriorityBoost
+    )
+{
+    NTSTATUS status;
+    ULONG priorityBoost;
+
+    status = NtQueryInformationProcess(
+        ProcessHandle,
+        ProcessPriorityBoost,
+        &priorityBoost,
+        sizeof(ULONG),
+        NULL
+        );
+
+    if (NT_SUCCESS(status))
+    {
+        *PriorityBoost = !!priorityBoost;
+    }
+
+    return status;
+}
+
+FORCEINLINE
+NTSTATUS
+PhSetProcessPriorityBoost(
+    _In_ HANDLE ProcessHandle,
+    _In_ BOOLEAN PriorityBoost
+    )
+{
+    ULONG priorityBoost;
+
+    priorityBoost = PriorityBoost ? 1 : 0;
+
+    return NtSetInformationProcess(
+        ProcessHandle,
+        ProcessPriorityBoost,
+        &priorityBoost,
+        sizeof(ULONG)
+        );
+}
+
 /**
  * Gets a process' cycle count.
  *
@@ -342,10 +476,36 @@ PhGetProcessCycleTime(
         NULL
         );
 
-    if (!NT_SUCCESS(status))
-        return status;
+    if (NT_SUCCESS(status))
+    {
+        *CycleTime = cycleTimeInfo.AccumulatedCycles;
+    }
 
-    *CycleTime = cycleTimeInfo.AccumulatedCycles;
+    return status;
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetProcessUptime(
+    _In_ HANDLE ProcessHandle,
+    _Out_ PPROCESS_UPTIME_INFORMATION Uptime
+    )
+{
+    NTSTATUS status;
+    PROCESS_UPTIME_INFORMATION uptimeInfo;
+
+    status = NtQueryInformationProcess(
+        ProcessHandle,
+        ProcessUptimeInformation,
+        &uptimeInfo,
+        sizeof(PROCESS_UPTIME_INFORMATION),
+        NULL
+        );
+
+    if (NT_SUCCESS(status))
+    {
+        *Uptime = uptimeInfo;
+    }
 
     return status;
 }
@@ -368,10 +528,10 @@ PhGetProcessConsoleHostProcessId(
         NULL
         );
 
-    if (!NT_SUCCESS(status))
-        return status;
-
-    *ConsoleHostProcessId = (HANDLE)consoleHostProcess;
+    if (NT_SUCCESS(status))
+    {
+        *ConsoleHostProcessId = (HANDLE)consoleHostProcess;
+    }
 
     return status;
 }
@@ -394,30 +554,33 @@ PhGetProcessProtection(
 
 FORCEINLINE
 NTSTATUS
-PhGetProcessIsCFGuardEnabled(
+PhGetProcessQuotaLimits(
     _In_ HANDLE ProcessHandle,
-    _Out_ PBOOLEAN IsControlFlowGuardEnabled
+    _Out_ PQUOTA_LIMITS QuotaLimits
     )
 {
-    NTSTATUS status;
-    PROCESS_MITIGATION_POLICY_INFORMATION policyInfo;
-
-    policyInfo.Policy = ProcessControlFlowGuardPolicy;
-
-    status = NtQueryInformationProcess(
+    return NtQueryInformationProcess(
         ProcessHandle,
-        ProcessMitigationPolicy,
-        &policyInfo,
-        sizeof(PROCESS_MITIGATION_POLICY_INFORMATION),
+        ProcessQuotaLimits,
+        QuotaLimits,
+        sizeof(QUOTA_LIMITS),
         NULL
         );
+}
 
-    if (!NT_SUCCESS(status))
-        return status;
-
-    *IsControlFlowGuardEnabled = !!policyInfo.ControlFlowGuardPolicy.EnableControlFlowGuard;
-
-    return status;
+FORCEINLINE
+NTSTATUS
+PhSetProcessQuotaLimits(
+    _In_ HANDLE ProcessHandle,
+    _In_ QUOTA_LIMITS QuotaLimits
+    )
+{
+    return NtSetInformationProcess(
+        ProcessHandle,
+        ProcessQuotaLimits,
+        &QuotaLimits,
+        sizeof(QUOTA_LIMITS)
+        );
 }
 
 /**
@@ -441,24 +604,171 @@ PhSetProcessAffinityMask(
         );
 }
 
-/**
- * Sets a process' I/O priority.
- *
- * \param ProcessHandle A handle to a process. The handle must have PROCESS_SET_INFORMATION access.
- * \param IoPriority The new I/O priority.
- */
 FORCEINLINE
 NTSTATUS
-PhSetProcessIoPriority(
+PhGetProcessIsCFGuardEnabled(
     _In_ HANDLE ProcessHandle,
-    _In_ IO_PRIORITY_HINT IoPriority
+    _Out_ PBOOLEAN IsControlFlowGuardEnabled
     )
 {
+    NTSTATUS status;
+    PROCESS_MITIGATION_POLICY_INFORMATION policyInfo;
+
+    policyInfo.Policy = ProcessControlFlowGuardPolicy;
+
+    status = NtQueryInformationProcess(
+        ProcessHandle,
+        ProcessMitigationPolicy,
+        &policyInfo,
+        sizeof(PROCESS_MITIGATION_POLICY_INFORMATION),
+        NULL
+        );
+
+    if (NT_SUCCESS(status))
+    {
+        *IsControlFlowGuardEnabled = !!policyInfo.ControlFlowGuardPolicy.EnableControlFlowGuard;
+    }
+
+    return status;
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetProcessHandleCount(
+    _In_ HANDLE ProcessHandle,
+    _Out_ PPROCESS_HANDLE_INFORMATION HandleInfo
+    )
+{
+    return NtQueryInformationProcess(
+        ProcessHandle,
+        ProcessHandleCount,
+        HandleInfo,
+        sizeof(PROCESS_HANDLE_INFORMATION),
+        NULL
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetProcessBreakOnTermination(
+    _In_ HANDLE ProcessHandle,
+    _Out_ PBOOLEAN BreakOnTermination
+    )
+{
+    NTSTATUS status;
+    ULONG breakOnTermination;
+
+    status = NtQueryInformationProcess(
+        ProcessHandle,
+        ProcessBreakOnTermination,
+        &breakOnTermination,
+        sizeof(ULONG),
+        NULL
+        );
+
+    if (NT_SUCCESS(status))
+    {
+        *BreakOnTermination = !!breakOnTermination;
+    }
+
+    return status;
+}
+
+FORCEINLINE
+NTSTATUS
+PhSetProcessBreakOnTermination(
+    _In_ HANDLE ProcessHandle,
+    _In_ BOOLEAN BreakOnTermination
+    )
+{
+    ULONG breakOnTermination;
+
+    breakOnTermination = BreakOnTermination ? 1 : 0;
+
     return NtSetInformationProcess(
         ProcessHandle,
-        ProcessIoPriority,
-        &IoPriority,
-        sizeof(IO_PRIORITY_HINT)
+        ProcessBreakOnTermination,
+        &breakOnTermination,
+        sizeof(ULONG)
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetProcessAppMemoryInformation(
+    _In_ HANDLE ProcessHandle,
+    _Out_ PPROCESS_JOB_MEMORY_INFO JobMemoryInfo
+    )
+{
+    NTSTATUS status;
+    PROCESS_JOB_MEMORY_INFO jobMemoryInfo;
+
+    // Win32 called this ProcessAppMemoryInfo with APP_MEMORY_INFORMATION struct (dmex)
+    status = NtQueryInformationProcess(
+        ProcessHandle,
+        ProcessJobMemoryInformation,
+        &jobMemoryInfo,
+        sizeof(PROCESS_JOB_MEMORY_INFO),
+        NULL
+        );
+
+    if (NT_SUCCESS(status))
+    {
+        *JobMemoryInfo = jobMemoryInfo;
+    }
+
+    return status;
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetProcessPowerThrottlingState(
+    _In_ HANDLE ProcessHandle,
+    _Out_ PPOWER_THROTTLING_PROCESS_STATE PowerThrottlingState
+    )
+{
+    NTSTATUS status;
+    POWER_THROTTLING_PROCESS_STATE powerThrottlingState;
+
+    memset(&powerThrottlingState, 0, sizeof(POWER_THROTTLING_PROCESS_STATE));
+    powerThrottlingState.Version = POWER_THROTTLING_PROCESS_CURRENT_VERSION;
+
+    status = NtQueryInformationProcess(
+        ProcessHandle,
+        ProcessPowerThrottlingState,
+        &powerThrottlingState,
+        sizeof(POWER_THROTTLING_PROCESS_STATE),
+        NULL
+        );
+
+    if (NT_SUCCESS(status))
+    {
+        *PowerThrottlingState = powerThrottlingState;
+    }
+
+    return status;
+}
+
+FORCEINLINE
+NTSTATUS
+PhSetProcessPowerThrottlingState(
+    _In_ HANDLE ProcessHandle,
+    _In_ ULONG ControlMask,
+    _In_ ULONG StateMask
+    )
+{
+    POWER_THROTTLING_PROCESS_STATE powerThrottlingState;
+
+    memset(&powerThrottlingState, 0, sizeof(POWER_THROTTLING_PROCESS_STATE));
+    powerThrottlingState.Version = POWER_THROTTLING_PROCESS_CURRENT_VERSION;
+    powerThrottlingState.ControlMask = ControlMask;
+    powerThrottlingState.StateMask = StateMask;
+
+    return NtSetInformationProcess(
+        ProcessHandle,
+        ProcessPowerThrottlingState,
+        &powerThrottlingState,
+        sizeof(POWER_THROTTLING_PROCESS_STATE)
         );
 }
 
@@ -485,6 +795,65 @@ PhGetThreadBasicInformation(
         );
 }
 
+FORCEINLINE
+NTSTATUS
+PhGetThreadBasePriority(
+    _In_ HANDLE ThreadHandle,
+    _Out_ PLONG Increment
+    )
+{
+    NTSTATUS status;
+    THREAD_BASIC_INFORMATION basicInfo;
+
+    status = PhGetThreadBasicInformation(ThreadHandle, &basicInfo);
+
+    if (NT_SUCCESS(status))
+    {
+        *Increment = basicInfo.BasePriority;
+    }
+
+    return status;
+
+    //return NtQueryInformationThread(
+    //    ThreadHandle,
+    //    ThreadBasePriority,
+    //    Increment,
+    //    sizeof(LONG),
+    //    NULL
+    //    );
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetThreadStartAddress(
+    _In_ HANDLE ThreadHandle,
+    _Out_ PVOID *StartAddress
+    )
+{
+    return NtQueryInformationThread(
+        ThreadHandle,
+        ThreadQuerySetWin32StartAddress,
+        StartAddress,
+        sizeof(PVOID),
+        NULL
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhSetThreadBasePriority(
+    _In_ HANDLE ThreadHandle,
+    _In_ LONG Increment
+    )
+{
+    return NtSetInformationThread(
+        ThreadHandle,
+        ThreadBasePriority,
+        &Increment,
+        sizeof(LONG)
+        );
+}
+
 /**
  * Gets a thread's I/O priority.
  *
@@ -505,6 +874,28 @@ PhGetThreadIoPriority(
         IoPriority,
         sizeof(IO_PRIORITY_HINT),
         NULL
+        );
+}
+
+/**
+ * Sets a thread's I/O priority.
+ *
+ * \param ThreadHandle A handle to a thread. The handle must have THREAD_SET_LIMITED_INFORMATION
+ * access.
+ * \param IoPriority The new I/O priority.
+ */
+FORCEINLINE
+NTSTATUS
+PhSetThreadIoPriority(
+    _In_ HANDLE ThreadHandle,
+    _In_ IO_PRIORITY_HINT IoPriority
+    )
+{
+    return NtSetInformationThread(
+        ThreadHandle,
+        ThreadIoPriority,
+        &IoPriority,
+        sizeof(IO_PRIORITY_HINT)
         );
 }
 
@@ -541,6 +932,70 @@ PhGetThreadPagePriority(
     return status;
 }
 
+FORCEINLINE
+NTSTATUS
+PhSetThreadPagePriority(
+    _In_ HANDLE ThreadHandle,
+    _In_ ULONG PagePriority
+    )
+{
+    PAGE_PRIORITY_INFORMATION pagePriorityInfo;
+
+    pagePriorityInfo.PagePriority = PagePriority;
+
+    return NtSetInformationThread(
+        ThreadHandle,
+        ThreadPagePriority,
+        &pagePriorityInfo,
+        sizeof(PAGE_PRIORITY_INFORMATION)
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetThreadPriorityBoost(
+    _In_ HANDLE ThreadHandle,
+    _Out_ PBOOLEAN PriorityBoost
+    )
+{
+    NTSTATUS status;
+    ULONG priorityBoost;
+
+    status = NtQueryInformationThread(
+        ThreadHandle,
+        ThreadPriorityBoost,
+        &priorityBoost,
+        sizeof(ULONG),
+        NULL
+        );
+
+    if (NT_SUCCESS(status))
+    {
+        *PriorityBoost = !!priorityBoost;
+    }
+
+    return status;
+}
+
+FORCEINLINE
+NTSTATUS
+PhSetThreadPriorityBoost(
+    _In_ HANDLE ThreadHandle,
+    _In_ BOOLEAN PriorityBoost
+    )
+{
+    ULONG priorityBoost;
+
+    priorityBoost = PriorityBoost ? 1 : 0;
+
+    return NtSetInformationThread(
+        ThreadHandle,
+        ThreadPriorityBoost,
+        &priorityBoost,
+        sizeof(ULONG)
+        );
+}
+
 /**
  * Gets a thread's cycle count.
  *
@@ -566,10 +1021,194 @@ PhGetThreadCycleTime(
         NULL
         );
 
-    if (!NT_SUCCESS(status))
-        return status;
+    if (NT_SUCCESS(status))
+    {
+        *CycleTime = cycleTimeInfo.AccumulatedCycles;
+    }
 
-    *CycleTime = cycleTimeInfo.AccumulatedCycles;
+    return status;
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetThreadIdealProcessor(
+    _In_ HANDLE ThreadHandle,
+    _Out_ PPROCESSOR_NUMBER ProcessorNumber
+    )
+{
+    return NtQueryInformationThread(
+        ThreadHandle,
+        ThreadIdealProcessorEx,
+        ProcessorNumber,
+        sizeof(PROCESSOR_NUMBER),
+        NULL
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetThreadSuspendCount(
+    _In_ HANDLE ThreadHandle,
+    _Out_ PULONG SuspendCount
+    )
+{
+    return NtQueryInformationThread(
+        ThreadHandle,
+        ThreadSuspendCount,
+        SuspendCount,
+        sizeof(ULONG),
+        NULL
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetThreadLastSystemCall(
+    _In_ HANDLE ThreadHandle,
+    _Out_ PTHREAD_LAST_SYSCALL_INFORMATION LastSystemCall
+    )
+{
+    return NtQueryInformationThread(
+        ThreadHandle,
+        ThreadLastSystemCall,
+        LastSystemCall,
+        RTL_SIZEOF_THROUGH_FIELD(THREAD_LAST_SYSCALL_INFORMATION, Pad), // HACK: Win7 requires exact size. (dmex)
+        NULL
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetThreadWow64Context(
+    _In_ HANDLE ThreadHandle,
+    _Out_ PWOW64_CONTEXT Context
+    )
+{
+    return NtQueryInformationThread(
+        ThreadHandle,
+        ThreadWow64Context,
+        Context,
+        sizeof(WOW64_CONTEXT),
+        NULL
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetThreadBreakOnTermination(
+    _In_ HANDLE ThreadHandle,
+    _Out_ PBOOLEAN BreakOnTermination
+    )
+{
+    NTSTATUS status;
+    ULONG breakOnTermination;
+
+    status = NtQueryInformationThread(
+        ThreadHandle,
+        ThreadBreakOnTermination,
+        &breakOnTermination,
+        sizeof(ULONG),
+        NULL
+        );
+
+    if (NT_SUCCESS(status))
+    {
+        *BreakOnTermination = !!breakOnTermination;
+    }
+
+    return status;
+}
+
+FORCEINLINE
+NTSTATUS
+PhSetThreadBreakOnTermination(
+    _In_ HANDLE ThreadHandle,
+    _In_ BOOLEAN BreakOnTermination
+    )
+{
+    ULONG breakOnTermination;
+
+    breakOnTermination = BreakOnTermination ? 1 : 0;
+
+    return NtSetInformationThread(
+        ThreadHandle,
+        ThreadBreakOnTermination,
+        &breakOnTermination,
+        sizeof(ULONG)
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetThreadIsIoPending(
+    _In_ HANDLE ThreadHandle,
+    _Out_ PBOOLEAN IsIoPending
+    )
+{
+    NTSTATUS status;
+    ULONG isIoPending;
+
+    status = NtQueryInformationThread(
+        ThreadHandle,
+        ThreadIsIoPending,
+        &isIoPending,
+        sizeof(ULONG),
+        NULL
+        );
+
+    if (NT_SUCCESS(status))
+    {
+        *IsIoPending = !!isIoPending;
+    }
+
+    return status;
+}
+
+/**
+ * Gets time information for a thread.
+ *
+ * \param ThreadHandle A handle to a thread. The handle must have
+ * THREAD_QUERY_LIMITED_INFORMATION access.
+ * \param Times A variable which receives the information.
+ */
+FORCEINLINE
+NTSTATUS
+PhGetThreadTimes(
+    _In_ HANDLE ThreadHandle,
+    _Out_ PKERNEL_USER_TIMES Times
+    )
+{
+    return NtQueryInformationThread(
+        ThreadHandle,
+        ThreadTimes,
+        Times,
+        sizeof(KERNEL_USER_TIMES),
+        NULL
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetThreadIsTerminated(
+    _In_ HANDLE ThreadHandle,
+    _Out_ PBOOLEAN IsTerminated
+    )
+{
+    NTSTATUS status;
+    ULONG threadIsTerminated;
+
+    status = NtQueryInformationThread(
+        ThreadHandle,
+        ThreadIsTerminated,
+        &threadIsTerminated,
+        sizeof(ULONG),
+        NULL
+        );
+
+    if (NT_SUCCESS(status))
+    {
+        *IsTerminated = !!threadIsTerminated;
+    }
 
     return status;
 }
@@ -593,92 +1232,6 @@ PhSetThreadAffinityMask(
         ThreadAffinityMask,
         &AffinityMask,
         sizeof(ULONG_PTR)
-        );
-}
-
-/**
- * Sets a thread's I/O priority.
- *
- * \param ThreadHandle A handle to a thread. The handle must have THREAD_SET_LIMITED_INFORMATION
- * access.
- * \param IoPriority The new I/O priority.
- */
-FORCEINLINE
-NTSTATUS
-PhSetThreadIoPriority(
-    _In_ HANDLE ThreadHandle,
-    _In_ IO_PRIORITY_HINT IoPriority
-    )
-{
-    return NtSetInformationThread(
-        ThreadHandle,
-        ThreadIoPriority,
-        &IoPriority,
-        sizeof(IO_PRIORITY_HINT)
-        );
-}
-
-FORCEINLINE
-NTSTATUS
-PhGetJobBasicAndIoAccounting(
-    _In_ HANDLE JobHandle,
-    _Out_ PJOBOBJECT_BASIC_AND_IO_ACCOUNTING_INFORMATION BasicAndIoAccounting
-    )
-{
-    return NtQueryInformationJobObject(
-        JobHandle,
-        (JOBOBJECTINFOCLASS) JobObjectBasicAndIoAccountingInformation,
-        BasicAndIoAccounting,
-        sizeof(JOBOBJECT_BASIC_AND_IO_ACCOUNTING_INFORMATION),
-        NULL
-        );
-}
-
-FORCEINLINE
-NTSTATUS
-PhGetJobBasicLimits(
-    _In_ HANDLE JobHandle,
-    _Out_ PJOBOBJECT_BASIC_LIMIT_INFORMATION BasicLimits
-    )
-{
-    return NtQueryInformationJobObject(
-        JobHandle,
-		(JOBOBJECTINFOCLASS) JobObjectBasicLimitInformation,
-        BasicLimits,
-        sizeof(JOBOBJECT_BASIC_LIMIT_INFORMATION),
-        NULL
-        );
-}
-
-FORCEINLINE
-NTSTATUS
-PhGetJobExtendedLimits(
-    _In_ HANDLE JobHandle,
-    _Out_ PJOBOBJECT_EXTENDED_LIMIT_INFORMATION ExtendedLimits
-    )
-{
-    return NtQueryInformationJobObject(
-        JobHandle,
-		(JOBOBJECTINFOCLASS) JobObjectExtendedLimitInformation,
-        ExtendedLimits,
-        sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION),
-        NULL
-        );
-}
-
-FORCEINLINE
-NTSTATUS
-PhGetJobBasicUiRestrictions(
-    _In_ HANDLE JobHandle,
-    _Out_ PJOBOBJECT_BASIC_UI_RESTRICTIONS BasicUiRestrictions
-    )
-{
-    return NtQueryInformationJobObject(
-        JobHandle,
-		(JOBOBJECTINFOCLASS) JobObjectBasicUIRestrictions,
-        BasicUiRestrictions,
-        sizeof(JOBOBJECT_BASIC_UI_RESTRICTIONS),
-        NULL
         );
 }
 
@@ -837,10 +1390,37 @@ PhGetTokenLinkedToken(
         &returnLength
         );
 
-    if (!NT_SUCCESS(status))
-        return status;
+    if (NT_SUCCESS(status))
+    {
+        *LinkedTokenHandle = linkedToken.LinkedToken;
+    }
 
-    *LinkedTokenHandle = linkedToken.LinkedToken;
+    return status;
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetTokenIsRestricted(
+    _In_ HANDLE TokenHandle,
+    _Out_ PBOOLEAN IsRestricted
+    )
+{
+    NTSTATUS status;
+    ULONG returnLength;
+    ULONG restricted;
+
+    status = NtQueryInformationToken(
+        TokenHandle,
+        TokenIsRestricted,
+        &restricted,
+        sizeof(ULONG),
+        &returnLength
+        );
+
+    if (NT_SUCCESS(status))
+    {
+        *IsRestricted = !!restricted;
+    }
 
     return status;
 }
@@ -871,10 +1451,10 @@ PhGetTokenIsVirtualizationAllowed(
         &returnLength
         );
 
-    if (!NT_SUCCESS(status))
-        return status;
-
-    *IsVirtualizationAllowed = !!virtualizationAllowed;
+    if (NT_SUCCESS(status))
+    {
+        *IsVirtualizationAllowed = !!virtualizationAllowed;
+    }
 
     return status;
 }
@@ -912,6 +1492,192 @@ PhGetTokenIsVirtualizationEnabled(
 
     return status;
 }
+
+/**
+* Gets UIAccess flag for a token.
+*
+* \param TokenHandle A handle to a token. The handle must have TOKEN_QUERY access.
+* \param IsUIAccessEnabled A variable which receives a boolean indicating whether
+* UIAccess is enabled for the token.
+*/
+FORCEINLINE
+NTSTATUS
+PhGetTokenIsUIAccessEnabled(
+    _In_ HANDLE TokenHandle,
+    _Out_ PBOOLEAN IsUIAccessEnabled
+    )
+{
+    NTSTATUS status;
+    ULONG returnLength;
+    ULONG uiAccess;
+
+    status = NtQueryInformationToken(
+        TokenHandle,
+        TokenUIAccess,
+        &uiAccess,
+        sizeof(ULONG),
+        &returnLength
+        );
+
+    if (!NT_SUCCESS(status))
+        return status;
+
+    *IsUIAccessEnabled = !!uiAccess;
+
+    return status;
+}
+
+/**
+* Sets UIAccess flag for a token.
+*
+* \param TokenHandle A handle to a token. The handle must have TOKEN_ADJUST_DEFAULT access.
+* \param IsUIAccessEnabled The new flag state.
+* \remarks Enabling UIAccess requires SeTcbPrivilege.
+*/
+FORCEINLINE
+NTSTATUS
+PhSetTokenUIAccessEnabled(
+    _In_ HANDLE TokenHandle,
+    _In_ BOOLEAN IsUIAccessEnabled
+    )
+{
+    ULONG uiAccess;
+
+    uiAccess = IsUIAccessEnabled ? 1 : 0;
+
+    return NtSetInformationToken(
+        TokenHandle,
+        TokenUIAccess,
+        &uiAccess,
+        sizeof(ULONG)
+        );
+}
+
+/**
+* Gets SandBoxInert flag for a token.
+*
+* \param TokenHandle A handle to a token. The handle must have TOKEN_QUERY access.
+* \param IsSandBoxInert A variable which receives a boolean indicating whether
+* AppLocker rules or Software Restriction Policies are enabled for the token.
+*/
+FORCEINLINE
+NTSTATUS
+PhGetTokenIsSandBoxInert(
+    _In_ HANDLE TokenHandle,
+    _Out_ PBOOLEAN IsSandBoxInert
+    )
+{
+    NTSTATUS status;
+    ULONG returnLength;
+    ULONG sandBoxInert;
+
+    status = NtQueryInformationToken(
+        TokenHandle,
+        TokenSandBoxInert,
+        &sandBoxInert,
+        sizeof(ULONG),
+        &returnLength
+        );
+
+    if (!NT_SUCCESS(status))
+        return status;
+
+    *IsSandBoxInert = !!sandBoxInert;
+
+    return status;
+}
+
+/**
+* Gets Mandatory Policy for a token.
+*
+* \param TokenHandle A handle to a token. The handle must have TOKEN_QUERY access.
+* \param MandatoryPolicy A variable which receives a set of mandatory integrity
+* policies enforced for the token.
+*/
+FORCEINLINE
+NTSTATUS
+PhGetTokenMandatoryPolicy(
+    _In_ HANDLE TokenHandle,
+    _Out_ PTOKEN_MANDATORY_POLICY MandatoryPolicy
+    )
+{
+    NTSTATUS status;
+    ULONG returnLength;
+
+    status = NtQueryInformationToken(
+        TokenHandle,
+        TokenMandatoryPolicy,
+        MandatoryPolicy,
+        sizeof(TOKEN_MANDATORY_POLICY),
+        &returnLength
+        );
+    
+    return status;
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetTokenOrigin(
+    _In_ HANDLE TokenHandle,
+    _Out_ PTOKEN_ORIGIN Origin
+    )
+{
+    ULONG returnLength;
+
+    return NtQueryInformationToken(
+        TokenHandle,
+        TokenOrigin,
+        Origin,
+        sizeof(TOKEN_ORIGIN),
+        &returnLength
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetTokenIsAppContainer(
+    _In_ HANDLE TokenHandle,
+    _Out_ PBOOLEAN IsAppContainer
+    )
+{
+    NTSTATUS status;
+    ULONG returnLength;
+    ULONG isAppContainer;
+
+    status = NtQueryInformationToken(
+        TokenHandle,
+        TokenIsAppContainer,
+        &isAppContainer,
+        sizeof(ULONG),
+        &returnLength
+        );
+
+    if (!NT_SUCCESS(status))
+        return status;
+
+    *IsAppContainer = !!isAppContainer;
+
+    return status;
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetTokenAppContainerNumber(
+    _In_ HANDLE TokenHandle,
+    _Out_ PULONG AppContainerNumber
+    )
+{
+    ULONG returnLength;
+
+    return NtQueryInformationToken(
+        TokenHandle,
+        TokenAppContainerNumber,
+        AppContainerNumber,
+        sizeof(ULONG),
+        &returnLength
+        );
+}
+
 
 FORCEINLINE
 NTSTATUS
@@ -1005,6 +1771,136 @@ PhGetTimerBasicInformation(
         TimerBasicInformation,
         BasicInformation,
         sizeof(TIMER_BASIC_INFORMATION),
+        NULL
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhSetDebugKillProcessOnExit(
+    _In_ HANDLE DebugObjectHandle,
+    _In_ BOOLEAN KillProcessOnExit
+    )
+{
+    ULONG killProcessOnExit;
+
+    killProcessOnExit = KillProcessOnExit ? 1 : 0;
+
+    return NtSetInformationDebugObject(
+        DebugObjectHandle,
+        DebugObjectKillProcessOnExitInformation,
+        &killProcessOnExit,
+        sizeof(ULONG),
+        NULL
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetProcessIsCetEnabled(
+    _In_ HANDLE ProcessHandle,
+    _Out_ PBOOLEAN IsCetEnabled,
+    _Out_ PBOOLEAN IsCetStrictModeEnabled
+    )
+{
+    NTSTATUS status;
+    PROCESS_MITIGATION_POLICY_INFORMATION policyInfo;
+
+    policyInfo.Policy = ProcessUserShadowStackPolicy;
+
+    status = NtQueryInformationProcess(
+        ProcessHandle,
+        ProcessMitigationPolicy,
+        &policyInfo,
+        sizeof(PROCESS_MITIGATION_POLICY_INFORMATION),
+        NULL
+        );
+
+    if (NT_SUCCESS(status))
+    {
+        *IsCetEnabled = !!policyInfo.UserShadowStackPolicy.EnableUserShadowStack;
+        *IsCetStrictModeEnabled = !!policyInfo.UserShadowStackPolicy.EnableUserShadowStackStrictMode;
+    }
+
+    return status;
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetSystemShadowStackInformation(
+    _Out_ PSYSTEM_SHADOW_STACK_INFORMATION ShadowStackInformation
+    )
+{
+    return NtQuerySystemInformation(
+        SystemShadowStackInformation,
+        ShadowStackInformation,
+        sizeof(SYSTEM_SHADOW_STACK_INFORMATION),
+        NULL
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetSystemProcessorIdleCycleTime(
+    _Out_ PLARGE_INTEGER Buffer,
+    _In_ ULONG BufferLength
+    )
+{
+    return NtQuerySystemInformation(
+        SystemProcessorIdleCycleTimeInformation,
+        Buffer,
+        BufferLength,
+        NULL
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetSystemProcessorIdleCycleTimeEx(
+    _In_ USHORT Group,
+    _Out_ PLARGE_INTEGER Buffer,
+    _In_ ULONG BufferLength
+    )
+{
+    return NtQuerySystemInformationEx(
+        SystemProcessorIdleCycleTimeInformation,
+        &Group,
+        sizeof(Group),
+        Buffer,
+        BufferLength,
+        NULL
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetSystemProcessorCycleTime(
+    _Out_ PLARGE_INTEGER Buffer,
+    _In_ ULONG BufferLength
+    )
+{
+    return NtQuerySystemInformation(
+        SystemProcessorCycleTimeInformation,
+        Buffer,
+        BufferLength,
+        NULL
+        );
+}
+
+FORCEINLINE
+NTSTATUS
+PhGetSystemProcessorCycleTimeEx(
+    _In_ USHORT Group,
+    _Out_ PLARGE_INTEGER Buffer,
+    _In_ ULONG BufferLength
+    )
+{
+    return NtQuerySystemInformationEx(
+        SystemProcessorCycleTimeInformation,
+        &Group,
+        sizeof(Group),
+        Buffer,
+        BufferLength,
         NULL
         );
 }

@@ -1,7 +1,25 @@
+/*
+ * Process Hacker -
+ *   Memory Manager Support functions
+ *
+ * This file is part of Process Hacker.
+ *
+ * Process Hacker is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Process Hacker is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Process Hacker.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #ifndef _NTMMAPI_H
 #define _NTMMAPI_H
-
-#if (PHNT_MODE == PHNT_MODE_KERNEL)
 
 // Protection constants
 
@@ -21,45 +39,47 @@
 #define PAGE_ENCLAVE_THREAD_CONTROL 0x80000000
 #define PAGE_TARGETS_NO_UPDATE      0x40000000
 #define PAGE_TARGETS_INVALID        0x40000000
-#define PAGE_ENCLAVE_UNVALIDATED    0x20000000
+#define PAGE_ENCLAVE_UNVALIDATED    0x20000000  
+#define PAGE_ENCLAVE_NO_CHANGE      0x20000000
+#define PAGE_ENCLAVE_MASK           0x10000000  
+#define PAGE_ENCLAVE_DECOMMIT       (PAGE_ENCLAVE_MASK | 0) 
+#define PAGE_ENCLAVE_SS_FIRST       (PAGE_ENCLAVE_MASK | 1) 
+#define PAGE_ENCLAVE_SS_REST        (PAGE_ENCLAVE_MASK | 2)
 
 // Region and section constants
-#if (PHNT_MODE != PHNT_MODE_KERNEL)
-#define MEM_COMMIT 0x1000
-#define MEM_RESERVE 0x2000
-#define MEM_DECOMMIT 0x4000
-#define MEM_RELEASE 0x8000
-#define MEM_FREE 0x10000
-#define MEM_PRIVATE 0x20000
-#define MEM_MAPPED 0x40000
-#define MEM_RESET 0x80000
-#define MEM_TOP_DOWN 0x100000
-#endif
-#define MEM_WRITE_WATCH 0x200000
-#define MEM_PHYSICAL 0x400000
-#define MEM_ROTATE 0x800000
-#define MEM_DIFFERENT_IMAGE_BASE_OK 0x800000
-#if (PHNT_MODE != PHNT_MODE_KERNEL)
-#define MEM_RESET_UNDO 0x1000000
-#endif
+
+#define MEM_COMMIT 0x00001000
+#define MEM_RESERVE 0x00002000
+#define MEM_DECOMMIT 0x00004000
+#define MEM_RELEASE 0x00008000
+#define MEM_FREE 0x00010000
+#define MEM_PRIVATE 0x00020000
+#define MEM_MAPPED 0x00040000
+#define MEM_RESET 0x00080000
+#define MEM_TOP_DOWN 0x00100000
+#define MEM_WRITE_WATCH 0x00200000
+#define MEM_PHYSICAL 0x00400000
+#define MEM_ROTATE 0x00800000
+#define MEM_DIFFERENT_IMAGE_BASE_OK 0x00800000
+#define MEM_RESET_UNDO 0x01000000
 #define MEM_LARGE_PAGES 0x20000000
+#define MEM_DOS_LIM 0x40000000
 #define MEM_4MB_PAGES 0x80000000
 
-#if (PHNT_MODE != PHNT_MODE_KERNEL)
-#define SEC_FILE 0x800000
-#endif
-#define SEC_IMAGE 0x1000000
-#define SEC_PROTECTED_IMAGE 0x2000000
-#if (PHNT_MODE != PHNT_MODE_KERNEL)
-#define SEC_RESERVE 0x4000000
-#define SEC_COMMIT 0x8000000
-#endif
+#define SEC_BASED 0x00200000
+#define SEC_NO_CHANGE 0x00400000
+#define SEC_FILE 0x00800000
+#define SEC_IMAGE 0x01000000
+#define SEC_PROTECTED_IMAGE 0x02000000
+#define SEC_RESERVE 0x04000000
+#define SEC_COMMIT 0x08000000
 #define SEC_NOCACHE 0x10000000
+#define SEC_GLOBAL 0x20000000
 #define SEC_WRITECOMBINE 0x40000000
 #define SEC_LARGE_PAGES 0x80000000
 #define SEC_IMAGE_NO_EXECUTE (SEC_IMAGE | SEC_NOCACHE)
+#if (PHNT_MODE == PHNT_MODE_KERNEL)
 #define MEM_IMAGE SEC_IMAGE
-
 #endif
 
 #if (PHNT_MODE != PHNT_MODE_KERNEL)
@@ -73,10 +93,13 @@ typedef enum _MEMORY_INFORMATION_CLASS
     MemoryWorkingSetExInformation, // MEMORY_WORKING_SET_EX_INFORMATION
     MemorySharedCommitInformation, // MEMORY_SHARED_COMMIT_INFORMATION
     MemoryImageInformation, // MEMORY_IMAGE_INFORMATION
-    MemoryRegionInformationEx,
+    MemoryRegionInformationEx, // MEMORY_REGION_INFORMATION
     MemoryPrivilegedBasicInformation,
-    MemoryEnclaveImageInformation, // since REDSTONE3
-    MemoryBasicInformationCapped
+    MemoryEnclaveImageInformation, // MEMORY_ENCLAVE_IMAGE_INFORMATION // since REDSTONE3
+    MemoryBasicInformationCapped, // 10
+    MemoryPhysicalContiguityInformation, // MEMORY_PHYSICAL_CONTIGUITY_INFORMATION // since 20H1
+    MemoryBadInformation, // since WIN11
+    MaxMemoryInfoClass
 } MEMORY_INFORMATION_CLASS;
 #else
 #define MemoryBasicInformation 0x0
@@ -90,6 +113,8 @@ typedef enum _MEMORY_INFORMATION_CLASS
 #define MemoryPrivilegedBasicInformation 0x8
 #define MemoryEnclaveImageInformation 0x9
 #define MemoryBasicInformationCapped 0xA
+#define MemoryPhysicalContiguityInformation 0xB
+#define MemoryBadInformation 0xC
 #endif
 
 typedef struct _MEMORY_WORKING_SET_BLOCK
@@ -127,14 +152,30 @@ typedef struct _MEMORY_REGION_INFORMATION
             ULONG MappedPageFile : 1;
             ULONG MappedPhysical : 1;
             ULONG DirectMapped : 1;
-            ULONG SoftwareEnclave : 1; //REDSTONE3
+            ULONG SoftwareEnclave : 1; // REDSTONE3
             ULONG PageSize64K : 1;
-            ULONG Reserved : 24;
+            ULONG PlaceholderReservation : 1; // REDSTONE4
+            ULONG MappedAwe : 1; // 21H1
+            ULONG MappedWriteWatch : 1;
+            ULONG PageSizeLarge : 1;
+            ULONG PageSizeHuge : 1;
+            ULONG Reserved : 19;
         };
     };
     SIZE_T RegionSize;
     SIZE_T CommitSize;
+    ULONG_PTR PartitionId; // 19H1
+    ULONG_PTR NodePreference; // 20H1
 } MEMORY_REGION_INFORMATION, *PMEMORY_REGION_INFORMATION;
+
+// private 
+typedef enum _MEMORY_WORKING_SET_EX_LOCATION
+{
+    MemoryLocationInvalid,
+    MemoryLocationResident,
+    MemoryLocationPagefile,
+    MemoryLocationReserved
+} MEMORY_WORKING_SET_EX_LOCATION;
 
 // private
 typedef struct _MEMORY_WORKING_SET_EX_BLOCK
@@ -154,8 +195,9 @@ typedef struct _MEMORY_WORKING_SET_EX_BLOCK
             ULONG_PTR Reserved : 3;
             ULONG_PTR SharedOriginal : 1;
             ULONG_PTR Bad : 1;
+            ULONG_PTR Win32GraphicsProtection : 4; // 19H1
 #ifdef _WIN64
-            ULONG_PTR ReservedUlong : 32;
+            ULONG_PTR ReservedUlong : 28;
 #endif
         };
         struct
@@ -207,11 +249,53 @@ typedef struct _MEMORY_IMAGE_INFORMATION
         {
             ULONG ImagePartialMap : 1;
             ULONG ImageNotExecutable : 1;
-            ULONG ImageSigningLevel : 1; // REDSTONE3
-            ULONG Reserved : 30;
+            ULONG ImageSigningLevel : 4; // REDSTONE3
+            ULONG Reserved : 26;
         };
     };
 } MEMORY_IMAGE_INFORMATION, *PMEMORY_IMAGE_INFORMATION;
+
+// private
+typedef struct _MEMORY_ENCLAVE_IMAGE_INFORMATION
+{
+    MEMORY_IMAGE_INFORMATION ImageInfo;
+    UCHAR UniqueID[32];
+    UCHAR AuthorID[32];
+} MEMORY_ENCLAVE_IMAGE_INFORMATION, *PMEMORY_ENCLAVE_IMAGE_INFORMATION;
+
+// private
+typedef enum _MEMORY_PHYSICAL_CONTIGUITY_UNIT_STATE
+{
+    MemoryNotContiguous,
+    MemoryAlignedAndContiguous,
+    MemoryNotResident,
+    MemoryNotEligibleToMakeContiguous,
+    MemoryContiguityStateMax,
+} MEMORY_PHYSICAL_CONTIGUITY_UNIT_STATE;
+
+// private
+typedef struct _MEMORY_PHYSICAL_CONTIGUITY_UNIT_INFORMATION
+{
+    union
+    {
+        struct
+        {
+            ULONG State : 2;
+            ULONG Reserved : 30;
+        };
+        ULONG AllInformation;
+    };
+} MEMORY_PHYSICAL_CONTIGUITY_UNIT_INFORMATION, *PMEMORY_PHYSICAL_CONTIGUITY_UNIT_INFORMATION;
+
+// private
+typedef struct _MEMORY_PHYSICAL_CONTIGUITY_INFORMATION
+{
+    PVOID VirtualAddress;
+    ULONG_PTR Size;
+    ULONG_PTR ContiguityUnitSize;
+    ULONG Flags;
+    PMEMORY_PHYSICAL_CONTIGUITY_UNIT_INFORMATION ContiguityUnitInformation;
+} MEMORY_PHYSICAL_CONTIGUITY_INFORMATION, *PMEMORY_PHYSICAL_CONTIGUITY_INFORMATION;
 
 #define MMPFNLIST_ZERO 0
 #define MMPFNLIST_FREE 1
@@ -221,6 +305,18 @@ typedef struct _MEMORY_IMAGE_INFORMATION
 #define MMPFNLIST_BAD 5
 #define MMPFNLIST_ACTIVE 6
 #define MMPFNLIST_TRANSITION 7
+
+//typedef enum _MMLISTS
+//{
+//    ZeroedPageList = 0,
+//    FreePageList = 1,
+//    StandbyPageList = 2,
+//    ModifiedPageList = 3,
+//    ModifiedNoWritePageList = 4,
+//    BadPageList = 5,
+//    ActiveAndValid = 6,
+//    TransitionPage = 7
+//} MMLISTS;
 
 #define MMPFNUSE_PROCESSPRIVATE 0
 #define MMPFNUSE_FILE 1
@@ -235,16 +331,33 @@ typedef struct _MEMORY_IMAGE_INFORMATION
 #define MMPFNUSE_DRIVERLOCKPAGE 10
 #define MMPFNUSE_KERNELSTACK 11
 
+//typedef enum _MMPFNUSE
+//{
+//    ProcessPrivatePage,
+//    MemoryMappedFilePage,
+//    PageFileMappedPage,
+//    PageTablePage,
+//    PagedPoolPage,
+//    NonPagedPoolPage,
+//    SystemPTEPage,
+//    SessionPrivatePage,
+//    MetafilePage,
+//    AWEPage,
+//    DriverLockedPage,
+//    KernelStackPage
+//} MMPFNUSE;
+
 // private
 typedef struct _MEMORY_FRAME_INFORMATION
 {
     ULONGLONG UseDescription : 4; // MMPFNUSE_*
     ULONGLONG ListDescription : 3; // MMPFNLIST_*
-    ULONGLONG Reserved0 : 1; // reserved for future expansion
+    ULONGLONG Cold : 1; // 19H1
     ULONGLONG Pinned : 1; // 1 - pinned, 0 - not pinned
     ULONGLONG DontUse : 48; // *_INFORMATION overlay
-    ULONGLONG Priority : 3; // rev
-    ULONGLONG Reserved : 4; // reserved for future expansion
+    ULONGLONG Priority : 3;
+    ULONGLONG NonTradeable : 1;
+    ULONGLONG Reserved : 3;
 } MEMORY_FRAME_INFORMATION;
 
 // private
@@ -252,7 +365,7 @@ typedef struct _FILEOFFSET_INFORMATION
 {
     ULONGLONG DontUse : 9; // MEMORY_FRAME_INFORMATION overlay
     ULONGLONG Offset : 48; // mapped files
-    ULONGLONG Reserved : 7; // reserved for future expansion
+    ULONGLONG Reserved : 7;
 } FILEOFFSET_INFORMATION;
 
 // private
@@ -260,7 +373,7 @@ typedef struct _PAGEDIR_INFORMATION
 {
     ULONGLONG DontUse : 9; // MEMORY_FRAME_INFORMATION overlay
     ULONGLONG PageDirectoryBase : 48; // private pages
-    ULONGLONG Reserved : 7; // reserved for future expansion
+    ULONGLONG Reserved : 7;
 } PAGEDIR_INFORMATION;
 
 // private
@@ -268,7 +381,7 @@ typedef struct _UNIQUE_PROCESS_INFORMATION
 {
     ULONGLONG DontUse : 9; // MEMORY_FRAME_INFORMATION overlay
     ULONGLONG UniqueProcessKey : 48; // ProcessId
-    ULONGLONG Reserved  : 7; // reserved for future expansion
+    ULONGLONG Reserved  : 7;
 } UNIQUE_PROCESS_INFORMATION, *PUNIQUE_PROCESS_INFORMATION;
 
 // private
@@ -382,7 +495,14 @@ typedef struct _SECTION_INTERNAL_IMAGE_INFORMATION
         struct
         {
             ULONG ImageExportSuppressionEnabled : 1;
-            ULONG Reserved : 31;
+            ULONG ImageCetShadowStacksReady : 1; // 20H1
+            ULONG ImageXfgEnabled : 1; // 20H2
+            ULONG ImageCetShadowStacksStrictMode : 1;
+            ULONG ImageCetSetContextIpValidationRelaxedMode : 1;
+            ULONG ImageCetDynamicApisAllowInProc : 1;
+            ULONG ImageCetDowngradeReserved1 : 1;
+            ULONG ImageCetDowngradeReserved2 : 1;
+            ULONG Reserved : 24;
         };
     };
 } SECTION_INTERNAL_IMAGE_INFORMATION, *PSECTION_INTERNAL_IMAGE_INFORMATION;
@@ -394,10 +514,6 @@ typedef enum _SECTION_INHERIT
     ViewUnmap = 2
 } SECTION_INHERIT;
 #endif
-
-#define SEC_BASED 0x200000
-#define SEC_NO_CHANGE 0x400000
-#define SEC_GLOBAL 0x20000000
 
 #define MEM_EXECUTE_OPTION_DISABLE 0x1
 #define MEM_EXECUTE_OPTION_ENABLE 0x2
@@ -422,6 +538,21 @@ NtAllocateVirtualMemory(
     _In_ ULONG AllocationType,
     _In_ ULONG Protect
     );
+
+#if (PHNT_VERSION >= PHNT_REDSTONE5)
+NTSYSAPI
+NTSTATUS
+NTAPI
+NtAllocateVirtualMemoryEx(
+    _In_ HANDLE ProcessHandle,
+    _Inout_ _At_(*BaseAddress, _Readable_bytes_(*RegionSize) _Writable_bytes_(*RegionSize) _Post_readable_byte_size_(*RegionSize)) PVOID *BaseAddress,
+    _Inout_ PSIZE_T RegionSize,
+    _In_ ULONG AllocationType,
+    _In_ ULONG PageProtection,
+    _Inout_updates_opt_(ExtendedParameterCount) PMEM_EXTENDED_PARAMETER ExtendedParameters,
+    _In_ ULONG ExtendedParameterCount
+    );
+#endif
 
 NTSYSCALLAPI
 NTSTATUS
@@ -471,11 +602,21 @@ NTSTATUS
 NTAPI
 NtQueryVirtualMemory(
     _In_ HANDLE ProcessHandle,
-    _In_ PVOID BaseAddress,
+    _In_opt_ PVOID BaseAddress,
     _In_ MEMORY_INFORMATION_CLASS MemoryInformationClass,
     _Out_writes_bytes_(MemoryInformationLength) PVOID MemoryInformation,
     _In_ SIZE_T MemoryInformationLength,
     _Out_opt_ PSIZE_T ReturnLength
+    );
+
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtFlushVirtualMemory(
+    _In_ HANDLE ProcessHandle,
+    _Inout_ PVOID *BaseAddress,
+    _Inout_ PSIZE_T RegionSize,
+    _Out_ struct _IO_STATUS_BLOCK* IoStatus
     );
 
 #endif
@@ -487,7 +628,12 @@ typedef enum _VIRTUAL_MEMORY_INFORMATION_CLASS
     VmPrefetchInformation, // ULONG
     VmPagePriorityInformation,
     VmCfgCallTargetInformation, // CFG_CALL_TARGET_LIST_INFORMATION // REDSTONE2
-    VmPageDirtyStateInformation // REDSTONE3
+    VmPageDirtyStateInformation, // REDSTONE3
+    VmImageHotPatchInformation, // 19H1
+    VmPhysicalContiguityInformation, // 20H1
+    VmVirtualMachinePrepopulateInformation,
+    VmRemoveFromWorkingSetInformation,
+    MaxVmInfoClass
 } VIRTUAL_MEMORY_INFORMATION_CLASS;
 
 typedef struct _MEMORY_RANGE_ENTRY
@@ -502,6 +648,8 @@ typedef struct _CFG_CALL_TARGET_LIST_INFORMATION
     ULONG Reserved;
     PULONG NumberOfEntriesProcessed;
     PCFG_CALL_TARGET_INFO CallTargetInfo;
+    PVOID Section; // since REDSTONE5
+    ULONGLONG FileOffset;
 } CFG_CALL_TARGET_LIST_INFORMATION, *PCFG_CALL_TARGET_LIST_INFORMATION;
 #endif
 // end_private
@@ -523,6 +671,9 @@ NtSetInformationVirtualMemory(
     );
 
 #endif
+
+#define MAP_PROCESS 1
+#define MAP_SYSTEM 2
 
 NTSYSCALLAPI
 NTSTATUS
@@ -563,6 +714,23 @@ NtCreateSection(
     _In_opt_ HANDLE FileHandle
     );
 
+#if (PHNT_VERSION >= PHNT_REDSTONE5)
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtCreateSectionEx(
+    _Out_ PHANDLE SectionHandle,
+    _In_ ACCESS_MASK DesiredAccess,
+    _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
+    _In_opt_ PLARGE_INTEGER MaximumSize,
+    _In_ ULONG SectionPageProtection,
+    _In_ ULONG AllocationAttributes,
+    _In_opt_ HANDLE FileHandle,
+    _Inout_updates_opt_(ExtendedParameterCount) PMEM_EXTENDED_PARAMETER ExtendedParameters,
+    _In_ ULONG ExtendedParameterCount
+    );
+#endif
+
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -587,6 +755,23 @@ NtMapViewOfSection(
     _In_ ULONG AllocationType,
     _In_ ULONG Win32Protect
     );
+
+#if (PHNT_VERSION >= PHNT_REDSTONE5)
+NTSYSAPI
+NTSTATUS
+NTAPI
+NtMapViewOfSectionEx(
+    _In_ HANDLE SectionHandle,
+    _In_ HANDLE ProcessHandle,
+    _Inout_ _At_(*BaseAddress, _Readable_bytes_(*ViewSize) _Writable_bytes_(*ViewSize) _Post_readable_byte_size_(*ViewSize)) PVOID *BaseAddress,
+    _Inout_opt_ PLARGE_INTEGER SectionOffset,
+    _Inout_ PSIZE_T ViewSize,
+    _In_ ULONG AllocationType,
+    _In_ ULONG Win32Protect,
+    _Inout_updates_opt_(ParameterCount) PMEM_EXTENDED_PARAMETER ExtendedParameters,
+    _In_ ULONG ExtendedParameterCount
+    );
+#endif
 
 NTSYSCALLAPI
 NTSTATUS
@@ -646,16 +831,41 @@ NtAreMappedFilesTheSame(
      MEMORY_PARTITION_QUERY_ACCESS | MEMORY_PARTITION_MODIFY_ACCESS)
 #endif
 
+#if (PHNT_MODE != PHNT_MODE_KERNEL)
 // private
-typedef enum _MEMORY_PARTITION_INFORMATION_CLASS
+typedef enum _PARTITION_INFORMATION_CLASS
 {
     SystemMemoryPartitionInformation, // q: MEMORY_PARTITION_CONFIGURATION_INFORMATION
     SystemMemoryPartitionMoveMemory, // s: MEMORY_PARTITION_TRANSFER_INFORMATION
     SystemMemoryPartitionAddPagefile, // s: MEMORY_PARTITION_PAGEFILE_INFORMATION
     SystemMemoryPartitionCombineMemory, // q; s: MEMORY_PARTITION_PAGE_COMBINE_INFORMATION
     SystemMemoryPartitionInitialAddMemory, // q; s: MEMORY_PARTITION_INITIAL_ADD_INFORMATION
-    SystemMemoryPartitionGetMemoryEvents // MEMORY_PARTITION_MEMORY_EVENTS_INFORMATION // since REDSTONE2
-} MEMORY_PARTITION_INFORMATION_CLASS;
+    SystemMemoryPartitionGetMemoryEvents, // MEMORY_PARTITION_MEMORY_EVENTS_INFORMATION // since REDSTONE2
+    SystemMemoryPartitionSetAttributes,
+    SystemMemoryPartitionNodeInformation,
+    SystemMemoryPartitionCreateLargePages,
+    SystemMemoryPartitionDedicatedMemoryInformation,
+    SystemMemoryPartitionOpenDedicatedMemory, // 10
+    SystemMemoryPartitionMemoryChargeAttributes,
+    SystemMemoryPartitionClearAttributes,
+    SystemMemoryPartitionMax
+} PARTITION_INFORMATION_CLASS, *PPARTITION_INFORMATION_CLASS;
+#else
+#define SystemMemoryPartitionInformation 0x0
+#define SystemMemoryPartitionMoveMemory 0x1
+#define SystemMemoryPartitionAddPagefile 0x2
+#define SystemMemoryPartitionCombineMemory 0x3
+#define SystemMemoryPartitionInitialAddMemory 0x4
+#define SystemMemoryPartitionGetMemoryEvents 0x5
+#define SystemMemoryPartitionSetAttributes 0x6
+#define SystemMemoryPartitionNodeInformation 0x7
+#define SystemMemoryPartitionCreateLargePages 0x8
+#define SystemMemoryPartitionDedicatedMemoryInformation 0x9
+#define SystemMemoryPartitionOpenDedicatedMemory 0xA
+#define SystemMemoryPartitionMemoryChargeAttributes 0xB
+#define SystemMemoryPartitionClearAttributes 0xC
+#define SystemMemoryPartitionMax 0xD
+#endif
 
 // private
 typedef struct _MEMORY_PARTITION_CONFIGURATION_INFORMATION
@@ -749,6 +959,7 @@ NTSYSCALLAPI
 NTSTATUS
 NTAPI
 NtCreatePartition(
+    _In_ HANDLE ParentPartitionHandle,
     _Out_ PHANDLE PartitionHandle,
     _In_ ACCESS_MASK DesiredAccess,
     _In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
@@ -768,8 +979,10 @@ NTSYSCALLAPI
 NTSTATUS
 NTAPI
 NtManagePartition(
-    _In_ MEMORY_PARTITION_INFORMATION_CLASS PartitionInformationClass,
-    _In_ PVOID PartitionInformation,
+    _In_ HANDLE TargetHandle,
+    _In_opt_ HANDLE SourceHandle,
+    _In_ PARTITION_INFORMATION_CLASS PartitionInformationClass,
+    _Inout_updates_bytes_(PartitionInformationLength) PVOID PartitionInformation,
     _In_ ULONG PartitionInformationLength
     );
 
@@ -808,6 +1021,19 @@ NtAllocateUserPhysicalPages(
     _Out_writes_(*NumberOfPages) PULONG_PTR UserPfnArray
     );
 
+#if (PHNT_VERSION >= PHNT_THRESHOLD)
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtAllocateUserPhysicalPagesEx(
+    _In_ HANDLE ProcessHandle,
+    _Inout_ PULONG_PTR NumberOfPages,
+    _Out_writes_(*NumberOfPages) PULONG_PTR UserPfnArray,
+    _Inout_updates_opt_(ParameterCount) PMEM_EXTENDED_PARAMETER ExtendedParameters,
+    _In_ ULONG ExtendedParameterCount
+    );
+#endif
+
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -816,23 +1042,6 @@ NtFreeUserPhysicalPages(
     _Inout_ PULONG_PTR NumberOfPages,
     _In_reads_(*NumberOfPages) PULONG_PTR UserPfnArray
     );
-
-#endif
-
-// Sessions
-
-#if (PHNT_MODE != PHNT_MODE_KERNEL)
-
-#if (PHNT_VERSION >= PHNT_VISTA)
-NTSYSCALLAPI
-NTSTATUS
-NTAPI
-NtOpenSession(
-    _Out_ PHANDLE SessionHandle,
-    _In_ ACCESS_MASK DesiredAccess,
-    _In_ POBJECT_ATTRIBUTES ObjectAttributes
-    );
-#endif
 
 #endif
 
@@ -888,6 +1097,71 @@ NtFlushWriteBuffer(
     VOID
     );
 
+#endif
+
+// Enclave support
+
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtCreateEnclave(
+    _In_ HANDLE ProcessHandle,
+    _Inout_ PVOID* BaseAddress,
+    _In_ ULONG_PTR ZeroBits,
+    _In_ SIZE_T Size,
+    _In_ SIZE_T InitialCommitment,
+    _In_ ULONG EnclaveType,
+    _In_reads_bytes_(EnclaveInformationLength) PVOID EnclaveInformation,
+    _In_ ULONG EnclaveInformationLength,
+    _Out_opt_ PULONG EnclaveError
+    );
+
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtLoadEnclaveData(
+    _In_ HANDLE ProcessHandle,
+    _In_ PVOID BaseAddress,
+    _In_reads_bytes_(BufferSize) PVOID Buffer,
+    _In_ SIZE_T BufferSize,
+    _In_ ULONG Protect,
+    _In_reads_bytes_(PageInformationLength) PVOID PageInformation,
+    _In_ ULONG PageInformationLength,
+    _Out_opt_ PSIZE_T NumberOfBytesWritten,
+    _Out_opt_ PULONG EnclaveError
+    );
+
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtInitializeEnclave(
+    _In_ HANDLE ProcessHandle,
+    _In_ PVOID BaseAddress,
+    _In_reads_bytes_(EnclaveInformationLength) PVOID EnclaveInformation,
+    _In_ ULONG EnclaveInformationLength,
+    _Out_opt_ PULONG EnclaveError
+    );
+
+// rev
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtTerminateEnclave(
+    _In_ PVOID BaseAddress,
+    _In_ BOOLEAN WaitForThread
+    );
+
+#if (PHNT_MODE != PHNT_MODE_KERNEL)
+// rev
+NTSYSCALLAPI
+NTSTATUS
+NTAPI
+NtCallEnclave(
+    _In_ PENCLAVE_ROUTINE Routine,
+    _In_ PVOID Parameter,
+    _In_ BOOLEAN WaitForThread,
+    _Out_opt_ PVOID *ReturnValue
+    );
 #endif
 
 #endif

@@ -108,11 +108,11 @@ List<String^>^ Phlib::GetKnownDlls(_In_ bool Wow64Dlls)
 extern "C" {
 #endif
 
-PAPI_SET_NAMESPACE GetApiSetNamespace()
+CLR_PAPI_SET_NAMESPACE GetApiSetNamespace()
 {
 	ULONG	ReturnLength;
 	PROCESS_BASIC_INFORMATION ProcessInformation;
-	PAPI_SET_NAMESPACE apiSetMap = NULL;
+	CLR_PAPI_SET_NAMESPACE apiSetMap = NULL;
 
 	//	Retrieve PEB address
 	if (!NT_SUCCESS(NtQueryInformationProcess(
@@ -128,7 +128,7 @@ PAPI_SET_NAMESPACE GetApiSetNamespace()
 
 	//	Parsing PEB structure and locating api set map
 	PPEB peb = static_cast<PPEB>(ProcessInformation.PebBaseAddress);
-	apiSetMap =  static_cast<PAPI_SET_NAMESPACE>(peb->ApiSetMap);
+	apiSetMap =  (CLR_PAPI_SET_NAMESPACE)(peb->ApiSetMap);
 
 	return apiSetMap;
 }
@@ -139,7 +139,7 @@ PAPI_SET_NAMESPACE GetApiSetNamespace()
 
 struct ApiSetSchemaImpl
 {
-    static ApiSetSchema^ ParseApiSetSchema(API_SET_NAMESPACE const * apiSetMap);
+    static ApiSetSchema^ ParseApiSetSchema(CLR_API_SET_NAMESPACE const * apiSetMap);
 
 private:
     // private implementation of ApiSet schema parsing
@@ -331,12 +331,12 @@ ApiSetSchema^ PE::GetApiSetSchema()
     {
         IMAGE_SECTION_HEADER const & section = mappedImage.Sections[n];
         if (strncmp(".apiset", reinterpret_cast<char const*>(section.Name), IMAGE_SIZEOF_SHORT_NAME) == 0)
-            return ApiSetSchemaImpl::ParseApiSetSchema(reinterpret_cast<PAPI_SET_NAMESPACE>(PTR_ADD_OFFSET(mappedImage.ViewBase, section.PointerToRawData)));
+            return ApiSetSchemaImpl::ParseApiSetSchema(reinterpret_cast<CLR_PAPI_SET_NAMESPACE>(PTR_ADD_OFFSET(mappedImage.ViewBase, section.PointerToRawData)));
     }
     return gcnew EmptyApiSetSchema();
 }
 
-ApiSetSchema^ ApiSetSchemaImpl::ParseApiSetSchema(API_SET_NAMESPACE const * const apiSetMap)
+ApiSetSchema^ ApiSetSchemaImpl::ParseApiSetSchema(CLR_API_SET_NAMESPACE const * const apiSetMap)
 {
 	// Check the returned api namespace is correct
 	if (!apiSetMap)

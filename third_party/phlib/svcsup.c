@@ -3,6 +3,7 @@
  *   service support functions
  *
  * Copyright (C) 2010-2012 wj32
+ * Copyright (C) 2019-2021 dmex
  *
  * This file is part of Process Hacker.
  *
@@ -21,62 +22,93 @@
  */
 
 #include <ph.h>
-
 #include <subprocesstag.h>
-
 #include <svcsup.h>
 
-#define SIP(String, Integer) { (String), (PVOID)(Integer) }
+#define SIP(String, Integer) \
+    { (String), (PVOID)(Integer) }
+
+#define SREF(String) (PVOID)&(PH_STRINGREF)PH_STRINGREF_INIT((String))
+static PH_STRINGREF PhpServiceUnknownString = PH_STRINGREF_INIT(L"Unknown");
 
 static PH_KEY_VALUE_PAIR PhpServiceStatePairs[] =
 {
-    SIP(L"Stopped", SERVICE_STOPPED),
-    SIP(L"Start pending", SERVICE_START_PENDING),
-    SIP(L"Stop pending", SERVICE_STOP_PENDING),
-    SIP(L"Running", SERVICE_RUNNING),
-    SIP(L"Continue pending", SERVICE_CONTINUE_PENDING),
-    SIP(L"Pause pending", SERVICE_PAUSE_PENDING),
-    SIP(L"Paused", SERVICE_PAUSED)
+    SIP(SREF(L"Stopped"), SERVICE_STOPPED),
+    SIP(SREF(L"Start pending"), SERVICE_START_PENDING),
+    SIP(SREF(L"Stop pending"), SERVICE_STOP_PENDING),
+    SIP(SREF(L"Running"), SERVICE_RUNNING),
+    SIP(SREF(L"Continue pending"), SERVICE_CONTINUE_PENDING),
+    SIP(SREF(L"Pause pending"), SERVICE_PAUSE_PENDING),
+    SIP(SREF(L"Paused"), SERVICE_PAUSED)
 };
 
 static PH_KEY_VALUE_PAIR PhpServiceTypePairs[] =
 {
-    SIP(L"Driver", SERVICE_KERNEL_DRIVER),
-    SIP(L"FS driver", SERVICE_FILE_SYSTEM_DRIVER),
-    SIP(L"Own process", SERVICE_WIN32_OWN_PROCESS),
-    SIP(L"Share process", SERVICE_WIN32_SHARE_PROCESS),
-    SIP(L"Own interactive process", SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS),
-    SIP(L"Share interactive process", SERVICE_WIN32_SHARE_PROCESS | SERVICE_INTERACTIVE_PROCESS),
-    SIP(L"User own process", SERVICE_USER_OWN_PROCESS),
-    SIP(L"User own process (instance)", SERVICE_USER_OWN_PROCESS | SERVICE_USERSERVICE_INSTANCE),
-    SIP(L"User share process", SERVICE_USER_SHARE_PROCESS),
-    SIP(L"User share process (instance)", SERVICE_USER_SHARE_PROCESS | SERVICE_USERSERVICE_INSTANCE)
+    SIP(SREF(L"Driver"), SERVICE_KERNEL_DRIVER),
+    SIP(SREF(L"FS driver"), SERVICE_FILE_SYSTEM_DRIVER),
+    SIP(SREF(L"Own process"), SERVICE_WIN32_OWN_PROCESS),
+    SIP(SREF(L"Share process"), SERVICE_WIN32_SHARE_PROCESS),
+    SIP(SREF(L"Own interactive process"), SERVICE_WIN32_OWN_PROCESS | SERVICE_INTERACTIVE_PROCESS),
+    SIP(SREF(L"Share interactive process"), SERVICE_WIN32_SHARE_PROCESS | SERVICE_INTERACTIVE_PROCESS),
+    SIP(SREF(L"User own process"), SERVICE_USER_OWN_PROCESS),
+    SIP(SREF(L"User own process (instance)"), SERVICE_USER_OWN_PROCESS | SERVICE_USERSERVICE_INSTANCE),
+    SIP(SREF(L"User share process"), SERVICE_USER_SHARE_PROCESS),
+    SIP(SREF(L"User share process (instance)"), SERVICE_USER_SHARE_PROCESS | SERVICE_USERSERVICE_INSTANCE),
+    SIP(SREF(L"Package own process"), SERVICE_PKG_SERVICE | SERVICE_WIN32_OWN_PROCESS),
+    SIP(SREF(L"Package share process"), SERVICE_PKG_SERVICE | SERVICE_WIN32_SHARE_PROCESS),
 };
 
 static PH_KEY_VALUE_PAIR PhpServiceStartTypePairs[] =
 {
-    SIP(L"Disabled", SERVICE_DISABLED),
-    SIP(L"Boot start", SERVICE_BOOT_START),
-    SIP(L"System start", SERVICE_SYSTEM_START),
-    SIP(L"Auto start", SERVICE_AUTO_START),
-    SIP(L"Demand start", SERVICE_DEMAND_START)
+    SIP(SREF(L"Disabled"), SERVICE_DISABLED),
+    SIP(SREF(L"Boot start"), SERVICE_BOOT_START),
+    SIP(SREF(L"System start"), SERVICE_SYSTEM_START),
+    SIP(SREF(L"Auto start"), SERVICE_AUTO_START),
+    SIP(SREF(L"Demand start"), SERVICE_DEMAND_START)
 };
 
 static PH_KEY_VALUE_PAIR PhpServiceErrorControlPairs[] =
 {
-    SIP(L"Ignore", SERVICE_ERROR_IGNORE),
-    SIP(L"Normal", SERVICE_ERROR_NORMAL),
-    SIP(L"Severe", SERVICE_ERROR_SEVERE),
-    SIP(L"Critical", SERVICE_ERROR_CRITICAL)
+    SIP(SREF(L"Ignore"), SERVICE_ERROR_IGNORE),
+    SIP(SREF(L"Normal"), SERVICE_ERROR_NORMAL),
+    SIP(SREF(L"Severe"), SERVICE_ERROR_SEVERE),
+    SIP(SREF(L"Critical"), SERVICE_ERROR_CRITICAL)
 };
 
-WCHAR *PhServiceTypeStrings[10] = { L"Driver", L"FS driver", L"Own process", L"Share process",
-    L"Own interactive process", L"Share interactive process", L"User own process", L"User own process (instance)",
-    L"User share process", L"User share process (instance)" };
-WCHAR *PhServiceStartTypeStrings[5] = { L"Disabled", L"Boot start", L"System start",
-    L"Auto start", L"Demand start" };
-WCHAR *PhServiceErrorControlStrings[4] = { L"Ignore", L"Normal", L"Severe", L"Critical" };
+PWSTR PhServiceTypeStrings[] =
+{
+    L"Driver",
+    L"FS driver",
+    L"Own process",
+    L"Share process",
+    L"Own interactive process",
+    L"Share interactive process",
+    L"User own process",
+    L"User own process (instance)",
+    L"User share process",
+    L"User share process (instance)",
+    L"Package own process",
+    L"Package share process",
+};
 
+PWSTR PhServiceStartTypeStrings[5] =
+{
+    L"Disabled",
+    L"Boot start",
+    L"System start",
+    L"Auto start",
+    L"Demand start"
+};
+
+PWSTR PhServiceErrorControlStrings[4] =
+{
+    L"Ignore",
+    L"Normal",
+    L"Severe",
+    L"Critical"
+};
+
+_Success_(return != NULL)
 PVOID PhEnumServices(
     _In_ SC_HANDLE ScManagerHandle,
     _In_opt_ ULONG Type,
@@ -85,7 +117,7 @@ PVOID PhEnumServices(
     )
 {
     static ULONG initialBufferSize = 0x8000;
-    LOGICAL result;
+    BOOL result;
     PVOID buffer;
     ULONG bufferSize;
     ULONG returnLength;
@@ -123,7 +155,7 @@ PVOID PhEnumServices(
         SC_ENUM_PROCESS_INFO,
         Type,
         State,
-        buffer,
+        (PBYTE)buffer,
         bufferSize,
         &returnLength,
         &servicesReturned,
@@ -142,7 +174,7 @@ PVOID PhEnumServices(
                 SC_ENUM_PROCESS_INFO,
                 Type,
                 State,
-                buffer,
+                (PBYTE)buffer,
                 bufferSize,
                 &returnLength,
                 &servicesReturned,
@@ -164,21 +196,60 @@ PVOID PhEnumServices(
     return buffer;
 }
 
+SC_HANDLE PhGetServiceManagerHandle(
+    VOID
+    )
+{
+    static SC_HANDLE cachedServiceManagerHandle = NULL;
+    SC_HANDLE serviceManagerHandle;
+    SC_HANDLE newServiceManagerHandle;
+
+    // Use the cached value if possible.
+
+    serviceManagerHandle = InterlockedCompareExchangePointer(&cachedServiceManagerHandle, NULL, NULL);
+
+    // If there is no cached handle, open one.
+
+    if (!serviceManagerHandle)
+    {
+        if (newServiceManagerHandle = OpenSCManager(
+            NULL,
+            NULL,
+            SC_MANAGER_CONNECT | SC_MANAGER_ENUMERATE_SERVICE
+            ))
+        {
+            // We succeeded in opening a policy handle, and since we did not have a cached handle
+            // before, we will now store it.
+            serviceManagerHandle = InterlockedCompareExchangePointer(
+                &cachedServiceManagerHandle,
+                newServiceManagerHandle,
+                NULL
+                );
+
+            if (!serviceManagerHandle)
+            {
+                // Success. Use our handle.
+                serviceManagerHandle = newServiceManagerHandle;
+            }
+            else
+            {
+                // Someone already placed a handle in the cache. Close our handle and use their handle.
+                CloseServiceHandle(newServiceManagerHandle);
+            }
+        }
+    }
+
+    return serviceManagerHandle;
+}
+
 SC_HANDLE PhOpenService(
     _In_ PWSTR ServiceName,
     _In_ ACCESS_MASK DesiredAccess
     )
 {
-    SC_HANDLE scManagerHandle;
     SC_HANDLE serviceHandle;
 
-    scManagerHandle = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
-
-    if (!scManagerHandle)
-        return NULL;
-
-    serviceHandle = OpenService(scManagerHandle, ServiceName, DesiredAccess);
-    CloseServiceHandle(scManagerHandle);
+    serviceHandle = OpenService(PhGetServiceManagerHandle(), ServiceName, DesiredAccess);
 
     return serviceHandle;
 }
@@ -268,6 +339,7 @@ PPH_STRING PhGetServiceDescription(
     }
 }
 
+_Success_(return)
 BOOLEAN PhGetServiceDelayedAutoStart(
     _In_ SC_HANDLE ServiceHandle,
     _Out_ PBOOLEAN DelayedAutoStart
@@ -309,47 +381,47 @@ BOOLEAN PhSetServiceDelayedAutoStart(
         );
 }
 
-PWSTR PhGetServiceStateString(
+PPH_STRINGREF PhGetServiceStateString(
     _In_ ULONG ServiceState
     )
 {
-    PWSTR string;
+    PPH_STRINGREF string;
 
     if (PhFindStringSiKeyValuePairs(
         PhpServiceStatePairs,
         sizeof(PhpServiceStatePairs),
         ServiceState,
-        &string
+        (PWSTR*)&string
         ))
         return string;
     else
-        return L"Unknown";
+        return &PhpServiceUnknownString;
 }
 
-PWSTR PhGetServiceTypeString(
+PPH_STRINGREF PhGetServiceTypeString(
     _In_ ULONG ServiceType
     )
 {
-    PWSTR string;
+    PPH_STRINGREF string;
 
     if (PhFindStringSiKeyValuePairs(
         PhpServiceTypePairs,
         sizeof(PhpServiceTypePairs),
         ServiceType,
-        &string
+        (PWSTR*)&string
         ))
         return string;
     else
-        return L"Unknown";
+        return &PhpServiceUnknownString;
 }
 
 ULONG PhGetServiceTypeInteger(
-    _In_ PWSTR ServiceType
+    _In_ PPH_STRINGREF ServiceType
     )
 {
     ULONG integer;
 
-    if (PhFindIntegerSiKeyValuePairs(
+    if (PhFindIntegerSiKeyValuePairsStringRef(
         PhpServiceTypePairs,
         sizeof(PhpServiceTypePairs),
         ServiceType,
@@ -357,33 +429,33 @@ ULONG PhGetServiceTypeInteger(
         ))
         return integer;
     else
-        return -1;
+        return ULONG_MAX;
 }
 
-PWSTR PhGetServiceStartTypeString(
+PPH_STRINGREF PhGetServiceStartTypeString(
     _In_ ULONG ServiceStartType
     )
 {
-    PWSTR string;
+    PPH_STRINGREF string;
 
     if (PhFindStringSiKeyValuePairs(
         PhpServiceStartTypePairs,
         sizeof(PhpServiceStartTypePairs),
         ServiceStartType,
-        &string
+        (PWSTR*)&string
         ))
         return string;
     else
-        return L"Unknown";
+        return &PhpServiceUnknownString;
 }
 
 ULONG PhGetServiceStartTypeInteger(
-    _In_ PWSTR ServiceStartType
+    _In_ PPH_STRINGREF ServiceStartType
     )
 {
     ULONG integer;
 
-    if (PhFindIntegerSiKeyValuePairs(
+    if (PhFindIntegerSiKeyValuePairsStringRef(
         PhpServiceStartTypePairs,
         sizeof(PhpServiceStartTypePairs),
         ServiceStartType,
@@ -391,33 +463,33 @@ ULONG PhGetServiceStartTypeInteger(
         ))
         return integer;
     else
-        return -1;
+        return ULONG_MAX;
 }
 
-PWSTR PhGetServiceErrorControlString(
+PPH_STRINGREF PhGetServiceErrorControlString(
     _In_ ULONG ServiceErrorControl
     )
 {
-    PWSTR string;
+    PPH_STRINGREF string;
 
     if (PhFindStringSiKeyValuePairs(
         PhpServiceErrorControlPairs,
         sizeof(PhpServiceErrorControlPairs),
         ServiceErrorControl,
-        &string
+        (PWSTR*)&string
         ))
         return string;
     else
-        return L"Unknown";
+        return &PhpServiceUnknownString;
 }
 
 ULONG PhGetServiceErrorControlInteger(
-    _In_ PWSTR ServiceErrorControl
+    _In_ PPH_STRINGREF ServiceErrorControl
     )
 {
     ULONG integer;
 
-    if (PhFindIntegerSiKeyValuePairs(
+    if (PhFindIntegerSiKeyValuePairsStringRef(
         PhpServiceErrorControlPairs,
         sizeof(PhpServiceErrorControlPairs),
         ServiceErrorControl,
@@ -425,7 +497,7 @@ ULONG PhGetServiceErrorControlInteger(
         ))
         return integer;
     else
-        return -1;
+        return ULONG_MAX;
 }
 
 PPH_STRING PhGetServiceNameFromTag(
@@ -439,7 +511,7 @@ PPH_STRING PhGetServiceNameFromTag(
 
     if (!I_QueryTagInformation)
     {
-        I_QueryTagInformation = PhGetModuleProcAddress(L"advapi32.dll", "I_QueryTagInformation");
+        I_QueryTagInformation = PhGetDllProcedureAddress(L"advapi32.dll", "I_QueryTagInformation", 0);
 
         if (!I_QueryTagInformation)
             return NULL;
@@ -471,7 +543,7 @@ PPH_STRING PhGetServiceNameForModuleReference(
 
     if (!I_QueryTagInformation)
     {
-        I_QueryTagInformation = PhGetModuleProcAddress(L"advapi32.dll", "I_QueryTagInformation");
+        I_QueryTagInformation = PhGetDllProcedureAddress(L"advapi32.dll", "I_QueryTagInformation", 0);
 
         if (!I_QueryTagInformation)
             return NULL;
@@ -542,42 +614,32 @@ NTSTATUS PhGetThreadServiceTag(
     return status;
 }
 
-NTSTATUS PhGetServiceDllParameter(
-    _In_ PPH_STRINGREF ServiceName,
-    _Out_ PPH_STRING *ServiceDll
+NTSTATUS PhpGetServiceDllName(
+    _In_ PPH_STRING ServiceKeyName,
+    _Out_ PPH_STRING* ServiceDll
     )
 {
-    static PH_STRINGREF servicesKeyName = PH_STRINGREF_INIT(L"System\\CurrentControlSet\\Services\\");
-    static PH_STRINGREF parameters = PH_STRINGREF_INIT(L"\\Parameters");
-
+    PPH_STRING serviceDllString = NULL;
     NTSTATUS status;
     HANDLE keyHandle;
-    PPH_STRING keyName;
 
-    keyName = PhConcatStringRef3(&servicesKeyName, ServiceName, &parameters);
-
-    if (NT_SUCCESS(status = PhOpenKey(
+    status = PhOpenKey(
         &keyHandle,
         KEY_READ,
         PH_KEY_LOCAL_MACHINE,
-        &keyName->sr,
+        &ServiceKeyName->sr,
         0
-        )))
-    {
-        PPH_STRING serviceDllString;
+        );
 
+    if (NT_SUCCESS(status))
+    {
         if (serviceDllString = PhQueryRegistryString(keyHandle, L"ServiceDll"))
         {
             PPH_STRING expandedString;
 
             if (expandedString = PhExpandEnvironmentStrings(&serviceDllString->sr))
             {
-                *ServiceDll = expandedString;
-                PhDereferenceObject(serviceDllString);
-            }
-            else
-            {
-                *ServiceDll = serviceDllString;
+                PhMoveReference(&serviceDllString, expandedString);
             }
         }
         else
@@ -588,7 +650,81 @@ NTSTATUS PhGetServiceDllParameter(
         NtClose(keyHandle);
     }
 
+    if (NT_SUCCESS(status))
+    {
+        *ServiceDll = serviceDllString;
+    }
+
+    return status;
+}
+
+NTSTATUS PhGetServiceDllParameter(
+    _In_ ULONG ServiceType,
+    _In_ PPH_STRINGREF ServiceName,
+    _Out_ PPH_STRING *ServiceDll
+    )
+{
+    static PH_STRINGREF servicesKeyName = PH_STRINGREF_INIT(L"System\\CurrentControlSet\\Services\\");
+    static PH_STRINGREF parameters = PH_STRINGREF_INIT(L"\\Parameters");
+    NTSTATUS status;
+    PPH_STRING serviceDllString;
+    PPH_STRING keyName;
+
+    if (ServiceType & SERVICE_USERSERVICE_INSTANCE)
+    {
+        PH_STRINGREF hostServiceName;
+        PH_STRINGREF userSessionLuid;
+
+        // The SCM creates multiple "user service instance" processes for each user session with the following template:
+        // [Host Service Instance Name]_[LUID for Session]
+        // The SCM internally uses the ServiceDll of the "host service instance" for all "user service instance" processes/services
+        // and we need to parse the user service template and query the "host service instance" configuration. (hsebs)
+
+        if (PhSplitStringRefAtLastChar(ServiceName, L'_', &hostServiceName, &userSessionLuid))
+            keyName = PhConcatStringRef3(&servicesKeyName, &hostServiceName, &parameters);
+        else
+            keyName = PhConcatStringRef3(&servicesKeyName, ServiceName, &parameters);
+    }
+    else
+    {
+        keyName = PhConcatStringRef3(&servicesKeyName, ServiceName, &parameters);
+    }
+
+    status = PhpGetServiceDllName(
+        keyName,
+        &serviceDllString
+        );
     PhDereferenceObject(keyName);
+
+    if (NT_SUCCESS(status))
+    {
+        *ServiceDll = serviceDllString;
+        return STATUS_SUCCESS;
+    }
+
+    if (
+        (WindowsVersion == WINDOWS_8 || WindowsVersion == WINDOWS_8_1) &&
+        (status == STATUS_OBJECT_NAME_NOT_FOUND || status == STATUS_NOT_FOUND)
+        )
+    {
+        // Windows 8 places the ServiceDll for some services in the root key. (dmex)
+        keyName = PhConcatStringRef2(
+            &servicesKeyName,
+            ServiceName
+            );
+
+        status = PhpGetServiceDllName(
+            keyName,
+            &serviceDllString
+            );
+        PhDereferenceObject(keyName);
+
+        if (NT_SUCCESS(status))
+        {
+            *ServiceDll = serviceDllString;
+            return STATUS_SUCCESS;
+        }
+    }
 
     return status;
 }

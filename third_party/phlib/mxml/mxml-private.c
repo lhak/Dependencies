@@ -1,17 +1,12 @@
 /*
- * "$Id: mxml-private.c 451 2014-01-04 21:50:06Z msweet $"
+ * Private functions for Mini-XML, a small XML file parsing library.
  *
- * Private functions for Mini-XML, a small XML-like file parsing library.
+ * https://www.msweet.org/mxml
  *
- * Copyright 2003-2014 by Michael R Sweet.
+ * Copyright © 2003-2019 by Michael R Sweet.
  *
- * These coded instructions, statements, and computer programs are the
- * property of Michael R Sweet and are protected by Federal copyright
- * law.  Distribution and use rights are outlined in the file "COPYING"
- * which should have been included with this file.  If this file is
- * missing or damaged, see the license at:
- *
- *     http://www.msweet.org/projects.php/Mini-XML
+ * Licensed under Apache License v2.0.  See the file "LICENSE" for more
+ * information.
  */
 
 /*
@@ -221,7 +216,7 @@ _mxml_init(void)
 }
 
 
-#elif defined(WIN32) && defined(MXML1_EXPORTS) /**** WIN32 threading ****/
+#elif defined(_WIN32) && defined(MXML1_EXPORTS) /**** WIN32 threading ****/
 #  include <windows.h>
 
 static DWORD _mxml_tls_index;		/* Index for global storage */
@@ -316,8 +311,3 @@ _mxml_global(void)
   return (&global);
 }
 #endif /* HAVE_PTHREAD_H */
-
-
-/*
- * End of "$Id: mxml-private.c 451 2014-01-04 21:50:06Z msweet $".
- */

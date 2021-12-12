@@ -3,6 +3,7 @@
  *   extended menus
  *
  * Copyright (C) 2010-2011 wj32
+ * Copyright (C) 2019 dmex
  *
  * This file is part of Process Hacker.
  *
@@ -22,7 +23,7 @@
 
 #include <ph.h>
 #include <emenu.h>
-
+#include <settings.h>
 #include <guisup.h>
 
 static const PH_FLAG_MAPPING EMenuTypeMappings[] =
@@ -39,18 +40,6 @@ static const PH_FLAG_MAPPING EMenuStateMappings[] =
     { PH_EMENU_DISABLED, MFS_DISABLED },
     { PH_EMENU_HIGHLIGHT, MFS_HILITE }
 };
-
-PPH_EMENU_ITEM PhAllocateEMenuItem(
-    VOID
-    )
-{
-    PPH_EMENU_ITEM item;
-
-    item = PhAllocate(sizeof(PH_EMENU_ITEM));
-    memset(item, 0, sizeof(PH_EMENU_ITEM));
-
-    return item;
-}
 
 /**
  * Creates a menu item.
@@ -72,20 +61,20 @@ PPH_EMENU_ITEM PhAllocateEMenuItem(
 PPH_EMENU_ITEM PhCreateEMenuItem(
     _In_ ULONG Flags,
     _In_ ULONG Id,
-    _In_ PWSTR Text,
+    _In_opt_ PWSTR Text,
     _In_opt_ HBITMAP Bitmap,
     _In_opt_ PVOID Context
     )
 {
     PPH_EMENU_ITEM item;
 
-    item = PhAllocateEMenuItem();
+    item = PhAllocate(sizeof(PH_EMENU_ITEM));
+    memset(item, 0, sizeof(PH_EMENU_ITEM));
 
     item->Flags = Flags;
     item->Id = Id;
     item->Text = Text;
     item->Bitmap = Bitmap;
-
     item->Context = Context;
 
     return item;
@@ -109,16 +98,12 @@ VOID PhpDestroyEMenuItem(
     if ((Item->Flags & PH_EMENU_TEXT_OWNED) && Item->Text)
         PhFree(Item->Text);
     if ((Item->Flags & PH_EMENU_BITMAP_OWNED) && Item->Bitmap)
-        DeleteObject(Item->Bitmap);
+        DeleteBitmap(Item->Bitmap);
 
     if (Item->Items)
     {
-        ULONG i;
-
-        for (i = 0; i < Item->Items->Count; i++)
-        {
+        for (ULONG i = 0; i < Item->Items->Count; i++)
             PhpDestroyEMenuItem(Item->Items->Items[i]);
-        }
 
         PhDereferenceObject(Item->Items);
     }
@@ -139,7 +124,7 @@ VOID PhDestroyEMenuItem(
 {
     // Remove the item from its parent, if it has one.
     if (Item->Parent)
-        PhRemoveEMenuItem(NULL, Item, -1);
+        PhRemoveEMenuItem(NULL, Item, ULONG_MAX);
 
     PhpDestroyEMenuItem(Item);
 }
@@ -239,9 +224,9 @@ PPH_EMENU_ITEM PhFindEMenuItemEx(
 
         if (Flags & PH_EMENU_FIND_DESCEND)
         {
-            PPH_EMENU_ITEM foundItem;
-            PPH_EMENU_ITEM foundParent;
-            ULONG foundIndex;
+            PPH_EMENU_ITEM foundItem = NULL;
+            PPH_EMENU_ITEM foundParent = NULL;
+            ULONG foundIndex = 0;
 
             foundItem = PhFindEMenuItemEx(item, Flags, Text, Id, &foundParent, &foundIndex);
 
@@ -282,7 +267,7 @@ ULONG PhIndexOfEMenuItem(
     )
 {
     if (!Parent->Items)
-        return -1;
+        return ULONG_MAX;
 
     return PhFindItemList(Parent->Items, Item);
 }
@@ -311,7 +296,7 @@ VOID PhInsertEMenuItem(
     if (Index > Parent->Items->Count)
         Index = Parent->Items->Count;
 
-    if (Index == -1)
+    if (Index == ULONG_MAX)
         PhAddItemList(Parent->Items, Item);
     else
         PhInsertItemList(Parent->Items, Index, Item);
@@ -342,7 +327,7 @@ BOOLEAN PhRemoveEMenuItem(
 
         Index = PhFindItemList(Parent->Items, Item);
 
-        if (Index == -1)
+        if (Index == ULONG_MAX)
             return FALSE;
     }
     else
@@ -460,10 +445,16 @@ HMENU PhEMenuToHMenu(
 {
     HMENU menuHandle;
 
-    menuHandle = CreatePopupMenu();
-
-    if (!menuHandle)
-        return NULL;
+    if ((Menu->Flags & PH_EMENU_MAINMENU) == PH_EMENU_MAINMENU)
+    {
+        if (!(menuHandle = CreateMenu()))
+            return NULL;
+    }
+    else
+    {
+        if (!(menuHandle = CreatePopupMenu()))
+            return NULL;
+    }
 
     PhEMenuToHMenu2(menuHandle, Menu, Flags, Data);
 
@@ -475,6 +466,18 @@ HMENU PhEMenuToHMenu(
         menuInfo.cbSize = sizeof(MENUINFO);
         menuInfo.fMask = MIM_STYLE;
         menuInfo.dwStyle = MNS_CHECKORBMP;
+
+        if (WindowsVersion < WINDOWS_10_19H2 && PhGetIntegerSetting(L"EnableThemeSupport"))
+        {
+            static HBRUSH themeBrush = NULL;
+
+            if (!themeBrush)
+                themeBrush = CreateSolidBrush(PhThemeWindowBackgroundColor);
+
+            menuInfo.fMask |= MIM_BACKGROUND | MIM_APPLYTOSUBMENUS;
+            menuInfo.hbrBack = themeBrush;
+        }
+
         SetMenuInfo(menuHandle, &menuInfo);
     }
 
@@ -536,8 +539,17 @@ VOID PhEMenuToHMenu2(
 
         if (item->Bitmap)
         {
-            menuItemInfo.fMask |= MIIM_BITMAP;
             menuItemInfo.hbmpItem = item->Bitmap;
+
+            if (WindowsVersion < WINDOWS_10_19H2)
+            {
+                if (!PhGetIntegerSetting(L"EnableThemeSupport"))
+                    menuItemInfo.fMask |= MIIM_BITMAP;
+            }
+            else
+            {
+                menuItemInfo.fMask |= MIIM_BITMAP;
+            }
         }
 
         // Id
@@ -586,6 +598,25 @@ VOID PhEMenuToHMenu2(
             menuItemInfo.hSubMenu = PhEMenuToHMenu(item, Flags, Data);
         }
 
+        // Themes
+        if (WindowsVersion < WINDOWS_10_19H2)
+        {
+            if (PhGetIntegerSetting(L"EnableThemeSupport"))
+            {
+                menuItemInfo.fType |= MFT_OWNERDRAW;
+            }
+        }
+        else
+        {
+            if (item->Flags & PH_EMENU_MAINMENU)
+            {
+                if (PhGetIntegerSetting(L"EnableThemeSupport"))
+                {
+                    menuItemInfo.fType |= MFT_OWNERDRAW;
+                }
+            }
+        }
+
         InsertMenuItem(MenuHandle, MAXINT, TRUE, &menuItemInfo);
     }
 }
@@ -606,51 +637,51 @@ VOID PhHMenuToEMenuItem(
 
     count = GetMenuItemCount(MenuHandle);
 
-    if (count != -1)
+    if (count == -1)
+        return;
+
+    for (i = 0; i < count; i++)
     {
-        for (i = 0; i < count; i++)
-        {
-            MENUITEMINFO menuItemInfo;
-            WCHAR buffer[256];
-            PPH_EMENU_ITEM menuItem;
+        MENUITEMINFO menuItemInfo;
+        PPH_EMENU_ITEM menuItem;
+        WCHAR buffer[MAX_PATH];
 
-            menuItemInfo.cbSize = sizeof(menuItemInfo);
-            menuItemInfo.fMask = MIIM_FTYPE | MIIM_ID | MIIM_STATE | MIIM_STRING | MIIM_SUBMENU;
-            menuItemInfo.cch = sizeof(buffer) / sizeof(WCHAR);
-            menuItemInfo.dwTypeData = buffer;
+        menuItemInfo.cbSize = sizeof(menuItemInfo);
+        menuItemInfo.fMask = MIIM_FTYPE | MIIM_ID | MIIM_STATE | MIIM_STRING | MIIM_SUBMENU;
+        menuItemInfo.cch = RTL_NUMBER_OF(buffer);
+        menuItemInfo.dwTypeData = buffer;
 
-            if (!GetMenuItemInfo(MenuHandle, i, TRUE, &menuItemInfo))
-                continue;
+        if (!GetMenuItemInfo(MenuHandle, i, TRUE, &menuItemInfo))
+            continue;
 
-            menuItem = PhCreateEMenuItem(
-                PH_EMENU_TEXT_OWNED,
-                menuItemInfo.wID,
-                PhDuplicateStringZ(buffer),
-                NULL,
-                NULL
-                );
+        menuItem = PhCreateEMenuItem(
+            PH_EMENU_TEXT_OWNED,
+            menuItemInfo.wID,
+            PhDuplicateStringZ(buffer),
+            NULL,
+            NULL
+            );
 
-            if (menuItemInfo.fType & MFT_SEPARATOR)
-                menuItem->Flags |= PH_EMENU_SEPARATOR;
+        if (menuItemInfo.fType & MFT_SEPARATOR)
+            menuItem->Flags |= PH_EMENU_SEPARATOR;
 
-            PhMapFlags2(
-                &menuItem->Flags,
-                menuItemInfo.fType,
-                EMenuTypeMappings,
-                sizeof(EMenuTypeMappings) / sizeof(PH_FLAG_MAPPING)
-                );
-            PhMapFlags2(
-                &menuItem->Flags,
-                menuItemInfo.fState,
-                EMenuStateMappings,
-                sizeof(EMenuStateMappings) / sizeof(PH_FLAG_MAPPING)
-                );
+        PhMapFlags2(
+            &menuItem->Flags,
+            menuItemInfo.fType,
+            EMenuTypeMappings,
+            RTL_NUMBER_OF(EMenuTypeMappings)
+            );
+        PhMapFlags2(
+            &menuItem->Flags,
+            menuItemInfo.fState,
+            EMenuStateMappings,
+            RTL_NUMBER_OF(EMenuStateMappings)
+            );
 
-            if (menuItemInfo.hSubMenu)
-                PhHMenuToEMenuItem(menuItem, menuItemInfo.hSubMenu);
+        if (menuItemInfo.hSubMenu)
+            PhHMenuToEMenuItem(menuItem, menuItemInfo.hSubMenu);
 
-            PhInsertEMenuItem(MenuItem, menuItem, -1);
-        }
+        PhInsertEMenuItem(MenuItem, menuItem, ULONG_MAX);
     }
 }
 
@@ -672,9 +703,9 @@ VOID PhLoadResourceEMenuItem(
     HMENU menu;
     HMENU realMenu;
 
-    menu = LoadMenu(InstanceHandle, Resource);
+    menu = PhLoadMenu(InstanceHandle, Resource);
 
-    if (SubMenuIndex != -1)
+    if (SubMenuIndex != ULONG_MAX)
         realMenu = GetSubMenu(menu, SubMenuIndex);
     else
         realMenu = menu;
@@ -848,7 +879,7 @@ VOID PhModifyEMenuItem(
     if (ModifyFlags & PH_EMENU_MODIFY_BITMAP)
     {
         if ((Item->Flags & PH_EMENU_BITMAP_OWNED) && Item->Bitmap)
-            DeleteObject(Item->Bitmap);
+            DeleteBitmap(Item->Bitmap);
 
         Item->Bitmap = Bitmap;
         Item->Flags &= ~PH_EMENU_BITMAP_OWNED;

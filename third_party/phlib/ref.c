@@ -47,7 +47,7 @@ PPH_CREATE_OBJECT_HOOK PhDbgCreateObjectHook = NULL;
 /**
  * Initializes the object manager module.
  */
-NTSTATUS PhRefInitialization(
+BOOLEAN PhRefInitialization(
     VOID
     )
 {
@@ -82,9 +82,9 @@ NTSTATUS PhRefInitialization(
     PhpAutoPoolTlsIndex = TlsAlloc();
 
     if (PhpAutoPoolTlsIndex == TLS_OUT_OF_INDEXES)
-        return STATUS_INSUFFICIENT_RESOURCES;
+        return FALSE;
 
-    return STATUS_SUCCESS;
+    return TRUE;
 }
 
 /**
@@ -242,6 +242,7 @@ VOID PhDereferenceObject(
     // Decrement the reference count.
     newRefCount = _InterlockedDecrement(&objectHeader->RefCount);
     ASSUME_ASSERT(newRefCount >= 0);
+    ASSUME_ASSERT(!(newRefCount < 0));
 
     // Free the object if it has 0 references.
     if (newRefCount == 0)
@@ -306,6 +307,40 @@ _May_raise_ VOID PhDereferenceObjectEx(
     {
         PhRaiseStatus(STATUS_INVALID_PARAMETER);
     }
+}
+
+/**
+ * References an array of objects.
+ *
+ * \param Objects An array of objects.
+ * \param NumberOfObjects The number of elements in \a Objects.
+ */
+VOID PhReferenceObjects(
+    _In_reads_(NumberOfObjects) PVOID *Objects,
+    _In_ ULONG NumberOfObjects
+    )
+{
+    ULONG i;
+
+    for (i = 0; i < NumberOfObjects; i++)
+        PhReferenceObject(Objects[i]);
+}
+
+/**
+ * Dereferences an array of objects.
+ *
+ * \param Objects An array of objects.
+ * \param NumberOfObjects The number of elements in \a Objects.
+ */
+VOID PhDereferenceObjects(
+    _In_reads_(NumberOfObjects) PVOID *Objects,
+    _In_ ULONG NumberOfObjects
+    )
+{
+    ULONG i;
+
+    for (i = 0; i < NumberOfObjects; i++)
+        PhDereferenceObject(Objects[i]);
 }
 
 /**
@@ -670,20 +705,12 @@ VOID PhDrainAutoPool(
     _In_ PPH_AUTO_POOL AutoPool
     )
 {
-    ULONG i;
-
-    for (i = 0; i < AutoPool->StaticCount; i++)
-        PhDereferenceObject(AutoPool->StaticObjects[i]);
-
+    PhDereferenceObjects(AutoPool->StaticObjects, AutoPool->StaticCount);
     AutoPool->StaticCount = 0;
 
     if (AutoPool->DynamicObjects)
     {
-        for (i = 0; i < AutoPool->DynamicCount; i++)
-        {
-            PhDereferenceObject(AutoPool->DynamicObjects[i]);
-        }
-
+        PhDereferenceObjects(AutoPool->DynamicObjects, AutoPool->DynamicCount);
         AutoPool->DynamicCount = 0;
 
         if (AutoPool->DynamicAllocated > PH_AUTO_POOL_DYNAMIC_BIG_SIZE)
