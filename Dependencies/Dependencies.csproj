@@ -77,7 +77,6 @@
 		<PlatformTarget>ARM64</PlatformTarget>
 		<ErrorReport>prompt</ErrorReport>
 		<CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-		<Prefer32Bit>true</Prefer32Bit>
 	</PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Appx|x86'">
     <OutputPath>$(SolutionDir)bin\$(Configuration)$(Platform)</OutputPath>
