@@ -4,7 +4,8 @@
       "commandName": "MsixPackage"
     },
     "DependenciesWAS (Unpackaged)": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "nativeDebugging": true
     }
   }
 }
