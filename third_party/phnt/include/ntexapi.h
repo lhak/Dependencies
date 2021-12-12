@@ -4640,7 +4640,7 @@ FORCEINLINE ULONGLONG NtGetTickCount64()
         if (tickCount.HighPart == (ULONG)USER_SHARED_DATA->TickCount.High2Time)
             break;
 
-        YieldProcessor();
+        //YieldProcessor();
     }
 
 #endif
@@ -4667,7 +4667,7 @@ FORCEINLINE ULONG NtGetTickCount()
         if (tickCount.HighPart == (ULONG)USER_SHARED_DATA->TickCount.High2Time)
             break;
 
-        YieldProcessor();
+        //YieldProcessor();
     }
 
     return (ULONG)((UInt32x32To64(tickCount.LowPart, USER_SHARED_DATA->TickCountMultiplier) >> 24) +

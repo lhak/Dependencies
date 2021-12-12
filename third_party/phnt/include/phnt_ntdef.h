@@ -97,7 +97,7 @@ typedef struct _LARGE_INTEGER_128
 // Functions
 
 #ifndef _WIN64
-#define FASTCALL __fastcall
+#define FASTCALL
 #else
 #define FASTCALL
 #endif

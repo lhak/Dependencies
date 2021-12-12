@@ -158,9 +158,6 @@
     <ClCompile Include="http.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="format_std.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="json.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -168,6 +165,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="bcd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="format_std.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
