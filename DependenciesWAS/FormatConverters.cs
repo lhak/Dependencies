@@ -30,6 +30,8 @@ namespace Dependencies
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
+            if (value == null)
+                return string.Empty;
             bool checksumCorrect = (bool)value;
             return checksumCorrect ? " (correct)" : " (incorrect)";
         }

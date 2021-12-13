@@ -13,7 +13,8 @@
 	SelectionMode="Extended"
 	IsReadOnly="True"
 	ItemsSource="{x:Bind SortedItems}"
-	Sorting="SortDataGrid">
+	Sorting="SortDataGrid"
+	Style="{StaticResource DataGridCompactStyle}">
 
 	<local:DataGridSort.Resources>
 		<local:StringFormatConverter x:Key="StringFormatConverter"/>

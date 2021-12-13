@@ -5,25 +5,47 @@
     xmlns:local="using:Dependencies"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    mc:Ignorable="d">
 
-	<Grid>
+	<Grid AllowDrop="True" DragEnter="RootGrid_DragEnter" Drop="RootGrid_Drop" Background="{StaticResource ApplicationPageBackgroundThemeBrush}">
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto"/>
 			<RowDefinition Height="*"/>
+			<RowDefinition Height="Auto"/>
 		</Grid.RowDefinitions>
 		<MenuBar>
 			<MenuBar.Items>
-				<MenuBarItem Title="File">
+				<MenuBarItem Title="File" AccessKey="F" >
 					<MenuBarItem.Items>
-						<MenuFlyoutItem x:Name="OpenItem" Text="Open" Click="OpenItem_Click"/>
+						<MenuFlyoutItem x:Name="OpenItem" Text="Open" Click="OpenItem_Click">
+							<MenuFlyoutItem.KeyboardAccelerators>
+								<KeyboardAccelerator Modifiers="Control" Key="O"/>
+							</MenuFlyoutItem.KeyboardAccelerators>
+						</MenuFlyoutItem>
 						<MenuFlyoutSeparator/>
+						<MenuFlyoutItem x:Name="ExitItem" Text="Exit" Click="ExitItem_Click">
+							<MenuFlyoutItem.KeyboardAccelerators>
+								<KeyboardAccelerator Modifiers="Control" Key="Q"/>
+							</MenuFlyoutItem.KeyboardAccelerators>
+						</MenuFlyoutItem>
 					</MenuBarItem.Items>
 
 				</MenuBarItem>
-				<MenuBarItem Title="View">
-
+				<MenuBarItem Title="View" AccessKey="V" >
+					<MenuBarItem.Items>
+						<ToggleMenuFlyoutItem x:Name="FullPathItem" AccessKey="F" Text="Full Paths" IsChecked="{x:Bind FullPathSetting, Mode=TwoWay}">
+							<ToggleMenuFlyoutItem.KeyboardAccelerators>
+								<KeyboardAccelerator Modifiers="None" Key="F9"/>
+							</ToggleMenuFlyoutItem.KeyboardAccelerators>
+						</ToggleMenuFlyoutItem>
+						<ToggleMenuFlyoutItem AccessKey="U" Text="Undecorate C++ Functions" IsChecked="{x:Bind UndecorateSetting, Mode=TwoWay }">
+							<ToggleMenuFlyoutItem.KeyboardAccelerators>
+								<KeyboardAccelerator Modifiers="None" Key="F10"/>
+							</ToggleMenuFlyoutItem.KeyboardAccelerators>
+						</ToggleMenuFlyoutItem>
+						<MenuFlyoutSeparator/>
+						<ToggleMenuFlyoutItem AccessKey="S" Text="Status Bar" IsChecked="{x:Bind ShowStatusBarSetting, Mode=TwoWay }"/>
+					</MenuBarItem.Items>
 				</MenuBarItem>
 				<MenuBarItem Title="Options">
 
@@ -32,8 +54,10 @@
 
 		</MenuBar>
 
-		<TabView x:Name="FileTabs" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsAddTabButtonVisible="False" Padding="4,4,0,0" TabCloseRequested="FileTabs_TabCloseRequested" TabItemsChanged="FileTabs_TabItemsChanged"  Background="#FF5C8F88">
-			
+		<Grid Grid.Row="1" Background="#FF5C8F88"/>
+
+		<TabView x:Name="FileTabs" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsAddTabButtonVisible="False" Padding="4,4,0,0" TabCloseRequested="FileTabs_TabCloseRequested" TabItemsChanged="FileTabs_TabItemsChanged" >
+
 		</TabView>
 
 		<Grid   Name="DefaultMessage"
@@ -62,5 +86,19 @@
                 or simply by dragging it into the application.
 			</TextBlock>
 		</Grid>
+
+		<InfoBar x:Name="AppStatusBar" 
+                   HorizontalContentAlignment="Stretch" 
+                   VerticalContentAlignment="Bottom" 
+                   Grid.Row="2" 
+                   MinHeight="20" 
+                   Margin="0" 
+                   VerticalAlignment="Bottom" IsClosable="False" IsOpen="True" Height="24" IsIconVisible="False" CornerRadius="0" BorderThickness="0,1,0,0" Background="{ThemeResource LayerFillColorDefaultBrush}"
+				   Visibility="{x:Bind ShowStatusBarSetting, Mode=OneWay}">
+			<!-- Visibility="{Binding Source={x:Static properties:Settings.Default}, Path=ShowStatusBar, Mode=OneWay, Converter={StaticResource BooleanToVisibility}}" -->
+			<InfoBar.Message>
+				"Welcome to Dependencies !"
+			</InfoBar.Message>
+		</InfoBar>
 	</Grid>
 </Page>

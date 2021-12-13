@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Navigation;
 using Microsoft.UI.Xaml.Shapes;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -26,7 +27,7 @@ namespace Dependencies
 	/// <summary>
 	/// Provides application-specific behavior to supplement the default Application class.
 	/// </summary>
-	public partial class App : Application
+	public partial class App : Application, INotifyPropertyChanged
 	{
 		/// <summary>
 		/// Initializes the singleton application object.  This is the first line of authored code
@@ -35,11 +36,35 @@ namespace Dependencies
 		public App()
 		{
 			this.InitializeComponent();
+			(Application.Current as App).PropertyChanged += App_PropertyChanged;
 		}
 
+		public string StatusBarMessage
+		{
+			get { return statusBarMessage; }
+			set
+			{
+				if (statusBarMessage != value)
+				{
+					statusBarMessage = value;
+					OnPropertyChanged("StatusBarMessage");
+				}
+			}
+		}
 
-		string StatusBarMessage;
+		public event PropertyChangedEventHandler PropertyChanged;
+		protected void OnPropertyChanged(string propertyName)
+		{
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+		}
 
+		private void App_PropertyChanged(object sender, PropertyChangedEventArgs e)
+		{
+			if (e.PropertyName == "StatusBarMessage" && mainWindow != null)
+			{
+				(mainWindow.Content as MainPage).SetStatusBarMessage(StatusBarMessage);
+			}
+		}
 		public PE LoadBinary(string path)
 		{
 			StatusBarMessage = String.Format("Loading module {0:s} ...", path);
@@ -99,13 +124,13 @@ namespace Dependencies
 			mainWindow.Activate();
 		}
 
-#if TODO
-		void AppExit()
+		public void AppExit()
 		{
-            BinaryCache.Instance.Unload();
+			Dependencies.Properties.Settings.Default.Save();
+			BinaryCache.Instance.Unload();
 		}
-#endif
 
 		private Window mainWindow;
+		private string statusBarMessage = "";
 	}
 }

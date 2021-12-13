@@ -32,6 +32,15 @@ namespace Dependencies
 			this.InitializeComponent();
 		}
 
+		private void Window_Closed(object sender, WindowEventArgs args)
+		{
+			(App.Current as App).AppExit();
+		}
+
+		public static MainWindow GetWindow()
+		{
+			return _mainWindow;
+		}
 
 		public static IntPtr GetWindowHandle()
 		{

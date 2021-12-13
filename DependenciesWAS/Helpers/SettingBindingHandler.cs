@@ -19,9 +19,7 @@ namespace Dependencies
 
         public SettingBindingHandler()
         {
-#if TODO
             Dependencies.Properties.Settings.Default.PropertyChanged += this.Handler_PropertyChanged;
-#endif
             Handlers = new List<EventHandlerInfo>();
         }
 
@@ -45,9 +43,7 @@ namespace Dependencies
         {
             foreach (EventHandlerInfo Handler in Handlers.FindAll(x => x.Property == e.PropertyName))
             {
-#if TODO
                 Handler.Handler(((bool)Dependencies.Properties.Settings.Default[Handler.Settings]));
-#endif
                 OnPropertyChanged(Handler.MemberBindingName);
             }
         }

@@ -22,6 +22,45 @@ using Windows.Foundation.Collections;
 
 namespace Dependencies
 {
+	public class ModuleCacheKey
+	{
+		public ModuleCacheKey(string _Name, string _Filepath, ModuleFlag _Flags = ModuleFlag.NoFlag)
+		{
+			Name = _Name;
+			Filepath = _Filepath;
+			Flags = _Flags;
+		}
+
+		public ModuleCacheKey(ImportContext import)
+		{
+			Name = import.ModuleName;
+			Filepath = import.PeFilePath;
+			Flags = import.Flags;
+		}
+
+		// mandatory since ModuleCacheKey is used as a dictionnary key
+		public override int GetHashCode()
+		{
+			int hashcode = Name.GetHashCode() ^ Flags.GetHashCode();
+
+			if (Filepath != null)
+			{
+				hashcode ^= Filepath.GetHashCode();
+			}
+
+			return hashcode;
+		}
+
+		public string Name;
+		public string Filepath;
+		public ModuleFlag Flags;
+	}
+
+	public class ModulesCache : Dictionary<ModuleCacheKey, DisplayModuleInfo>
+	{
+
+	}
+
 	public sealed partial class DependencyModuleList : DataGridSort
 	{
 		public RelayCommand DoFindModuleInTreeCommand
@@ -47,7 +86,6 @@ namespace Dependencies
 		public DependencyModuleList()
 		{
 			SortedItems = new Toolkit.Uwp.UI.AdvancedCollectionView(Items, true);
-
 			this.InitializeComponent();
 		}
 

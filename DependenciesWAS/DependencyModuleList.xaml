@@ -6,24 +6,23 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	xmlns:toolkit="using:CommunityToolkit.WinUI.UI.Controls"
-    mc:Ignorable="d"
+	mc:Ignorable="d"
 	HeadersVisibility="Column"
     AutoGenerateColumns="False"
 	CanUserSortColumns="True"
 	SelectionMode="Extended"
 	IsReadOnly="True"
 	ItemsSource="{x:Bind SortedItems}"
-	Sorting="SortDataGrid">
+	Sorting="SortDataGrid"
+	Style="{StaticResource DataGridCompactStyle}">
 
 	<toolkit:DataGrid.Resources>
 		<local:ImageToHeaderConverter x:Key="img"/>
 		<local:OverlayImageToHeaderConverter x:Key="img_overlay"/>
 		<local:StringFormatConverter x:Key="StringFormatConverter"/>
 		<local:ChecksumConverter x:Key="ChecksumConverter"/>
-		<Style TargetType="toolkit:DataGridCell">
-			<Setter Property="FontSize" Value="12"/>
-			<Setter Property="MinHeight" Value="20"/>
-		</Style>
+
+
 	</toolkit:DataGrid.Resources>
 	<local:DataGridSort.Columns>
 		<toolkit:DataGridTemplateColumn Header="" Width="50">
