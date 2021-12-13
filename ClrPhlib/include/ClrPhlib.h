@@ -17,6 +17,7 @@ namespace Dependencies {
 		{
 			x86,
 			x64,
+            ARM64,
 			WOW64
 		};
 
