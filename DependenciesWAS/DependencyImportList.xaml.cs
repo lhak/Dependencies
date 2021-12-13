@@ -32,30 +32,36 @@ namespace Dependencies
 
 		public void SetImports(string ModuleFilepath, List<PeExport> Exports, List<PeImportDll> ParentImports, PhSymbolProvider SymPrv, DependencyWindow Dependencies)
 		{
-			this.Items.Clear();
-
-			foreach (PeImportDll DllImport in ParentImports)
+			using (SortedItems.DeferRefresh())
 			{
-				foreach (var Import in BinaryCache.LookupImports(DllImport, Exports))
+				this.Items.Clear();
+
+				foreach (PeImportDll DllImport in ParentImports)
 				{
-					this.Items.Add(new DisplayPeImport(Import.Item1, SymPrv, ModuleFilepath, Import.Item2));
+					foreach (var Import in BinaryCache.LookupImports(DllImport, Exports))
+					{
+						this.Items.Add(new DisplayPeImport(Import.Item1, SymPrv, ModuleFilepath, Import.Item2));
+					}
 				}
 			}
 		}
 
 		public void SetRootImports(List<PeImportDll> Imports, PhSymbolProvider SymPrv, DependencyWindow Dependencies)
 		{
-			this.Items.Clear();
-
-			foreach (PeImportDll DllImport in Imports)
+			using (SortedItems.DeferRefresh())
 			{
+				this.Items.Clear();
 
-				PE ModuleImport = Dependencies.LoadImport(DllImport.Name, null, DllImport.IsDelayLoad());
-				string ModuleFilepath = (ModuleImport != null) ? ModuleImport.Filepath : null;
-
-				foreach (var Import in BinaryCache.LookupImports(DllImport, ModuleFilepath))
+				foreach (PeImportDll DllImport in Imports)
 				{
-					this.Items.Add(new DisplayPeImport(Import.Item1, SymPrv, ModuleFilepath, Import.Item2));
+
+					PE ModuleImport = Dependencies.LoadImport(DllImport.Name, null, DllImport.IsDelayLoad());
+					string ModuleFilepath = (ModuleImport != null) ? ModuleImport.Filepath : null;
+
+					foreach (var Import in BinaryCache.LookupImports(DllImport, ModuleFilepath))
+					{
+						this.Items.Add(new DisplayPeImport(Import.Item1, SymPrv, ModuleFilepath, Import.Item2));
+					}
 				}
 			}
 		}

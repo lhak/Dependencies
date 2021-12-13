@@ -32,11 +32,14 @@ namespace Dependencies
 
 		public void SetExports(List<PeExport> Exports, PhSymbolProvider SymPrv)
 		{
-			this.Items.Clear();
-
-			foreach (PeExport Export in Exports)
+			using (SortedItems.DeferRefresh())
 			{
-				this.Items.Add(new DisplayPeExport(Export, SymPrv));
+				this.Items.Clear();
+
+				foreach (PeExport Export in Exports)
+				{
+					this.Items.Add(new DisplayPeExport(Export, SymPrv));
+				}
 			}
 		}
 
