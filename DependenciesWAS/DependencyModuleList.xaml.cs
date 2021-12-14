@@ -87,6 +87,7 @@ namespace Dependencies
 		{
 			SortedItems = new Toolkit.Uwp.UI.AdvancedCollectionView(Items, true);
 			this.InitializeComponent();
+			this.RowStyle = DataGridRowStyleWithContextMenu;
 		}
 
 		public void AddModule(DisplayModuleInfo NewModule)
@@ -96,6 +97,16 @@ namespace Dependencies
 			NewModule.ConfigureSearchOrderCommand = ConfigureSearchOrderCommand;
 
 			Items.Add(NewModule);
+		}
+
+		private void ItemContextMenu_Opening(object sender, object e)
+		{
+			// Select item when context menu is opened
+			MenuFlyout flyout = sender as MenuFlyout;
+			if (flyout != null && flyout.Target is DataGridRow row)
+			{
+				this.SelectedItem = row.DataContext;
+			}
 		}
 
 		public ObservableCollection<DisplayModuleInfo> Items = new ObservableCollection<DisplayModuleInfo>();	

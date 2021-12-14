@@ -1291,6 +1291,124 @@ namespace Dependencies
 			return ResolvedModule.Item2;
 		}
 
+		/// <summary>
+		/// Reentrant version of Collapse/Expand Node
+		/// </summary>
+		/// <param name="Item"></param>
+		/// <param name="ExpandNode"></param>
+		private void CollapseOrExpandAllNodes(ModuleTreeViewItem Item, bool ExpandNode)
+		{
+			Item.IsExpanded = ExpandNode;
+			foreach (ModuleTreeViewItem ChildItem in Item.Children)
+			{
+				CollapseOrExpandAllNodes(ChildItem, ExpandNode);
+			}
+		}
+		
+		private void ExpandAllNodes_Executed(XamlUICommand sender, ExecuteRequestedEventArgs args)
+		{
+			// Expanding all nodes tends to slow down the application (massive allocations for node DataContext)
+			// TODO : Reduce memory pressure by storing tree nodes data context in a HashSet and find an async trick
+			// to improve the command responsiveness.
+			object TreeNode = (args.Parameter as TreeViewItem).DataContext;
+
+			CollapseOrExpandAllNodes((TreeNode as ModuleTreeViewItem), true);
+		}
+
+		private void CollapseAllNodes_Executed(XamlUICommand sender, ExecuteRequestedEventArgs args)
+		{
+			object TreeNode = (args.Parameter as TreeViewItem).DataContext;
+			CollapseOrExpandAllNodes((TreeNode as ModuleTreeViewItem), false);
+		}
+		
+		private void DoFindModuleInList_Executed(XamlUICommand sender, ExecuteRequestedEventArgs args)
+		{
+			ModuleTreeViewItem Source = DllTreeView.SelectedItem as ModuleTreeViewItem;
+			
+			if (args.Parameter is TreeViewItem)
+				Source = (args.Parameter as TreeViewItem).DataContext as ModuleTreeViewItem;
+
+			if (Source == null)
+				return;
+
+			String SelectedModuleName = Source.GetTreeNodeHeaderName(Dependencies.Properties.Settings.Default.FullPath);
+
+			foreach (DisplayModuleInfo item in this.ModulesList.Items)
+			{
+				if (item.ModuleName == SelectedModuleName)
+				{
+
+					this.ModulesList.SelectedItem = item;
+					this.ModulesList.ScrollIntoView(item, null);
+					return;
+				}
+			}
+		}
+
+		private void ExpandAllParentNode(ModuleTreeViewItem Item)
+		{
+			if (Item != null)
+			{
+				ExpandAllParentNode(Item.Parent as ModuleTreeViewItem);
+				Item.IsExpanded = true;
+			}
+		}
+
+		/// <summary>
+		/// Reentrant version of Collapse/Expand Node
+		/// </summary>
+		/// <param name="Item"></param>
+		/// <param name="ExpandNode"></param>
+		private ModuleTreeViewItem FindModuleInTree(ModuleTreeViewItem Item, DisplayModuleInfo Module, bool Highlight = false)
+		{
+
+			if (Item.GetTreeNodeHeaderName(Dependencies.Properties.Settings.Default.FullPath) == Module.ModuleName)
+			{
+				if (Highlight)
+				{
+					ExpandAllParentNode(Item.Parent as ModuleTreeViewItem);
+					DllTreeView.SelectedItem = Item;
+
+#if TODO
+					Item.BringIntoView();
+					Item.Focus();
+#endif
+				}
+
+				return Item;
+			}
+
+			// BFS style search -> return the first matching node with the lowest "depth"
+			foreach (ModuleTreeViewItem ChildItem in Item.Children)
+			{
+				if (ChildItem.GetTreeNodeHeaderName(Dependencies.Properties.Settings.Default.FullPath) == Module.ModuleName)
+				{
+					if (Highlight)
+					{
+						ExpandAllParentNode(Item);
+						DllTreeView.SelectedItem = ChildItem;
+#if TODO
+						ChildItem.IsSelected = true;
+						ChildItem.BringIntoView();
+						ChildItem.Focus();
+#endif
+					}
+
+					return Item;
+				}
+			}
+
+			foreach (ModuleTreeViewItem ChildItem in Item.Children)
+			{
+				ModuleTreeViewItem matchingItem = FindModuleInTree(ChildItem, Module, Highlight);
+
+				// early exit as soon as we find a matching node
+				if (matchingItem != null)
+					return matchingItem;
+			}
+
+			return null;
+		}
 
 		public RelayCommand DoFindModuleInTree
 		{
@@ -1300,9 +1418,7 @@ namespace Dependencies
 				{
 					DisplayModuleInfo SelectedModule = (param as DisplayModuleInfo);
 					ModuleTreeViewItem TreeRootItem = this.DllTreeView.RootNodes[0] as ModuleTreeViewItem;
-#if TODO
                     FindModuleInTree(TreeRootItem, SelectedModule, true);
-#endif
 				});
 			}
 		}
@@ -1320,7 +1436,7 @@ namespace Dependencies
 				});
 			}
 		}
-		#endregion // Commands 
+#endregion // Commands 
 
 		private void TreeViewItem_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
 		{

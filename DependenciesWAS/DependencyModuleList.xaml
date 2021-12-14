@@ -14,7 +14,8 @@
 	IsReadOnly="True"
 	ItemsSource="{x:Bind SortedItems}"
 	Sorting="SortDataGrid"
-	Style="{StaticResource DataGridCompactStyle}">
+	Style="{StaticResource DataGridCompactStyle}"
+	ClipboardCopyMode="None">
 
 	<toolkit:DataGrid.Resources>
 		<local:ImageToHeaderConverter x:Key="img"/>
@@ -23,6 +24,15 @@
 		<local:ChecksumConverter x:Key="ChecksumConverter"/>
 
 
+		<MenuFlyout x:Name="ItemContextMenu" Opening="ItemContextMenu_Opening">
+			<MenuFlyoutItem Text="Highlight Matching Module In Tree" Command="{Binding DoFindModuleInTreeCommand}" CommandParameter ="{Binding}"/>
+			<MenuFlyoutSeparator/>
+			<MenuFlyoutItem Text="Copy module name" Command="{Binding CopyValue}" CommandParameter ="{Binding ModuleName}"/>
+		</MenuFlyout>
+
+		<Style x:Name="DataGridRowStyleWithContextMenu" BasedOn="{StaticResource DataGridCompactRowStyle}" TargetType="toolkit:DataGridRow">
+			<Setter Property="toolkit:DataGridRow.ContextFlyout" Value="{StaticResource ItemContextMenu}"/>
+		</Style>
 	</toolkit:DataGrid.Resources>
 	<local:DataGridSort.Columns>
 		<toolkit:DataGridTemplateColumn Header="" Width="50">

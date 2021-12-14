@@ -7,15 +7,16 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-	<Grid AllowDrop="True" DragEnter="RootGrid_DragEnter" Drop="RootGrid_Drop" Background="{StaticResource ApplicationPageBackgroundThemeBrush}">
+	<Grid AllowDrop="True" DragEnter="RootGrid_DragEnter" Drop="RootGrid_Drop">
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto"/>
 			<RowDefinition Height="*"/>
 			<RowDefinition Height="Auto"/>
 		</Grid.RowDefinitions>
-		<MenuBar>
+		<MenuBar Padding="4,0,0,0">
+			
 			<MenuBar.Items>
-				<MenuBarItem Title="File" AccessKey="F" >
+				<MenuBarItem Title="File" AccessKey="F">
 					<MenuBarItem.Items>
 						<MenuFlyoutItem x:Name="OpenItem" Text="Open" Click="OpenItem_Click">
 							<MenuFlyoutItem.KeyboardAccelerators>
@@ -57,7 +58,9 @@
 		<Grid Grid.Row="1" Background="#FF5C8F88"/>
 
 		<TabView x:Name="FileTabs" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsAddTabButtonVisible="False" Padding="4,4,0,0" TabCloseRequested="FileTabs_TabCloseRequested" TabItemsChanged="FileTabs_TabItemsChanged" >
-
+			<TabView.Resources>
+				<CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius> <!--TODO: Remove when rendering issue fixed -->
+			</TabView.Resources>
 		</TabView>
 
 		<Grid   Name="DefaultMessage"

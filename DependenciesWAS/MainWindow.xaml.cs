@@ -1,4 +1,6 @@
-﻿using Microsoft.UI.Xaml;
+﻿using Microsoft.UI;
+using Microsoft.UI.Windowing;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Data;
@@ -30,6 +32,20 @@ namespace Dependencies
 			_windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
 
 			this.InitializeComponent();
+
+			WindowId myWndId = Win32Interop.GetWindowIdFromWindow(MainWindow.GetWindowHandle());
+
+			AppWindow appWindow = AppWindow.GetFromWindowId(myWndId);
+
+			if (AppWindowTitleBar.IsCustomizationSupported()) // Check for Windows 11
+			{
+				appWindow.TitleBar.ExtendsContentIntoTitleBar = true;
+				appWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
+				appWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
+				RootPage.Margin = new Thickness(0, 28, 0, 0);
+				TitleBar.Visibility = Visibility.Visible;
+			}
+			appWindow.SetIcon("Dependencies.ico");
 		}
 
 		private void Window_Closed(object sender, WindowEventArgs args)
@@ -45,6 +61,17 @@ namespace Dependencies
 		public static IntPtr GetWindowHandle()
 		{
 			return _windowHandle;
+		}
+
+		public void SetStatusBarMessage(string message)
+		{
+			RootPage.SetStatusBarMessage(message);
+		}
+
+		public void SetWindowTitle(string title)
+		{
+			this.Title = title;
+			TitleBarText.Text = title;
 		}
 
 		private static MainWindow _mainWindow;

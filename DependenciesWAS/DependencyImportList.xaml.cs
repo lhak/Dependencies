@@ -13,6 +13,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 
@@ -28,6 +29,7 @@ namespace Dependencies
 			SortedItems = new Toolkit.Uwp.UI.AdvancedCollectionView(Items, true);
 
 			this.InitializeComponent();
+			this.RowStyle = DataGridRowStyleWithContextMenu;
 		}
 
 		public void SetImports(string ModuleFilepath, List<PeExport> Exports, List<PeImportDll> ParentImports, PhSymbolProvider SymPrv, DependencyWindow Dependencies)
@@ -65,9 +67,49 @@ namespace Dependencies
 				}
 			}
 		}
+		private void ImportListCopySelectedValues(XamlUICommand sender, ExecuteRequestedEventArgs args)
+		{
+			if (this.SelectedItems.Count == 0)
+				return;
 
+			List<DisplayPeImport> selectedImports = new List<DisplayPeImport>();
+			foreach (var import in this.SelectedItems)
+			{
+				selectedImports.Add((import as DisplayPeImport));
+			}
+
+			string SelectedValues = String.Join("\n", selectedImports.Select(imp => imp.ToString()));
+
+			DataPackage dataPackage = new DataPackage();
+			dataPackage.RequestedOperation = DataPackageOperation.Copy;
+			dataPackage.SetText(SelectedValues);
+
+
+			// sometimes another process has "opened" the clipboard, so we need to wait for it
+			try
+			{
+				Clipboard.SetContent(dataPackage);
+				Clipboard.Flush();
+				return;
+			}
+			catch { }
+		}
+
+		private void ItemContextMenu_Opening(object sender, object e)
+		{
+			// Select item when context menu is opened
+			MenuFlyout flyout = sender as MenuFlyout;
+			if (flyout != null && flyout.Target is DataGridRow row)
+			{
+				this.SelectedItem = row.DataContext;
+			}
+		}
 
 		public ObservableCollection<DisplayPeImport> Items = new ObservableCollection<DisplayPeImport>();
 
+		private void XamlUICommand_CanExecuteRequested(XamlUICommand sender, CanExecuteRequestedEventArgs args)
+		{
+			args.CanExecute = false;
+		}
 	}
 }

@@ -5,7 +5,7 @@
     },
     "DependenciesWAS (Unpackaged)": {
       "commandName": "Project",
-      "nativeDebugging": true
+      "nativeDebugging": false
     }
   }
 }

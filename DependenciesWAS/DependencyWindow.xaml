@@ -11,6 +11,15 @@
 	<TabViewItem.Resources>
 		<local:ImageToHeaderConverter x:Key="img"/>
 		<local:OverlayImageToHeaderConverter x:Key="img_overlay"/>
+		<XamlUICommand x:Key="DoFindModuleInList" Label="Highlight Matching Module In List" ExecuteRequested="DoFindModuleInList_Executed">
+			<XamlUICommand.KeyboardAccelerators>
+				<KeyboardAccelerator Modifiers="Control" Key="M"/>
+			</XamlUICommand.KeyboardAccelerators>
+		</XamlUICommand>
+		<XamlUICommand x:Key="DoExpandAllNodes" Label="Expand All" ExecuteRequested="ExpandAllNodes_Executed"/>
+		<XamlUICommand x:Key="DoCollapseAllNodes" Label="Collapse All" ExecuteRequested="CollapseAllNodes_Executed"/>
+
+
 	</TabViewItem.Resources>
 
 	<Grid x:Name="ResizeElemGrid" Margin="0,0,0,0" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
@@ -35,13 +44,38 @@
                     VerticalContentAlignment="Stretch" 
                     Padding="0" Expanding="DllTreeView_Expanding" ItemInvoked="DllTreeView_ItemInvoked">
 				<TreeView.Resources>
+
+					<MenuFlyout x:Name="TreeItemContextMenu">
+						<MenuFlyoutItem Command="{StaticResource DoFindModuleInList}" CommandParameter="{x:Bind TreeItemContextMenu.Target, Mode=OneWay}"/>
+						<MenuFlyoutSeparator/>
+						<MenuFlyoutItem Command="{StaticResource DoExpandAllNodes}" CommandParameter="{x:Bind TreeItemContextMenu.Target, Mode=OneWay}"/>
+						<MenuFlyoutItem Command="{StaticResource DoCollapseAllNodes}" CommandParameter="{x:Bind TreeItemContextMenu.Target, Mode=OneWay}"/>
+
+						<!-- TODO
+				
+
+						<MenuItem Header="View Module in separate application" 
+                                Command="{Binding  Path=OpenNewAppCommand, RelativeSource={RelativeSource AncestorLevel=1,AncestorType=TreeViewItem,Mode=FindAncestor}}"
+                                CommandParameter ="{Binding DataContext, RelativeSource={RelativeSource AncestorLevel=1,AncestorType=Grid,Mode=FindAncestor}}"
+                                InputGestureText="Alt+Enter"  
+                                IsEnabled="True" />
+
+						<MenuItem Header="View Module in Peviewer" 
+                                Command="{Binding  Path=OpenPeviewerCommand, RelativeSource={RelativeSource AncestorLevel=1,AncestorType=TreeViewItem,Mode=FindAncestor}}"
+                                CommandParameter ="{Binding DataContext, RelativeSource={RelativeSource AncestorLevel=1,AncestorType=Grid,Mode=FindAncestor}}"
+                                InputGestureText="Alt+Enter"  
+                                IsEnabled="True" />-->
+
+						<!--AncestorType=Grid To get the current context feel like magic to me -->
+					</MenuFlyout>
+
 					<Thickness x:Key="TreeViewItemPresenterMargin">4,0</Thickness>
 					<Thickness x:Key="TreeViewItemPresenterPadding">0,0,0,0</Thickness>
 					<x:Double x:Key="TreeViewItemMinHeight">20</x:Double>
 				</TreeView.Resources>
 				<TreeView.ItemTemplate>
 					<DataTemplate x:DataType="local:ModuleTreeViewItem">
-						<TreeViewItem DoubleTapped="TreeViewItem_DoubleTapped">
+						<TreeViewItem DoubleTapped="TreeViewItem_DoubleTapped" ContextFlyout="{StaticResource TreeItemContextMenu}">
 							<Grid Margin="0,0,5,0">
 								<Grid.ColumnDefinitions>
 									<ColumnDefinition Width="24"/>
@@ -53,8 +87,8 @@
 								<!--System icon for the current module-->
 								<Image Grid.Column="0" Width="16" Height="16" Margin="0,0,0,0" 
                                                Source="{x:Bind Path=ModuleFilePath, Converter={StaticResource img} }">
-                                </Image>
-						
+								</Image>
+
 								<!--Overlay for additional flags (delay import, apiset, etc.)-->
 								<Image Grid.Column="0" Width="16" Height="16" Margin="4,0,0,0" Source="{x:Bind Path=Flags, Converter={StaticResource img_overlay} }"></Image>
 
@@ -107,7 +141,7 @@
 						</TreeViewItem>
 					</DataTemplate>
 				</TreeView.ItemTemplate>
-			
+
 			</TreeView>
 
 			<toolkit:GridSplitter Grid.Column="1" MinWidth="8"

@@ -5,6 +5,7 @@ using System.IO;
 using System.ComponentModel;
 
 using Dependencies.ClrPh;
+using Windows.ApplicationModel.DataTransfer;
 
 [Flags]
 public enum PeTypes
@@ -460,16 +461,19 @@ namespace Dependencies
                         {
                             return;
                         }
-#if TODO
-                        Clipboard.Clear();
+
+
+                        DataPackage dataPackage = new DataPackage();
+                        dataPackage.RequestedOperation = DataPackageOperation.Copy;
+                        dataPackage.SetText(param.ToString());
 
                         try
                         {
 
-                            Clipboard.SetText((string)param, TextDataFormat.Text);
+                            Clipboard.SetContent(dataPackage);
+                            Clipboard.Flush();
                         }
                         catch { }
-#endif
                     });
                 }
 

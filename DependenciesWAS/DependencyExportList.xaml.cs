@@ -13,6 +13,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 
@@ -28,6 +29,7 @@ namespace Dependencies
 			SortedItems = new Toolkit.Uwp.UI.AdvancedCollectionView(Items, true);
 
 			this.InitializeComponent();
+			this.RowStyle = DataGridRowStyleWithContextMenu;
 		}
 
 		public void SetExports(List<PeExport> Exports, PhSymbolProvider SymPrv)
@@ -43,9 +45,42 @@ namespace Dependencies
 			}
 		}
 
+		private void ExportListCopySelectedValues(XamlUICommand sender, ExecuteRequestedEventArgs args)
+		{
+			if (this.SelectedItems.Count == 0)
+				return;
+
+			List<DisplayPeExport> selectedExports = new List<DisplayPeExport>();
+			foreach (var import in this.SelectedItems)
+			{
+				selectedExports.Add((import as DisplayPeExport));
+			}
+
+			string SelectedValues = String.Join("\n", selectedExports.Select(exp => exp.ToString()));
+
+			DataPackage dataPackage = new DataPackage();
+			dataPackage.RequestedOperation = DataPackageOperation.Copy;
+			dataPackage.SetText(SelectedValues);
+
+			// sometimes another process has "opened" the clipboard, so we need to wait for it
+			try
+			{
+				Clipboard.SetContent(dataPackage);
+				Clipboard.Flush();
+				return;
+			}
+			catch { }
+		}
+		private void ItemContextMenu_Opening(object sender, object e)
+		{
+			// Select item when context menu is opened
+			MenuFlyout flyout = sender as MenuFlyout;
+			if (flyout != null && flyout.Target is DataGridRow row)
+			{
+				this.SelectedItem = row.DataContext;
+			}
+		}
 
 		public ObservableCollection<DisplayPeExport> Items = new ObservableCollection<DisplayPeExport>();
 	}
-
-
 }

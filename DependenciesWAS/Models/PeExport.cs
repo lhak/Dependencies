@@ -5,6 +5,7 @@ using System.Collections.Generic;
 
 using Dependencies;
 using Dependencies.ClrPh;
+using Microsoft.UI.Xaml.Media.Imaging;
 
 public class DisplayPeExport : SettingBindingHandler
 {
@@ -46,7 +47,16 @@ public class DisplayPeExport : SettingBindingHandler
 		return String.Join(", ", members.ToArray());
 	}
 
-	public string IconUri
+    // WinUI uses list view virtualization. To improve performance use a cache
+    public BitmapImage CachedIcon
+    {
+        get
+        {
+            return (App.Current as App).GetCachedIcon(IconUri);
+        }
+    }
+
+    public string IconUri
     {
         get
         {
