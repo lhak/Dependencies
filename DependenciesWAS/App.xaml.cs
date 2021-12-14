@@ -132,7 +132,7 @@ namespace Dependencies
 					mainWindow.SetWindowTitle("Dependencies (x64)");
 					break;
 				case CLRPH_ARCH.ARM64:
-					mainWindow.Title = "Dependencies (ARM64)";
+					mainWindow.SetWindowTitle("Dependencies (ARM64)");
 					break;
 				case CLRPH_ARCH.WOW64:
 					mainWindow.SetWindowTitle("Dependencies (WoW64)");
