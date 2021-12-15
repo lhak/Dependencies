@@ -19,7 +19,7 @@ namespace Dependencies
 	/// that returns a 32x32 or 16x16 System.Drawing.Icon depending on which function you call
 	/// either GetSmallIcon(string fileName) or GetLargeIcon(string fileName)
 	/// </summary>
-#if TODO
+#if REMOVED
 
     public static class ShellIcon
     {
@@ -163,46 +163,41 @@ namespace Dependencies
 		{
 			ModuleFlag Flags = (ModuleFlag)value;
 
+			string iconFile = String.Empty;
+
 			// ext-ms api are considered optional
 			if (((Flags & ModuleFlag.NotFound) != 0) && ((Flags & ModuleFlag.ApiSetExt) == 0))
 			{
-				return "Images/InvalidOverlay.png";
+				iconFile = "Images/InvalidOverlay.png";
 			}
 
 			bool DelayLoadModule = (Flags & ModuleFlag.DelayLoad) != 0;
 			if (DelayLoadModule)
 			{
-				return "Images/HourglassOverlay.png";
+				iconFile = "Images/HourglassOverlay.png";
 			}
 
 			// How to handle delay-load + missing import?
 			if ((Flags & ModuleFlag.MissingImports) != 0)
 			{
-				return "Images/InvalidOverlay.png";
+				iconFile = "Images/InvalidOverlay.png";
 			}
 
 			bool ClrAssembly = (Flags & ModuleFlag.ClrReference) != 0;
 			if (ClrAssembly)
 			{
-				return "Images/ReferenceOverlay.png";
+				iconFile = "Images/ReferenceOverlay.png";
 			}
+
+			if(!string.IsNullOrEmpty(iconFile))
+				return (App.Current as App).GetCachedIcon(iconFile);
 
 			return null;
 		}
 
 		public object Convert(object value, Type targetType, object parameter, string culture)
 		{
-			string imageFile = GetImageFile(value, targetType, parameter, culture) as string;
-
-
-			if (imageFile == null)
-				return null;
-
-			BitmapImage bitmapImage = new BitmapImage();
-			Uri uri = new Uri("ms-appx:///" + imageFile);
-			bitmapImage.UriSource = uri;
-
-			return bitmapImage;
+			return GetImageFile(value, targetType, parameter, culture);
 		}
 
 		public object ConvertBack(object value, Type targetType, object parameter, string culture)

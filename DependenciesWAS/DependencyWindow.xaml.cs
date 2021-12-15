@@ -1,5 +1,6 @@
 ﻿using Dependencies;
 using Dependencies.ClrPh;
+using Dependencies.Toolkit.Uwp.Helpers;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -210,14 +211,14 @@ namespace Dependencies
 		{
 			_importsVerified = false;
 			_Parent = null;
-			Dependencies.Properties.Settings.Default.PropertyChanged += this.ModuleTreeViewItem_PropertyChanged;
+			RegisterPropertyChangedHandler();
 		}
 
 		public ModuleTreeViewItem(ModuleTreeViewItem Parent)
 		{
 			_importsVerified = false;
 			_Parent = Parent;
-			Dependencies.Properties.Settings.Default.PropertyChanged += this.ModuleTreeViewItem_PropertyChanged;
+			RegisterPropertyChangedHandler();
 		}
 
 		public ModuleTreeViewItem(ModuleTreeViewItem Other, ModuleTreeViewItem Parent)
@@ -225,7 +226,22 @@ namespace Dependencies
 			_importsVerified = false;
 			_Parent = Parent;
 			this.DataContext = new DependencyNodeContext((DependencyNodeContext)Other.DataContext);
-			Dependencies.Properties.Settings.Default.PropertyChanged += this.ModuleTreeViewItem_PropertyChanged;
+			RegisterPropertyChangedHandler();
+		}
+
+		void RegisterPropertyChangedHandler()
+		{
+			// Use weak event listener here to avoid memory leaks
+			WeakEventListener<ModuleTreeViewItem, object, PropertyChangedEventArgs> propertyChangedWeakEventListener =
+					   new WeakEventListener<ModuleTreeViewItem, object, PropertyChangedEventArgs>(this)
+					   {
+						   // Call the actual collection changed event
+						   OnEventAction = (source, changed, args) => source.ModuleTreeViewItem_PropertyChanged(source, args),
+
+						   // The source doesn't exist anymore
+						   OnDetachAction = (listener) => Dependencies.Properties.Settings.Default.PropertyChanged -= listener.OnEvent
+					   };// Use weak event listener here to avoid memory leaks
+			Dependencies.Properties.Settings.Default.PropertyChanged += propertyChangedWeakEventListener.OnEvent;
 		}
 
 		#region PropertyEventHandlers 
@@ -498,6 +514,12 @@ namespace Dependencies
 			}
 		}
 
+		// Add the event handler here instead of the DependencyWindow class to avoid memory leaks
+		public void DoubleTappedEventHandler(object sender, DoubleTappedRoutedEventArgs e)
+		{
+			IsExpanded = !IsExpanded;
+		}
+
 		#endregion // Commands 
 
 		private RelayCommand _OpenPeviewerCommand;
@@ -547,27 +569,23 @@ namespace Dependencies
 		{
 			if (!NativeFile.Exists(this.Filename))
 			{
-#if TODO
                 MessageBox.Show(
                     String.Format("{0:s} is not present on the disk", this.Filename),
                     "Invalid PE",
                     MessageBoxButton.OK
                 );
-#endif
 				return;
 			}
 
 			this.Pe = (Application.Current as App).LoadBinary(this.Filename);
 			if (this.Pe == null || !this.Pe.LoadSuccessful)
 			{
-#if TODO
 
                 MessageBox.Show(
                     String.Format("{0:s} is not a valid PE-COFF file", this.Filename),
                     "Invalid PE",
                     MessageBoxButton.OK
                 );
-#endif
 				return;
 			}
 
@@ -677,12 +695,10 @@ namespace Dependencies
 			{
 				if (!this._DisplayWarning)
 				{
-#if TODO
                     MessageBoxResult result = MessageBox.Show(
                     "This binary use the App-V containerization technology which fiddle with search directories and PATH env in ways Dependencies can't handle.\n\nFollowing results are probably not quite exact.",
                     "App-V ISV disclaimer"
                     );
-#endif
 					this._DisplayWarning = true; // prevent the same warning window to popup several times
 				}
 
@@ -1172,9 +1188,7 @@ namespace Dependencies
 			if (SelectedModule.HasErrors)
 			{
 				// TODO : do a proper refresh instead of asking the user to do it
-#if TODO
-                System.Windows.MessageBox.Show(String.Format("We could not find {0:s} file on the disk anymore, please fix this problem and refresh the window via F5", SelectedModule.Filepath));
-#endif
+                MessageBox.Show(String.Format("We could not find {0:s} file on the disk anymore, please fix this problem and refresh the window via F5", SelectedModule.Filepath));
 			}
 
 			// Root Item : no parent
@@ -1437,13 +1451,6 @@ namespace Dependencies
 			}
 		}
 #endregion // Commands 
-
-		private void TreeViewItem_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
-		{
-			TreeViewItem item = sender as TreeViewItem;
-			if (item != null)
-				item.IsExpanded = !item.IsExpanded;
-		}
 	}
 
 }

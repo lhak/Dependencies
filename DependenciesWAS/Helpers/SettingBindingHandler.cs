@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Collections.Generic;
+using Dependencies.Toolkit.Uwp.Helpers;
 
 namespace Dependencies
 {
@@ -19,7 +20,18 @@ namespace Dependencies
 
         public SettingBindingHandler()
         {
-            Dependencies.Properties.Settings.Default.PropertyChanged += this.Handler_PropertyChanged;
+			// Use weak event listener here to avoid memory leaks
+			WeakEventListener<SettingBindingHandler, object, PropertyChangedEventArgs> propertyChangedWeakEventListener =
+                       new WeakEventListener<SettingBindingHandler, object, PropertyChangedEventArgs>(this)
+                       {
+                            // Call the actual collection changed event
+                            OnEventAction = (source, changed, arg3) => source.Handler_PropertyChanged(source, arg3),
+
+                            // The source doesn't exist anymore
+                            OnDetachAction = (listener) => Dependencies.Properties.Settings.Default.PropertyChanged -= listener.OnEvent
+                       };
+
+            Dependencies.Properties.Settings.Default.PropertyChanged += propertyChangedWeakEventListener.OnEvent;
             Handlers = new List<EventHandlerInfo>();
         }
 

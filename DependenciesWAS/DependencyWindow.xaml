@@ -72,10 +72,15 @@
 					<Thickness x:Key="TreeViewItemPresenterMargin">4,0</Thickness>
 					<Thickness x:Key="TreeViewItemPresenterPadding">0,0,0,0</Thickness>
 					<x:Double x:Key="TreeViewItemMinHeight">20</x:Double>
+					<Style TargetType="TreeViewItem">
+						<Setter Property="ContextFlyout" Value="{StaticResource TreeItemContextMenu}"/>
+					</Style>
 				</TreeView.Resources>
 				<TreeView.ItemTemplate>
 					<DataTemplate x:DataType="local:ModuleTreeViewItem">
-						<TreeViewItem DoubleTapped="TreeViewItem_DoubleTapped" ContextFlyout="{StaticResource TreeItemContextMenu}">
+						<!-- TODO: Do not register an event handler pointing to a method of the TabViewItem but use the item class instead. Otherwise
+						memory leaks will occur. Also set the context menu in a style -->
+						<TreeViewItem DoubleTapped="{x:Bind DoubleTappedEventHandler}">
 							<Grid Margin="0,0,5,0">
 								<Grid.ColumnDefinitions>
 									<ColumnDefinition Width="24"/>
@@ -99,7 +104,7 @@
 									<Rectangle.Fill>
 										<SolidColorBrush Color="Red"/>
 									</Rectangle.Fill>
-									<!--<Rectangle.OpacityMask>
+									<!--TODO: <Rectangle.OpacityMask>
 										<DrawingBrush AlignmentX="Left" AlignmentY="Top">
 											<DrawingBrush.Drawing>
 												<DrawingGroup>
@@ -121,7 +126,7 @@
 									<Rectangle.Fill>
 										<SolidColorBrush Color="DarkOrange" />
 									</Rectangle.Fill>
-									<!--<Rectangle.OpacityMask>
+									<!--TODO: <Rectangle.OpacityMask>
 										<DrawingBrush AlignmentX="Left" AlignmentY="Top">
 											<DrawingBrush.Drawing>
 												<DrawingGroup>
@@ -184,8 +189,5 @@
 
 		<local:DependencyModuleList x:Name="ModulesList"
                                     Grid.Row="2"/>
-		<!--SelectedModuleChanged="OnModuleViewSelectedItemChanged"-->
-
-
 	</Grid>
 </TabViewItem>
