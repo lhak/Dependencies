@@ -7,6 +7,18 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
+	<Page.Resources>
+		<Style x:Name="RecentMenuItemStyle" TargetType="MenuFlyoutItem">
+			<Setter Target="Template">
+				<Setter.Value>
+					<ControlTemplate TargetType="MenuFlyoutItem">
+						<MenuFlyoutItem Text="{Binding HeaderTitle}" Click="RecentItem_Click"></MenuFlyoutItem>
+					</ControlTemplate>
+				</Setter.Value>
+			</Setter>
+		</Style>
+	</Page.Resources>
+
 	<Grid AllowDrop="True" DragEnter="RootGrid_DragEnter" Drop="RootGrid_Drop">
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto"/>
@@ -16,13 +28,14 @@
 		<MenuBar Padding="4,0,0,0">
 			
 			<MenuBar.Items>
-				<MenuBarItem Title="File" AccessKey="F">
+				<MenuBarItem x:Name="FileMenu" Title="File" AccessKey="F">
 					<MenuBarItem.Items>
 						<MenuFlyoutItem x:Name="OpenItem" Text="Open" Click="OpenItem_Click">
 							<MenuFlyoutItem.KeyboardAccelerators>
 								<KeyboardAccelerator Modifiers="Control" Key="O"/>
 							</MenuFlyoutItem.KeyboardAccelerators>
 						</MenuFlyoutItem>
+						<MenuFlyoutSubItem x:Name="RecentItems" Text="Recent files"/>
 						<MenuFlyoutSeparator/>
 						<MenuFlyoutItem x:Name="ExitItem" Text="Exit" Click="ExitItem_Click">
 							<MenuFlyoutItem.KeyboardAccelerators>
@@ -30,7 +43,6 @@
 							</MenuFlyoutItem.KeyboardAccelerators>
 						</MenuFlyoutItem>
 					</MenuBarItem.Items>
-
 				</MenuBarItem>
 				<MenuBarItem Title="View" AccessKey="V" >
 					<MenuBarItem.Items>

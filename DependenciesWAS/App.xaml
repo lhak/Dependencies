@@ -18,6 +18,7 @@
 					<Thickness x:Key="InfoBarPanelVerticalOrientationPadding">0,4,0,4</Thickness>
 					<x:Double x:Key="InfoBarMessageFontSize">12</x:Double>
 					<x:Double x:Key="ControlContentThemeFontSize">12</x:Double>
+					<x:Double x:Key="FlyoutThemeMaxWidth">1000</x:Double>
 				</ResourceDictionary>
 				<!-- The DataGrid resources need to be manually imported here so that the custom datagrid styles work -->
 				<ResourceDictionary Source="ms-appx:///CommunityToolkit.WinUI.UI.Controls.DataGrid/Themes/Generic.xaml"/>

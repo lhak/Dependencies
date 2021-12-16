@@ -148,6 +148,42 @@ namespace Dependencies
 			BinaryCache.Instance.Unload();
 		}
 
+		public static void AddToRecentDocuments(String Filename)
+		{
+#if TODO
+			// Create custom task
+			JumpTask item = new JumpTask();
+			item.Title = System.IO.Path.GetFileName(Filename);
+			item.Description = Filename;
+			item.ApplicationPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+			item.Arguments = Filename;
+			item.CustomCategory = "Tasks";
+
+
+			// Add document to recent category
+			JumpList RecentsDocs = JumpList.GetJumpList(Application.Current);
+			RecentsDocs.JumpItems.Add(item);
+			JumpList.AddToRecentCategory(item);
+			RecentsDocs.Apply();
+#endif
+			// Store a copy in application settings, LRU style
+			// First check if the item is not already present in the list
+			int index = Dependencies.Properties.Settings.Default.RecentFiles.IndexOf(Filename);
+			if (index != -1)
+			{
+				Dependencies.Properties.Settings.Default.RecentFiles.RemoveAt(index);
+			}
+
+			// Second check if the list is not full
+			if (Dependencies.Properties.Settings.Default.RecentFiles.Count == 10)
+			{
+				Dependencies.Properties.Settings.Default.RecentFiles.RemoveAt(9);
+			}
+
+			// Prepend the list with the new item
+			Dependencies.Properties.Settings.Default.RecentFiles.Insert(0, Filename);
+		}
+
 		private MainWindow mainWindow;
 		private string statusBarMessage = "";
 		private Dictionary<string, BitmapImage> iconCache;

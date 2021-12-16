@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using Dependencies;
 using Dependencies.ClrPh;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Windows.ApplicationModel.DataTransfer;
 
 public class DisplayPeExport : SettingBindingHandler
 {
@@ -146,7 +147,7 @@ public class DisplayPeExport : SettingBindingHandler
                         return;
                     }
 
-                    Process.Start(@"https://docs.microsoft.com/search/?search=" + ExportName);
+                    Process.Start(new ProcessStartInfo() { FileName = @"https://docs.microsoft.com/search/?search=" + ExportName, UseShellExecute = true });
                 });
             }
 
@@ -161,20 +162,22 @@ public class DisplayPeExport : SettingBindingHandler
             {
                 _CopyValue = new RelayCommand((param) =>
                 {
-
                     if ((param == null))
                     {
                         return;
                     }
-#if TODO
-                    Clipboard.Clear();
+
+                    DataPackage dataPackage = new DataPackage();
+                    dataPackage.RequestedOperation = DataPackageOperation.Copy;
+                    dataPackage.SetText(param.ToString());
 
                     try
                     {
-                        
-                        Clipboard.SetText((string)param, TextDataFormat.Text);
-                    } catch { }
-#endif
+
+                        Clipboard.SetContent(dataPackage);
+                        Clipboard.Flush();
+                    }
+                    catch { }
                 });
             }
 

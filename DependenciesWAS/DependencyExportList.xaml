@@ -34,7 +34,7 @@
 			<MenuFlyoutItem Command="{StaticResource CopyValuesCommand}"/>
 			<MenuFlyoutItem Text="Copy function name" Command="{Binding CopyValue}" CommandParameter ="{Binding Name}"/>
 			<MenuFlyoutSeparator/>
-			<MenuFlyoutItem Text="Lookup Import function on MSDN" Command="{Binding QueryImportApi}" CommandParameter ="{Binding}"/>
+			<MenuFlyoutItem Text="Lookup Export function on MSDN" Command="{Binding QueryExportApi}" CommandParameter ="{Binding}"/>
 		</MenuFlyout>
 
 		<Style x:Name="DataGridRowStyleWithContextMenu" BasedOn="{StaticResource DataGridCompactRowStyle}" TargetType="toolkit:DataGridRow">

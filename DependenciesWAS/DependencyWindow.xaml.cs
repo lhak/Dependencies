@@ -316,10 +316,7 @@ namespace Dependencies
 					_importsVerified = true;
 
 					// Update tooltip only once some basic checks are done
-#if TODO
-
-                    this.ToolTip = ModuleInfo.Status;
-#endif
+					OnPropertyChanged(nameof(Tooltip));
 				}
 
 				// propagate error for parent
@@ -368,10 +365,9 @@ namespace Dependencies
 				{
 					ModuleInfo.Flags &= ~ModuleFlag.ChildrenError;
 				}
-#if TODO
 
-                ToolTip = ModuleInfo.Status;
-#endif
+                OnPropertyChanged(nameof(Tooltip));
+
 				_has_child_errors = true;
 				OnPropertyChanged("HasChildErrors");
 
@@ -802,12 +798,10 @@ namespace Dependencies
 			}
 			catch (BadImageFormatException)
 			{
-#if TODO
                 MessageBoxResult result = MessageBox.Show(
                         String.Format("Cecil could not correctly parse {0:s}, which can happens on .NET Core executables. CLR imports will be not shown", AnalyzedPe.Filepath),
                         "CLR parsing fail"
                 );
-#endif
 				return;
 			}
 
