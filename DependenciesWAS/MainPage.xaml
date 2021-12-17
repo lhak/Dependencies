@@ -12,7 +12,7 @@
 			<Setter Target="Template">
 				<Setter.Value>
 					<ControlTemplate TargetType="MenuFlyoutItem">
-						<MenuFlyoutItem Text="{Binding HeaderTitle}" Click="RecentItem_Click"></MenuFlyoutItem>
+						<MenuFlyoutItem Text="{Binding HeaderTitle}" FontSize="12" Padding="{StaticResource MenuFlyoutItemThemePaddingNarrow}" Click="RecentItem_Click"/>
 					</ControlTemplate>
 				</Setter.Value>
 			</Setter>
@@ -30,21 +30,21 @@
 			<MenuBar.Items>
 				<MenuBarItem x:Name="FileMenu" Title="File" AccessKey="F">
 					<MenuBarItem.Items>
-						<MenuFlyoutItem x:Name="OpenItem" Text="Open" Click="OpenItem_Click">
+						<MenuFlyoutItem x:Name="OpenItem" Text="Open" Click="OpenItem_Click" AccessKey="O">
 							<MenuFlyoutItem.KeyboardAccelerators>
 								<KeyboardAccelerator Modifiers="Control" Key="O"/>
 							</MenuFlyoutItem.KeyboardAccelerators>
 						</MenuFlyoutItem>
 						<MenuFlyoutSubItem x:Name="RecentItems" Text="Recent files"/>
 						<MenuFlyoutSeparator/>
-						<MenuFlyoutItem x:Name="ExitItem" Text="Exit" Click="ExitItem_Click">
+						<MenuFlyoutItem x:Name="ExitItem" Text="Exit" Click="ExitItem_Click" AccessKey="X">
 							<MenuFlyoutItem.KeyboardAccelerators>
 								<KeyboardAccelerator Modifiers="Control" Key="Q"/>
 							</MenuFlyoutItem.KeyboardAccelerators>
 						</MenuFlyoutItem>
 					</MenuBarItem.Items>
 				</MenuBarItem>
-				<MenuBarItem Title="View" AccessKey="V" >
+				<MenuBarItem Title="View" AccessKey="V">
 					<MenuBarItem.Items>
 						<ToggleMenuFlyoutItem x:Name="FullPathItem" AccessKey="F" Text="Full Paths" IsChecked="{x:Bind FullPathSetting, Mode=TwoWay}">
 							<ToggleMenuFlyoutItem.KeyboardAccelerators>
@@ -60,8 +60,10 @@
 						<ToggleMenuFlyoutItem AccessKey="S" Text="Status Bar" IsChecked="{x:Bind ShowStatusBarSetting, Mode=TwoWay }"/>
 					</MenuBarItem.Items>
 				</MenuBarItem>
-				<MenuBarItem Title="Options">
-
+				<MenuBarItem Title="Options" AccessKey="O">
+					<MenuBarItem.Items>
+						<MenuFlyoutItem x:Name="UserSettingsItem" Text="Properties" AccessKey="P" Click="UserSettingsItem_Click"/>
+					</MenuBarItem.Items>
 				</MenuBarItem>
 			</MenuBar.Items>
 
@@ -72,6 +74,10 @@
 		<TabView x:Name="FileTabs" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsAddTabButtonVisible="False" Padding="4,4,0,0" TabCloseRequested="FileTabs_TabCloseRequested" TabItemsChanged="FileTabs_TabItemsChanged" >
 			<TabView.Resources>
 				<CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius> <!--TODO: Remove when rendering issue fixed -->
+				<StaticResource x:Key="TabViewItemHeaderBackground" ResourceKey="LayerOnAccentAcrylicFillColorDefault" />
+				<StaticResource x:Key="TabViewItemHeaderBackgroundPointerOver" ResourceKey="LayerFillColorDefaultBrush" />
+				<StaticResource x:Key="TabViewItemHeaderBackgroundPressed" ResourceKey="SolidBackgroundFillColorSecondaryBrush" />
+				<StaticResource x:Key="TabViewItemBorderBrush" ResourceKey="LayerOnAccentAcrylicFillColorDefault" />
 			</TabView.Resources>
 		</TabView>
 

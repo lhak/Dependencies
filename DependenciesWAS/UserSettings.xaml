@@ -1,0 +1,81 @@
+﻿<UserControl
+    x:Class="Dependencies.UserSettings"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Dependencies"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+
+	<UserControl.Resources>
+		<local:TreeBuildingBehaviour x:Key="TreeBuildingBehaviourConverter"/>
+		<local:BinaryCacheOption x:Key="BinaryCacheOptionConverter"/>
+	</UserControl.Resources>
+
+	<Grid Width="450" Height="200">
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="Auto" />
+			<ColumnDefinition Width="*" />
+		</Grid.ColumnDefinitions>
+
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="*"/>
+			<RowDefinition Height="Auto"/>
+		</Grid.RowDefinitions>
+
+		<TextBlock 
+               Grid.Row="0"
+               Grid.Column="0"
+               Text="Use BinaryCache:" 
+               HorizontalAlignment="Left" 
+               VerticalAlignment="Center" />
+
+
+		<ComboBox x:Name="BinaryCacheCombo"
+                  Margin="8"
+                  Grid.Row="0"
+                  Grid.Column="1" 
+                  SelectedItem="{x:Bind BinaryCacheOptionValueSetting, Mode=TwoWay, Converter={StaticResource BinaryCacheOptionConverter}}"
+                  />
+
+		<TextBlock Grid.Row="1" Grid.ColumnSpan="2" x:Name="UpdateNote" Text="The binary caching preference has been modified, you need to restart Dependencies for the modifications to be actually reloaded." TextWrapping="WrapWholeWords" FontSize="10" Foreground="Gray" x:Load="False"/>
+
+		<!-- Tree build behaviour selection -->
+		<TextBlock  
+               Grid.Row="2"
+               Grid.Column="0"
+               Text="Tree build behaviour:" 
+               HorizontalAlignment="Left" 
+               VerticalAlignment="Center" />
+
+		<ComboBox x:Name="TreeBuildCombo"
+                  Margin="8"
+                  Grid.Row="2"
+                  Grid.Column="1" 
+                  SelectedItem="{x:Bind TreeBuildBehaviourSetting, Mode=TwoWay, Converter={StaticResource TreeBuildingBehaviourConverter}}"
+                  />
+
+		<!-- Tree depth -->
+		<TextBlock 
+               Grid.Row="3"
+               Grid.Column="0"
+               Text="Tree depth:" 
+               HorizontalAlignment="Left" 
+               VerticalAlignment="Center" />
+
+		<NumberBox  Name="TreeDepthValue"
+                  Grid.Row="3"
+                  Grid.Column="1" 
+                  Margin="8"
+				  Width="150"
+                  Text="{x:Bind TreeDepthSetting, Mode=TwoWay}" Minimum="1" Maximum="4" SpinButtonPlacementMode="Inline"
+		          HorizontalAlignment="Left"  
+                  VerticalContentAlignment="Center" />
+
+	</Grid>
+</UserControl>

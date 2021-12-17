@@ -114,12 +114,7 @@ namespace Dependencies
 			Phlib.InitializePhLib();
 
 			// Load singleton for binary caching
-#if TODO
 			BinaryCache.InitializeBinaryCache(Dependencies.BinaryCacheOption.GetGlobalBehaviour() == Dependencies.BinaryCacheOption.BinaryCacheOptionValue.Yes);
-#else
-			BinaryCache.InitializeBinaryCache(false);
-
-#endif
 
 			mainWindow = new MainWindow();
 

@@ -19,6 +19,7 @@
     <None Remove="DependencyImportList.xaml" />
     <None Remove="DependencyWindow.xaml" />
     <None Remove="MainPage.xaml" />
+    <None Remove="UserSettings.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -160,6 +161,9 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+    <Page Update="UserSettings.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="MainPage.xaml">

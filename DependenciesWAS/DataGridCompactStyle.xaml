@@ -5,25 +5,6 @@
 	xmlns:toolkit="using:CommunityToolkit.WinUI.UI.Controls"
 	xmlns:toolkitprimitives="using:CommunityToolkit.WinUI.UI.Controls.Primitives">
 
-	<!-- Somehow, DataGridRowInvalidBrush is not found if not added here again -->
-	<ResourceDictionary.ThemeDictionaries>
-		<ResourceDictionary x:Key="Default">
-			<SolidColorBrush x:Key="DataGridRowInvalidBrush" Color="#FFFF00"/>
-
-		</ResourceDictionary>
-		<ResourceDictionary x:Key="HighContrast">
-			<SolidColorBrush x:Key="DataGridRowInvalidBrush" Color="#FFFF00"/>
-
-		</ResourceDictionary>
-		<ResourceDictionary x:Key="Light">
-			<SolidColorBrush x:Key="DataGridRowInvalidBrush" Color="#C50500"/>
-
-		</ResourceDictionary>
-	</ResourceDictionary.ThemeDictionaries>
-
-	<StaticResource x:Key="DataGridDetailsPresenterBackgroundBrush" ResourceKey="SystemControlBackgroundChromeMediumLowBrush"/>
-
-
 	<Style x:Key="DataGridCompactCellStyle" TargetType="toolkit:DataGridCell">
 		<Setter Property="FontSize" Value="12"/>
 		<Setter Property="MinHeight" Value="20"/>

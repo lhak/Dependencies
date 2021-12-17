@@ -53,14 +53,14 @@
 		</toolkit:DataGridTemplateColumn>
 
 		<toolkit:DataGridTextColumn Header="Module" Width="300" Binding="{Binding ModuleName, TargetNullValue='N/A'}" Tag="ModuleName" />
-		<toolkit:DataGridTextColumn Header="Machine"  Width="60" Binding="{Binding Cpu, TargetNullValue='N/A'}" Tag="Cpu" />
-		<toolkit:DataGridTextColumn Header="Type" Width="150" Binding="{Binding Type, TargetNullValue='N/A'}" Tag="Type" />
+		<toolkit:DataGridTextColumn Header="Machine" Width="90" Binding="{Binding Cpu, TargetNullValue='N/A'}" Tag="Cpu" />
+		<toolkit:DataGridTextColumn Header="Type" Width="130" Binding="{Binding Type, TargetNullValue='N/A'}" Tag="Type" />
 		<toolkit:DataGridTextColumn Header="File Size" Width="100" Binding="{Binding Filesize, TargetNullValue='N/A', Converter={StaticResource StringFormatConverter}, ConverterParameter='0x{0:x08}' }" Tag="Filesize"/>
-		<toolkit:DataGridTextColumn Header="Image Base" Width="100" Binding="{Binding ImageBase, TargetNullValue='N/A', Converter={StaticResource StringFormatConverter}, ConverterParameter='0x{0:x08}' }" Tag="ImageBase"/>
-		<toolkit:DataGridTextColumn Header="Virtual Size" Width="100" Binding="{Binding VirtualSize, TargetNullValue='N/A', Converter={StaticResource StringFormatConverter}, ConverterParameter='0x{0:x08}'}" Tag="VirtualSize"/>
-		<toolkit:DataGridTextColumn Header="Entry point" Width="100" Binding="{Binding EntryPoint, TargetNullValue='N/A', Converter={StaticResource StringFormatConverter}, ConverterParameter='0x{0:x08}' }" Tag="EntryPoint"/>
-		<toolkit:DataGridTextColumn Header="Subsystem" Width="100" Binding="{Binding Subsystem, TargetNullValue='N/A', Converter={StaticResource StringFormatConverter}, ConverterParameter='0x{0:x08}' }" Tag="Subsystem"/>
-		<toolkit:DataGridTextColumn Header="Subsystem Ver." Width="100" Binding="{Binding SubsystemVersion, TargetNullValue='N/A'}" Tag="SubsystemVersion" />
+		<toolkit:DataGridTextColumn Header="Image Base" Width="110" Binding="{Binding ImageBase, TargetNullValue='N/A', Converter={StaticResource StringFormatConverter}, ConverterParameter='0x{0:x08}' }" Tag="ImageBase"/>
+		<toolkit:DataGridTextColumn Header="Virtual Size" Width="110" Binding="{Binding VirtualSize, TargetNullValue='N/A', Converter={StaticResource StringFormatConverter}, ConverterParameter='0x{0:x08}'}" Tag="VirtualSize"/>
+		<toolkit:DataGridTextColumn Header="Entry point" Width="110" Binding="{Binding EntryPoint, TargetNullValue='N/A', Converter={StaticResource StringFormatConverter}, ConverterParameter='0x{0:x08}' }" Tag="EntryPoint"/>
+		<toolkit:DataGridTextColumn Header="Subsystem" Width="110" Binding="{Binding Subsystem, TargetNullValue='N/A', Converter={StaticResource StringFormatConverter}, ConverterParameter='0x{0:x08}' }" Tag="Subsystem"/>
+		<toolkit:DataGridTextColumn Header="Subsys. Ver." Width="110" Binding="{Binding SubsystemVersion, TargetNullValue='N/A'}" Tag="SubsystemVersion" />
 
 		<toolkit:DataGridTemplateColumn Header="Checksum" Width="200" Tag="Checksum">
 			<toolkit:DataGridTemplateColumn.CellTemplate>

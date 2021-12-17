@@ -19,10 +19,6 @@
 
 	<local:DataGridSort.Resources>
 		<local:StringFormatConverter x:Key="StringFormatConverter"/>
-		<Style TargetType="toolkit:DataGridCell">
-			<Setter Property="FontSize" Value="12"/>
-			<Setter Property="MinHeight" Value="10"/>
-		</Style>
 
 		<XamlUICommand x:Key="CopyValuesCommand" Label="Copy" ExecuteRequested="ExportListCopySelectedValues">
 			<XamlUICommand.KeyboardAccelerators>

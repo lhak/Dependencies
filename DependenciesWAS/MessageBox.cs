@@ -12,11 +12,16 @@ namespace Dependencies
 	{
 		public static MessageBoxResult Show(string text, string caption = "", MessageBoxButton button = MessageBoxButton.OK)
 		{
-			MessageDialog dialog = new MessageDialog(text, caption);
-			dialog.Commands.Add(new UICommand("Ok"));
-			WinRT.Interop.InitializeWithWindow.Initialize(dialog, MainWindow.GetWindowHandle());
-			dialog.ShowAsync().AsTask().Wait();
+			MainWindow.GetWindow().DispatcherQueue.TryEnqueue(() =>
+			{
+				MessageDialog dialog = new MessageDialog(text, caption);
+
+				dialog.Commands.Add(new UICommand("Ok"));
+				WinRT.Interop.InitializeWithWindow.Initialize(dialog, MainWindow.GetWindowHandle());
+				dialog.ShowAsync().AsTask().Wait();
+			});
 			return MessageBoxResult.OK;
+
 		}
 	}
 
