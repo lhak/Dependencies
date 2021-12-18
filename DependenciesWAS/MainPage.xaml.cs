@@ -1,10 +1,12 @@
 ﻿using Dependencies.Properties;
+using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Automation.Provider;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
@@ -14,6 +16,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.ApplicationModel.DataTransfer;
@@ -68,6 +71,8 @@ namespace Dependencies
 		public MainPage()
 		{
 			this.InitializeComponent();
+
+			PopulateRecentFilesMenuItems();
 
 			OpenNewDependencyWindow("coreclr.dll");
 
@@ -198,6 +203,34 @@ namespace Dependencies
 			await dialog.ShowAsync();
 		}
 
+
+		private async void AboutItem_Click(object sender, RoutedEventArgs e)
+		{
+			TextBlock text = new TextBlock();
+			text.Inlines.Add(new Span()
+			{
+				Inlines = {
+							new Run() { FontWeight = FontWeights.SemiBold, Text = "Dependencies for WindowsAppSDK v" + VersionStr  },
+							new LineBreak(),
+							new LineBreak(),
+							new Run() { Text = "Port of Dependencies by lucasg (" },
+							new Hyperlink() { NavigateUri = new Uri("https://github.com/lucasg/Dependencies"),
+								Inlines = { new Run() { Text = "https://github.com/lucasg/Dependencies" } }
+							},
+							new Run() { Text = ")"}
+				}
+			});
+
+			ContentDialog dialog = new ContentDialog()
+			{
+				Title = "About",
+				CloseButtonText = "Close",
+				Content = text,
+				XamlRoot = this.XamlRoot
+			};
+			await dialog.ShowAsync();
+		}
+
 		private void FileTabs_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args)
 		{
 			FileTabs.TabItems.Remove(args.Item);
@@ -267,6 +300,8 @@ namespace Dependencies
 			}
 			deferal.Complete();
 		}
+
+		public string VersionStr { get => Assembly.GetEntryAssembly().GetName().Version.ToString(); }
 
 		bool FullPathSetting { get => Settings.Default.FullPath; set { Settings.Default.FullPath = value; OnPropertyChanged(); } }
 		bool UndecorateSetting { get => Settings.Default.Undecorate; set { Settings.Default.Undecorate = value; OnPropertyChanged(); } }

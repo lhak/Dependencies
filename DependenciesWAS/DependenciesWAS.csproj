@@ -12,12 +12,15 @@
     <EnablePreviewMsixTooling>true</EnablePreviewMsixTooling>
 		<WindowsPackageType>None</WindowsPackageType>
 		<ApplicationIcon>Dependencies.ico</ApplicationIcon>
+		<Version>0.1</Version>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Assets\Square44x44Logo.targetsize-48_altform-unplated.png" />
     <None Remove="DataGridCompactStyle.xaml" />
     <None Remove="DependencyExportList.xaml" />
     <None Remove="DependencyImportList.xaml" />
     <None Remove="DependencyWindow.xaml" />
+    <None Remove="FilterControl.xaml" />
     <None Remove="MainPage.xaml" />
     <None Remove="UserSettings.xaml" />
   </ItemGroup>
@@ -25,11 +28,7 @@
   <ItemGroup>
     <Content Include="Assets\SplashScreen.scale-200.png" />
     <Content Include="Assets\LockScreenLogo.scale-200.png" />
-    <Content Include="Assets\Square150x150Logo.scale-200.png" />
-    <Content Include="Assets\Square44x44Logo.scale-200.png" />
-    <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
     <Content Include="Assets\StoreLogo.png" />
-    <Content Include="Assets\Wide310x150Logo.scale-200.png" />
     <Content Include="Dependencies.ico" />
   </ItemGroup>
 
@@ -73,6 +72,9 @@
     <None Update="DependencyModuleList.xaml">
       <Generator>MSBuild:Compile</Generator>
     </None>
+    <Page Update="FilterControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <None Update="Images\%29%29Dependencies.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -82,9 +84,9 @@
     <None Update="Images\Dependencies_32px.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Images\Dependencies_48px-no-blur.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+		<None Update="Images\Dependencies_48px-no-blur.png">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
     <None Update="Images\Dependencies_48px.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

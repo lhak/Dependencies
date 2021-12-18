@@ -65,6 +65,12 @@
 						<MenuFlyoutItem x:Name="UserSettingsItem" Text="Properties" AccessKey="P" Click="UserSettingsItem_Click"/>
 					</MenuBarItem.Items>
 				</MenuBarItem>
+
+				<MenuBarItem Title="Help" AccessKey="H">
+					<MenuBarItem.Items>
+						<MenuFlyoutItem Text="About Dependencies" Click="AboutItem_Click"/>
+					</MenuBarItem.Items>
+				</MenuBarItem>
 			</MenuBar.Items>
 
 		</MenuBar>
@@ -73,11 +79,31 @@
 
 		<TabView x:Name="FileTabs" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsAddTabButtonVisible="False" Padding="4,4,0,0" TabCloseRequested="FileTabs_TabCloseRequested" TabItemsChanged="FileTabs_TabItemsChanged" >
 			<TabView.Resources>
-				<CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius> <!--TODO: Remove when rendering issue fixed -->
-				<StaticResource x:Key="TabViewItemHeaderBackground" ResourceKey="LayerOnAccentAcrylicFillColorDefault" />
-				<StaticResource x:Key="TabViewItemHeaderBackgroundPointerOver" ResourceKey="LayerFillColorDefaultBrush" />
-				<StaticResource x:Key="TabViewItemHeaderBackgroundPressed" ResourceKey="SolidBackgroundFillColorSecondaryBrush" />
-				<StaticResource x:Key="TabViewItemBorderBrush" ResourceKey="LayerOnAccentAcrylicFillColorDefault" />
+				<ResourceDictionary>
+					<ResourceDictionary.ThemeDictionaries>
+						<ResourceDictionary x:Key="Default">
+							<!-- Optimize appereance of non-active tabs -->
+							<SolidColorBrush x:Key="TabViewItemHeaderBackground" Color="#40FFFFFF" />
+							<SolidColorBrush x:Key="TabViewItemHeaderBackgroundPointerOver" Color="#80FFFFFF" />
+							<SolidColorBrush x:Key="TabViewItemHeaderBackgroundPressed" Color="#EEEEEE" />
+							<SolidColorBrush x:Key="TabViewItemBorderBrush" Color="#40FFFFFF" />
+							<SolidColorBrush x:Key="TabViewItemHeaderForeground" Color="#9E000000" />
+							<SolidColorBrush x:Key="TabViewItemHeaderForegroundPointerOver" Color="#9E000000" />
+							<SolidColorBrush x:Key="TabViewItemHeaderForegroundPressed" Color="#E4000000" />
+							<SolidColorBrush x:Key="TabViewItemHeaderCloseButtonForeground" Color="#9E000000" />
+							<SolidColorBrush x:Key="TabViewItemHeaderCloseButtonForegroundPointerOver" Color="#9E000000" />
+							<SolidColorBrush x:Key="TabViewItemHeaderCloseButtonForegroundPressed" Color="#E4000000" />
+							<SolidColorBrush x:Key="TabViewItemHeaderPressedCloseButtonForeground" Color="#9E000000" />
+							<SolidColorBrush x:Key="TabViewItemHeaderPointerOverCloseButtonForeground" Color="#E4000000" />
+							<SolidColorBrush x:Key="TabViewItemHeaderCloseButtonBackgroundPressed" Color="#06000000" />
+							<SolidColorBrush x:Key="TabViewItemHeaderCloseButtonBackgroundPointerOver" Color="#60FFFFFF" />
+						</ResourceDictionary>
+					</ResourceDictionary.ThemeDictionaries>
+					<!--TODO: Remove when rendering issue fixed -->
+					<CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius>
+				</ResourceDictionary>
+				<!-- TODO Theme -->
+				
 			</TabView.Resources>
 		</TabView>
 

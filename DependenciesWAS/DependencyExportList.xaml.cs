@@ -71,6 +71,12 @@ namespace Dependencies
 			}
 			catch { }
 		}
+
+		private void ExportListFilter(XamlUICommand sender, ExecuteRequestedEventArgs args)
+		{
+			OpenFilterWindow();
+		}
+
 		private void ItemContextMenu_Opening(object sender, object e)
 		{
 			// Select item when context menu is opened

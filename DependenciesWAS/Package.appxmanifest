@@ -9,11 +9,11 @@
   <Identity
     Name="78e955a3-65b4-40a0-af29-cb0cd0e9389b"
     Publisher="CN=arno_"
-    Version="1.0.0.0" />
+    Version="0.1.0.0" />
 
   <Properties>
-    <DisplayName>DependenciesWAS</DisplayName>
-    <PublisherDisplayName>arno_</PublisherDisplayName>
+    <DisplayName>Dependencies WindowsAppSDK</DisplayName>
+    <PublisherDisplayName>lhak_</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
@@ -31,13 +31,16 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="DependenciesWAS"
-        Description="DependenciesWAS"
+        DisplayName="Dependencies WindowsAppSDK"
+        Description="Dependencies for WindowsAppSDK"
         BackgroundColor="transparent"
-        Square150x150Logo="Assets\Square150x150Logo.png"
-        Square44x44Logo="Assets\Square44x44Logo.png">
-        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
+        Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png">
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
+        <uap:DefaultTile>
+          <uap:ShowNameOnTiles>
+            <uap:ShowOn Tile="square150x150Logo"/>
+          </uap:ShowNameOnTiles>
+        </uap:DefaultTile>
       </uap:VisualElements>
     </Application>
   </Applications>

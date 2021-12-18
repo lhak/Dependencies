@@ -15,7 +15,9 @@
 	ItemsSource="{x:Bind SortedItems}"
 	Sorting="SortDataGrid"
 	Style="{StaticResource DataGridCompactStyle}"
-	ClipboardCopyMode="None">
+	ClipboardCopyMode="None"
+	SearchListFilter="ModuleName"
+	>
 
 	<toolkit:DataGrid.Resources>
 		<local:ImageToHeaderConverter x:Key="img"/>
@@ -23,9 +25,15 @@
 		<local:StringFormatConverter x:Key="StringFormatConverter"/>
 		<local:ChecksumConverter x:Key="ChecksumConverter"/>
 
+		<XamlUICommand x:Key="FilterCommand" Label="Filter" ExecuteRequested="ModuleListFilter">
+			<XamlUICommand.KeyboardAccelerators>
+				<KeyboardAccelerator Modifiers="Control" Key="F" ScopeOwner="{x:Bind}"/>
+			</XamlUICommand.KeyboardAccelerators>
+		</XamlUICommand>
 
 		<MenuFlyout x:Name="ItemContextMenu" Opening="ItemContextMenu_Opening">
 			<MenuFlyoutItem Text="Highlight Matching Module In Tree" Command="{Binding DoFindModuleInTreeCommand}" CommandParameter ="{Binding}"/>
+			<MenuFlyoutItem Command="{StaticResource FilterCommand}"/>
 			<MenuFlyoutSeparator/>
 			<MenuFlyoutItem Text="Copy module name" Command="{Binding CopyValue}" CommandParameter ="{Binding ModuleName}"/>
 		</MenuFlyout>

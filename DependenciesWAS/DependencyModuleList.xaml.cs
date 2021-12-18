@@ -99,6 +99,11 @@ namespace Dependencies
 			Items.Add(NewModule);
 		}
 
+		private void ModuleListFilter(XamlUICommand sender, ExecuteRequestedEventArgs args)
+		{
+			OpenFilterWindow();
+		}
+
 		private void ItemContextMenu_Opening(object sender, object e)
 		{
 			// Select item when context menu is opened

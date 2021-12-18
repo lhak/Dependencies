@@ -15,7 +15,8 @@
 	ItemsSource="{x:Bind SortedItems}"
 	Sorting="SortDataGrid"
 	Style="{StaticResource DataGridCompactStyle}"
-	ClipboardCopyMode="None">
+	ClipboardCopyMode="None"
+	SearchListFilter="Name">
 
 	<local:DataGridSort.Resources>
 		<local:StringFormatConverter x:Key="StringFormatConverter"/>
@@ -26,9 +27,16 @@
 			</XamlUICommand.KeyboardAccelerators>
 		</XamlUICommand>
 
+		<XamlUICommand x:Key="FilterCommand" Label="Filter" ExecuteRequested="ExportListFilter">
+			<XamlUICommand.KeyboardAccelerators>
+				<KeyboardAccelerator Modifiers="Control" Key="F" ScopeOwner="{x:Bind}"/>
+			</XamlUICommand.KeyboardAccelerators>
+		</XamlUICommand>
+
 		<MenuFlyout x:Name="ItemContextMenu" Opening="ItemContextMenu_Opening">
 			<MenuFlyoutItem Command="{StaticResource CopyValuesCommand}"/>
 			<MenuFlyoutItem Text="Copy function name" Command="{Binding CopyValue}" CommandParameter ="{Binding Name}"/>
+			<MenuFlyoutItem Command="{StaticResource FilterCommand}"/>
 			<MenuFlyoutSeparator/>
 			<MenuFlyoutItem Text="Lookup Export function on MSDN" Command="{Binding QueryExportApi}" CommandParameter ="{Binding}"/>
 		</MenuFlyout>
