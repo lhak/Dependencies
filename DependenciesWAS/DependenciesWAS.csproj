@@ -14,6 +14,8 @@
 		<ApplicationIcon>Dependencies.ico</ApplicationIcon>
 		<Version>0.1</Version>
 		<Configurations>Debug;Release;Packaged</Configurations>
+		<OutputPath>$(SolutionDir)bin\$(Configuration)$(Platform)</OutputPath>
+		<IntermediateOutputPath>$(SolutionDir)obj\$(ProjectName)\$(Configuration)$(Platform)</IntermediateOutputPath>
   </PropertyGroup>
   
   
