@@ -18,6 +18,7 @@
 		</XamlUICommand>
 		<XamlUICommand x:Key="DoExpandAllNodes" Label="Expand All" ExecuteRequested="ExpandAllNodes_Executed"/>
 		<XamlUICommand x:Key="DoCollapseAllNodes" Label="Collapse All" ExecuteRequested="CollapseAllNodes_Executed"/>
+		<XamlUICommand x:Key="OpenInNewTab" Label="Open in new tab" ExecuteRequested="OpenInNewTab_Executed"/>
 
 
 	</TabViewItem.Resources>
@@ -50,6 +51,9 @@
 						<MenuFlyoutSeparator/>
 						<MenuFlyoutItem Command="{StaticResource DoExpandAllNodes}" CommandParameter="{x:Bind TreeItemContextMenu.Target, Mode=OneWay}"/>
 						<MenuFlyoutItem Command="{StaticResource DoCollapseAllNodes}" CommandParameter="{x:Bind TreeItemContextMenu.Target, Mode=OneWay}"/>
+						<MenuFlyoutSeparator/>
+						<MenuFlyoutItem Command="{StaticResource OpenInNewTab}" CommandParameter="{x:Bind TreeItemContextMenu.Target, Mode=OneWay}"/>
+
 
 						<!-- TODO
 				

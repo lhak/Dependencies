@@ -10,12 +10,14 @@
     <PublishProfile>win10-$(Platform).pubxml</PublishProfile>
     <UseWinUI>true</UseWinUI>
     <EnablePreviewMsixTooling>true</EnablePreviewMsixTooling>
-		<WindowsPackageType>None</WindowsPackageType>
+		<WindowsPackageType Condition="'$(Configuration)' != 'Packaged'">None</WindowsPackageType>
 		<ApplicationIcon>Dependencies.ico</ApplicationIcon>
 		<Version>0.1</Version>
+		<Configurations>Debug;Release;Packaged</Configurations>
   </PropertyGroup>
+  
+  
   <ItemGroup>
-    <None Remove="Assets\Square44x44Logo.targetsize-48_altform-unplated.png" />
     <None Remove="DataGridCompactStyle.xaml" />
     <None Remove="DependencyExportList.xaml" />
     <None Remove="DependencyImportList.xaml" />
@@ -26,9 +28,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Assets\SplashScreen.scale-200.png" />
-    <Content Include="Assets\LockScreenLogo.scale-200.png" />
-    <Content Include="Assets\StoreLogo.png" />
     <Content Include="Dependencies.ico" />
   </ItemGroup>
 

@@ -1328,7 +1328,13 @@ namespace Dependencies
 			object TreeNode = (args.Parameter as TreeViewItem).DataContext;
 			CollapseOrExpandAllNodes((TreeNode as ModuleTreeViewItem), false);
 		}
-		
+
+		private void OpenInNewTab_Executed(XamlUICommand sender, ExecuteRequestedEventArgs args)
+		{
+			ModuleTreeViewItem item = (args.Parameter as TreeViewItem).DataContext as ModuleTreeViewItem;
+			MainWindow.GetWindow().OpenNewTab(item.ModuleFilePath);
+		}
+
 		private void DoFindModuleInList_Executed(XamlUICommand sender, ExecuteRequestedEventArgs args)
 		{
 			ModuleTreeViewItem Source = DllTreeView.SelectedItem as ModuleTreeViewItem;

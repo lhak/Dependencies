@@ -117,7 +117,7 @@
 				<ColumnDefinition Width="auto"/>
 			</Grid.ColumnDefinitions>
 
-			<Image Source="Images/Dependencies_48px-no-blur.png" Height="48" Width="48" Grid.Column="0"/>
+			<Image Source="Assets/Square44x44Logo.png" Height="48" Width="48" Grid.Column="0"/>
 
 
 
@@ -125,7 +125,6 @@
                        TextWrapping="Wrap"
                        VerticalAlignment="Center"
                        Name="TextContent"
-                       FontFamily="Courrier New"
                        FontSize="18"
                        Margin="20 0 0 00"
                        >

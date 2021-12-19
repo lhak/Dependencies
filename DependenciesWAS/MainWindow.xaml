@@ -10,7 +10,7 @@
 
 	<Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 		<StackPanel x:Name="TitleBar" Height="24" Margin="16,4,0,0" Orientation="Horizontal" Visibility="Collapsed" VerticalAlignment="Top">
-			<Image Source="ms-appx:///Images/Dependencies_32px-no-blur.png" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+			<Image Source="ms-appx:///Assets/Square44x44Logo.png" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Left"/>
 			<TextBlock x:Name="TitleBarText" Text="Dependencies" Margin="12,4,0,0" FontSize="12" VerticalAlignment="Top"/>
 		</StackPanel>
 		<local:MainPage x:Name="RootPage"/>

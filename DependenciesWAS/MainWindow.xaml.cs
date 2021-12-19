@@ -74,6 +74,11 @@ namespace Dependencies
 			TitleBarText.Text = title;
 		}
 
+		public void OpenNewTab(string filepath)
+		{
+			RootPage.OpenNewDependencyWindow(filepath);
+		}
+
 		private static MainWindow _mainWindow;
 		private static IntPtr _windowHandle;
 	}
