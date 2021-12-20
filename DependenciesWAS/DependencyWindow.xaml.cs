@@ -1086,26 +1086,7 @@ namespace Dependencies
 
 					if ((NewTreeContext.PeProperties != null) && (NewTreeContext.PeProperties.GetImports().Count > 0))
 					{
-#if TODO
-  ModuleTreeViewItem DummyEntry = new ModuleTreeViewItem();
-                        DependencyNodeContext DummyContext = new DependencyNodeContext()
-                        {
-                            ModuleInfo = new WeakReference(new NotFoundModuleInfo("Dummy")),
-                            IsDummy = true
-                        };
-
-                        DummyEntry.DataContext = DummyContext;
-                        DummyEntry.Header = "@Dummy : if you see this header, it's a bug.";
-                        DummyEntry.IsExpanded = false;
-
-#else
 						childTreeNode.HasUnrealizedChildren = true;
-
-#endif
-
-#if TODO
-                        childTreeNode.Expanded += ResolveDummyEntries;
-#endif
 					}
 
 					// Add to tree view

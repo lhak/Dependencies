@@ -8,17 +8,18 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
-using Microsoft.UI.Xaml.Shapes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.UI.StartScreen;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -143,24 +144,8 @@ namespace Dependencies
 			BinaryCache.Instance.Unload();
 		}
 
-		public static void AddToRecentDocuments(String Filename)
+		public static async Task AddToRecentDocuments(String Filename)
 		{
-#if TODO
-			// Create custom task
-			JumpTask item = new JumpTask();
-			item.Title = System.IO.Path.GetFileName(Filename);
-			item.Description = Filename;
-			item.ApplicationPath = System.Reflection.Assembly.GetExecutingAssembly().Location;
-			item.Arguments = Filename;
-			item.CustomCategory = "Tasks";
-
-
-			// Add document to recent category
-			JumpList RecentsDocs = JumpList.GetJumpList(Application.Current);
-			RecentsDocs.JumpItems.Add(item);
-			JumpList.AddToRecentCategory(item);
-			RecentsDocs.Apply();
-#endif
 			// Store a copy in application settings, LRU style
 			// First check if the item is not already present in the list
 			int index = Dependencies.Properties.Settings.Default.RecentFiles.IndexOf(Filename);
@@ -177,6 +162,17 @@ namespace Dependencies
 
 			// Prepend the list with the new item
 			Dependencies.Properties.Settings.Default.RecentFiles.Insert(0, Filename);
+
+			// Refresh jumplist.
+			JumpList jumpList = await JumpList.LoadCurrentAsync();
+			jumpList.SystemGroupKind = Windows.UI.StartScreen.JumpListSystemGroupKind.None;
+			jumpList.Items.Clear();
+			foreach (string file in Dependencies.Properties.Settings.Default.RecentFiles)
+			{
+				if(!string.IsNullOrEmpty(file))
+					jumpList.Items.Add(JumpListItem.CreateWithArguments(file, Path.GetFileName(file)));
+			}
+			await jumpList.SaveAsync();
 		}
 
 		private MainWindow mainWindow;
