@@ -100,7 +100,7 @@ namespace Dependencies
 		/// Open a new depedency tree window on a given PE.
 		/// </summary>
 		/// <param name="Filename">File path to a PE to process.</param>
-		public void OpenNewDependencyWindow(String Filename)
+		public async void OpenNewDependencyWindow(String Filename)
 		{
 			var newDependencyWindow = new DependencyWindow(Filename);
 			newDependencyWindow.Header = Path.GetFileNameWithoutExtension(Filename);
@@ -109,7 +109,7 @@ namespace Dependencies
 			FileTabs.SelectedItem = newDependencyWindow;
 
 			// Update recent files entries
-			App.AddToRecentDocuments(Filename);
+			await App.AddToRecentDocuments(Filename);
 			PopulateRecentFilesMenuItems();
 		}
 
@@ -142,8 +142,8 @@ namespace Dependencies
 
 				AddRecentFilesMenuItem(RecentFilePath, Properties.Settings.Default.RecentFiles.IndexOf(RecentFilePath));
 			}
+			RecentItems.IsEnabled = RecentItems.Items.Count > 0;
 			FileMenu.Items.Insert(index, RecentItems);
-
 		}
 
 
