@@ -707,7 +707,7 @@ namespace Dependencies
 
 			// only user32 triggers appinit dlls
 			string User32Filepath = Path.Combine(FindPe.GetSystemPath(this.Pe), "user32.dll");
-			if (ImportModule.PeFilePath != User32Filepath)
+			if (!ImportModule.PeFilePath.Equals(User32Filepath, StringComparison.OrdinalIgnoreCase))
 			{
 				return;
 			}

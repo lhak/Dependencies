@@ -120,36 +120,9 @@ namespace Dependencies
 		public object Convert(object value, Type targetType, object parameter, string culture)
 		{
 			string Filepath = (string)value;
-			BitmapImage bitmapImage = new BitmapImage();
 
-			if (NativeFile.Exists(Filepath))
-			{
-				StorageFile file = StorageFile.GetFileFromPathAsync(Path.GetFullPath(Filepath)).AsTask<StorageFile>().Result;
-
-				StorageItemThumbnail thumbnail = file.GetThumbnailAsync(Windows.Storage.FileProperties.ThumbnailMode.SingleItem, 32).AsTask<StorageItemThumbnail>().Result;
-				if (thumbnail != null)
-				{
-					bitmapImage.SetSource(thumbnail);
-					return bitmapImage;
-				}
-			}
-
-
-			/* Icon icon = ShellIcon.GetSmallIcon(Filepath);
-
-			if (NativeFile.Exists(Filepath) && (icon != null))
-			{
-			 return System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(
-						 icon.Handle,
-						 new Int32Rect(0, 0, icon.Width, icon.Height),
-						 BitmapSizeOptions.FromEmptyOptions()); 
-			}*/
-
-			Uri uri = new Uri("ms-appx:///Images/Question.png");
-			bitmapImage.UriSource = uri;
-
-			return bitmapImage;
-		}
+            return (App.Current as App).GetCachedThumbnail(Filepath);
+        }
 
 		public object ConvertBack(object value, Type targetType, object parameter, string culture)
 		{

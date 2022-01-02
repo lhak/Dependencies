@@ -1,4 +1,5 @@
-﻿using Dependencies;
+﻿using CommunityToolkit.WinUI.UI;
+using Dependencies;
 using Dependencies.ClrPh;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -19,6 +20,8 @@ using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Storage;
+using Windows.Storage.FileProperties;
 using Windows.UI.StartScreen;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -39,6 +42,8 @@ namespace Dependencies
 		{
 			this.InitializeComponent();
 			iconCache = new Dictionary<string, BitmapImage>();
+			thumbnailCache = new InMemoryStorage<BitmapImage>();
+			thumbnailCache.MaxItemCount = 1000;
 			(Application.Current as App).PropertyChanged += App_PropertyChanged;
 		}
 
@@ -102,6 +107,34 @@ namespace Dependencies
 			BitmapImage newImage = new BitmapImage(new Uri(iconPath));
 			iconCache[iconPath] = newImage;
 			return newImage;
+		}
+
+		public BitmapImage GetCachedThumbnail(string path)
+		{
+            InMemoryStorageItem<BitmapImage> cachedItem = thumbnailCache.GetItem(path, TimeSpan.FromMinutes(10));
+			if (cachedItem != null)
+			{
+				return cachedItem.Item;
+            }
+			BitmapImage bitmapImage = new BitmapImage();
+
+            try
+            {
+				StorageFile file = StorageFile.GetFileFromPathAsync(Path.GetFullPath(path)).AsTask<StorageFile>().Result;
+
+				StorageItemThumbnail thumbnail = file.GetThumbnailAsync(Windows.Storage.FileProperties.ThumbnailMode.SingleItem, 32).AsTask<StorageItemThumbnail>().Result;
+				if (thumbnail != null)
+				{
+					bitmapImage.SetSource(thumbnail);
+					thumbnailCache.SetItem(new InMemoryStorageItem<BitmapImage>(path, DateTime.Now, bitmapImage));
+					return bitmapImage;
+				}
+			}
+			catch(Exception)
+            {
+            }
+
+			return GetCachedIcon("Images/Question.png");
 		}
 
 		/// <summary>
@@ -178,5 +211,6 @@ namespace Dependencies
 		private MainWindow mainWindow;
 		private string statusBarMessage = "";
 		private Dictionary<string, BitmapImage> iconCache;
+		private InMemoryStorage<BitmapImage> thumbnailCache;
 	}
 }

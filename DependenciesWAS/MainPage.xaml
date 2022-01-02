@@ -75,30 +75,11 @@
 
 		</MenuBar>
 
-		<Grid Grid.Row="1" Background="#FF5C8F88"/>
+		<Grid Grid.Row="1" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefault}" BorderThickness="0,1,0,0"/>
 
 		<TabView x:Name="FileTabs" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsAddTabButtonVisible="False" Padding="4,4,0,0" TabCloseRequested="FileTabs_TabCloseRequested" TabItemsChanged="FileTabs_TabItemsChanged" >
 			<TabView.Resources>
 				<ResourceDictionary>
-					<ResourceDictionary.ThemeDictionaries>
-						<ResourceDictionary x:Key="Default">
-							<!-- Optimize appereance of non-active tabs -->
-							<SolidColorBrush x:Key="TabViewItemHeaderBackground" Color="#40FFFFFF" />
-							<SolidColorBrush x:Key="TabViewItemHeaderBackgroundPointerOver" Color="#80FFFFFF" />
-							<SolidColorBrush x:Key="TabViewItemHeaderBackgroundPressed" Color="#EEEEEE" />
-							<SolidColorBrush x:Key="TabViewItemBorderBrush" Color="#40FFFFFF" />
-							<SolidColorBrush x:Key="TabViewItemHeaderForeground" Color="#9E000000" />
-							<SolidColorBrush x:Key="TabViewItemHeaderForegroundPointerOver" Color="#9E000000" />
-							<SolidColorBrush x:Key="TabViewItemHeaderForegroundPressed" Color="#E4000000" />
-							<SolidColorBrush x:Key="TabViewItemHeaderCloseButtonForeground" Color="#9E000000" />
-							<SolidColorBrush x:Key="TabViewItemHeaderCloseButtonForegroundPointerOver" Color="#9E000000" />
-							<SolidColorBrush x:Key="TabViewItemHeaderCloseButtonForegroundPressed" Color="#E4000000" />
-							<SolidColorBrush x:Key="TabViewItemHeaderPressedCloseButtonForeground" Color="#9E000000" />
-							<SolidColorBrush x:Key="TabViewItemHeaderPointerOverCloseButtonForeground" Color="#E4000000" />
-							<SolidColorBrush x:Key="TabViewItemHeaderCloseButtonBackgroundPressed" Color="#06000000" />
-							<SolidColorBrush x:Key="TabViewItemHeaderCloseButtonBackgroundPointerOver" Color="#60FFFFFF" />
-						</ResourceDictionary>
-					</ResourceDictionary.ThemeDictionaries>
 					<!--TODO: Remove when rendering issue fixed -->
 					<CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius>
 				</ResourceDictionary>
@@ -141,7 +122,6 @@
                    Margin="0" 
                    VerticalAlignment="Bottom" IsClosable="False" IsOpen="True" Height="24" IsIconVisible="False" CornerRadius="0" BorderThickness="0,1,0,0" Background="{ThemeResource LayerFillColorDefaultBrush}"
 				   Visibility="{x:Bind ShowStatusBarSetting, Mode=OneWay}">
-			<!-- Visibility="{Binding Source={x:Static properties:Settings.Default}, Path=ShowStatusBar, Mode=OneWay, Converter={StaticResource BooleanToVisibility}}" -->
 			<InfoBar.Message>
 				"Welcome to Dependencies !"
 			</InfoBar.Message>
