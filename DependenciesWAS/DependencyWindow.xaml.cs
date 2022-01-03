@@ -788,6 +788,12 @@ namespace Dependencies
 			}
 
 			var resolver = new DefaultAssemblyResolver();
+			/* Remove the current directory from the search path. Otherwise, we will get relative paths
+			 * back for .net dlls that also exist side-by-side with this application. The cecil library will
+			 * later use the TRUSTED_PLATFORM_ASSEMBLIES list that also contains our side-by-side dlls, but this time 
+			 * will return the absolute paths so the code below works.
+			 */
+			resolver.RemoveSearchDirectory(".");
 			resolver.AddSearchDirectory(RootFolder);
 
 			// Parse it via cecil
