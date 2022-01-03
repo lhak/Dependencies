@@ -707,7 +707,7 @@ namespace Dependencies
 
 			// only user32 triggers appinit dlls
 			string User32Filepath = Path.Combine(FindPe.GetSystemPath(this.Pe), "user32.dll");
-			if (!ImportModule.PeFilePath.Equals(User32Filepath, StringComparison.OrdinalIgnoreCase))
+			if (string.Compare(ImportModule.PeFilePath, User32Filepath, StringComparison.OrdinalIgnoreCase) != 0)
 			{
 				return;
 			}
@@ -782,7 +782,7 @@ namespace Dependencies
 
 			// only mscorre triggers clr parsing
 			string User32Filepath = Path.Combine(FindPe.GetSystemPath(this.Pe), "mscoree.dll");
-			if (ImportModule.PeFilePath != User32Filepath)
+			if (string.Compare(ImportModule.PeFilePath, User32Filepath, StringComparison.OrdinalIgnoreCase) != 0)
 			{
 				return;
 			}
