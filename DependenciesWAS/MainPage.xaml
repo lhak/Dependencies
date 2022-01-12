@@ -57,6 +57,12 @@
 							</ToggleMenuFlyoutItem.KeyboardAccelerators>
 						</ToggleMenuFlyoutItem>
 						<MenuFlyoutSeparator/>
+						<MenuFlyoutItem x:Name="RefreshItem" AccessKey="R" Text="Refresh" IsEnabled="False" Click="RefreshItem_Click">
+							<MenuFlyoutItem.KeyboardAccelerators>
+								<KeyboardAccelerator Modifiers="None" Key="F5"/>
+							</MenuFlyoutItem.KeyboardAccelerators>
+						</MenuFlyoutItem>
+						<MenuFlyoutSeparator/>
 						<ToggleMenuFlyoutItem AccessKey="S" Text="Status Bar" IsChecked="{x:Bind ShowStatusBarSetting, Mode=TwoWay }"/>
 					</MenuBarItem.Items>
 				</MenuBarItem>

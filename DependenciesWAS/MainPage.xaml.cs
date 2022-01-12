@@ -190,6 +190,16 @@ namespace Dependencies
 		{
 			MainWindow.GetWindow().Close();
 		}
+
+		private void RefreshItem_Click(object sender, RoutedEventArgs e)
+		{
+			DependencyWindow SelectedItem = FileTabs.SelectedItem as DependencyWindow;
+			if (SelectedItem == null)
+				return;
+
+			SelectedItem.InitializeView();
+		}
+
 		private async void UserSettingsItem_Click(object sender, RoutedEventArgs e)
 		{
 			ContentDialog dialog = new ContentDialog()
@@ -239,6 +249,7 @@ namespace Dependencies
 		{
 			this.DefaultMessage.Visibility = FileTabs.TabItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 			this.FileTabs.Visibility = FileTabs.TabItems.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+			this.RefreshItem.IsEnabled = FileTabs.TabItems.Count > 0;
 		}
 
 		private async void RootGrid_DragEnter(object sender, DragEventArgs e)
