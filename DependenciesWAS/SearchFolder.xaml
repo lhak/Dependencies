@@ -1,0 +1,58 @@
+﻿<Page
+    x:Class="Dependencies.SearchFolder"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Dependencies"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+	Width="450">
+
+	<Page.Resources>
+		<XamlUICommand x:Name="AddCommand" Label="Add" ExecuteRequested="AddCommand_ExecuteRequested">
+			<XamlUICommand.IconSource>
+				<SymbolIconSource Symbol="Add"/>
+			</XamlUICommand.IconSource>
+		</XamlUICommand>
+		<XamlUICommand x:Name="RemoveCommand" Label="Remove" ExecuteRequested="RemoveCommand_ExecuteRequested">
+			<XamlUICommand.IconSource>
+				<SymbolIconSource Symbol="Remove"/>
+			</XamlUICommand.IconSource>
+		</XamlUICommand>
+		</Page.Resources>
+	
+	<Grid RowSpacing="4">
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="*"/>
+			<RowDefinition Height="Auto"/>
+		</Grid.RowDefinitions>
+		<Grid ColumnSpacing="8">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="Auto"/>
+				<ColumnDefinition Width="*"/>
+				<ColumnDefinition Width="Auto"/>
+			</Grid.ColumnDefinitions>
+			<TextBlock Text="Binary working directory" VerticalAlignment="Center"/>
+			<TextBox Grid.Column="1" x:Name="WorkingDirectoryTextBox" Text="{x:Bind WorkingDirectory, Mode=TwoWay}"/>
+			<Button Grid.Column="2" Content="..."  VerticalAlignment="Stretch" />
+		</Grid>
+		<TextBlock Grid.Row="1" Text="Additional search folders" Style="{ThemeResource BaseTextBlockStyle}"/>
+		<Border Grid.Row="2" BorderBrush="{ThemeResource CardStrokeColorDefault}" BorderThickness="1" CornerRadius="4"/>
+		<ListView x:Name="SearchFolderList" Grid.Row="2" SelectionMode="Extended" ItemsSource="{x:Bind SearchFolders}" CanReorderItems="True" AllowDrop="True" DragEnter="SearchFolderList_DragEnter" Drop="SearchFolderList_Drop" Padding="0,4,0,4">
+			<ListView.ItemTemplate>
+				<DataTemplate x:DataType="local:SearchFolderItem">
+					<Grid>
+						<TextBlock Text="{x:Bind Folder}"/>
+					</Grid>
+				</DataTemplate>
+			</ListView.ItemTemplate>
+		</ListView>
+		<TextBlock Grid.Row="2" x:Name="EmptyText" x:Load="{x:Bind IsEmptyTextVisible(SearchFolders.Count), Mode=OneWay}" Padding="8" TextWrapping="Wrap" IsHitTestVisible="False" VerticalAlignment="Center" Text="No custom search folders defined. Click the Add button or drag folders here."/>
+		<CommandBar Grid.Row="3" OverflowButtonVisibility="Collapsed" DefaultLabelPosition="Right">
+			<AppBarButton Command="{x:Bind RemoveCommand}" IsEnabled="{x:Bind IsItemSelected(SearchFolderList.SelectedIndex), Mode=OneWay}"/>
+			<AppBarButton Command="{x:Bind AddCommand}"/>
+		</CommandBar>
+	</Grid>
+</Page>

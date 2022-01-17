@@ -68,6 +68,8 @@
 				</MenuBarItem>
 				<MenuBarItem Title="Options" AccessKey="O">
 					<MenuBarItem.Items>
+						<MenuFlyoutItem x:Name="CustomizeSearchFoldersItem" Text="Customize search folders" AccessKey="C" Click="CustomizeSearchFolderItem_Click"/>
+						<MenuFlyoutSeparator/>
 						<MenuFlyoutItem x:Name="UserSettingsItem" Text="Properties" AccessKey="P" Click="UserSettingsItem_Click"/>
 					</MenuBarItem.Items>
 				</MenuBarItem>

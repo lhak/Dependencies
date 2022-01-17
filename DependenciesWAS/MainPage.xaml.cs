@@ -74,8 +74,9 @@ namespace Dependencies
 
 			PopulateRecentFilesMenuItems();
 
-			//OpenNewDependencyWindow("coreclr.dll");
-
+#if DEBUG
+			OpenNewDependencyWindow(Path.GetFullPath("coreclr.dll"));
+#endif
 			// Process command line args
 			string[] args = Environment.GetCommandLineArgs();
 			if (args.Length > 1)
@@ -199,6 +200,34 @@ namespace Dependencies
 
 			SelectedItem.InitializeView();
 		}
+		private async void CustomizeSearchFolderItem_Click(object sender, RoutedEventArgs e)
+		{
+			DependencyWindow SelectedItem = FileTabs.SelectedItem as DependencyWindow;
+			if (SelectedItem == null)
+				return;
+
+			ContentDialog dialog = new ContentDialog()
+			{
+				Title = "Search folders",
+				CloseButtonText = "Cancel",
+				PrimaryButtonText = "Ok",
+				DefaultButton = ContentDialogButton.Primary,
+				Content = new SearchFolder(SelectedItem),
+				XamlRoot = this.XamlRoot
+			};
+
+			TypedEventHandler<ContentDialog, ContentDialogButtonClickEventArgs> OkHandler = (sender, args) => { (sender.Content as SearchFolder).Save(); };
+
+			dialog.PrimaryButtonClick += OkHandler;
+			await dialog.ShowAsync();
+			dialog.PrimaryButtonClick -= OkHandler;
+
+		}
+
+		private void Dialog_CloseButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+		{
+
+		}
 
 		private async void UserSettingsItem_Click(object sender, RoutedEventArgs e)
 		{
@@ -206,13 +235,13 @@ namespace Dependencies
 			{
 				Title = "Properties",
 				CloseButtonText = "Close",
+				DefaultButton = ContentDialogButton.Close,
 				Content = new UserSettings(),
 				XamlRoot = this.XamlRoot
 			};
 
 			await dialog.ShowAsync();
 		}
-
 
 		private async void AboutItem_Click(object sender, RoutedEventArgs e)
 		{
@@ -235,6 +264,7 @@ namespace Dependencies
 			{
 				Title = "About",
 				CloseButtonText = "Close",
+				DefaultButton = ContentDialogButton.Close,
 				Content = text,
 				XamlRoot = this.XamlRoot
 			};

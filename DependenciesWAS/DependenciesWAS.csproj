@@ -26,6 +26,7 @@
     <None Remove="DependencyWindow.xaml" />
     <None Remove="FilterControl.xaml" />
     <None Remove="MainPage.xaml" />
+    <None Remove="SearchFolder.xaml" />
     <None Remove="UserSettings.xaml" />
   </ItemGroup>
 
@@ -73,6 +74,9 @@
     <None Update="DependencyModuleList.xaml">
       <Generator>MSBuild:Compile</Generator>
     </None>
+    <Page Update="SearchFolder.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="FilterControl.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
