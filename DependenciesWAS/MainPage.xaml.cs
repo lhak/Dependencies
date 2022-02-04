@@ -280,6 +280,7 @@ namespace Dependencies
 			this.DefaultMessage.Visibility = FileTabs.TabItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 			this.FileTabs.Visibility = FileTabs.TabItems.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
 			this.RefreshItem.IsEnabled = FileTabs.TabItems.Count > 0;
+			this.CustomizeSearchFoldersItem.IsEnabled = FileTabs.TabItems.Count > 0;
 		}
 
 		private async void RootGrid_DragEnter(object sender, DragEventArgs e)
