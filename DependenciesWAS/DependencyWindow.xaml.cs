@@ -1,4 +1,5 @@
-﻿using Dependencies;
+﻿using CommunityToolkit.WinUI.UI;
+using Dependencies;
 using Dependencies.ClrPh;
 using Dependencies.Toolkit.Uwp.Helpers;
 using Microsoft.UI.Xaml;
@@ -1370,10 +1371,8 @@ namespace Dependencies
 					ExpandAllParentNode(Item.Parent as ModuleTreeViewItem);
 					DllTreeView.SelectedItem = Item;
 
-#if TODO
-					Item.BringIntoView();
-					Item.Focus();
-#endif
+					TreeViewList list = DllTreeView.FindDescendant<TreeViewList>();
+					list.ScrollIntoView(Item);
 				}
 
 				return Item;
@@ -1388,11 +1387,9 @@ namespace Dependencies
 					{
 						ExpandAllParentNode(Item);
 						DllTreeView.SelectedItem = ChildItem;
-#if TODO
-						ChildItem.IsSelected = true;
-						ChildItem.BringIntoView();
-						ChildItem.Focus();
-#endif
+
+						TreeViewList list = DllTreeView.FindDescendant<TreeViewList>();
+						list.ScrollIntoView(ChildItem);
 					}
 
 					return Item;
