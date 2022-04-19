@@ -86,14 +86,6 @@
 		<Grid Grid.Row="1" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefault}" BorderThickness="0,1,0,0"/>
 
 		<TabView x:Name="FileTabs" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsAddTabButtonVisible="False" Padding="4,4,0,0" TabCloseRequested="FileTabs_TabCloseRequested" TabItemsChanged="FileTabs_TabItemsChanged" >
-			<TabView.Resources>
-				<ResourceDictionary>
-					<!--TODO: Remove when rendering issue fixed -->
-					<CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius>
-				</ResourceDictionary>
-				<!-- TODO Theme -->
-				
-			</TabView.Resources>
 		</TabView>
 
 		<Grid   Name="DefaultMessage"
