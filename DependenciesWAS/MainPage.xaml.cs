@@ -103,9 +103,9 @@ namespace Dependencies
 		/// <param name="Filename">File path to a PE to process.</param>
 		public async void OpenNewDependencyWindow(String Filename)
 		{
-			var newDependencyWindow = new DependencyWindow(Filename);
+			DependencyWindow newDependencyWindow = new DependencyWindow(Filename);
 			newDependencyWindow.Header = Path.GetFileNameWithoutExtension(Filename);
-
+			newDependencyWindow.Tag = Filename;
 			FileTabs.TabItems.Add(newDependencyWindow);
 			FileTabs.SelectedItem = newDependencyWindow;
 
@@ -120,13 +120,7 @@ namespace Dependencies
 		public void PopulateRecentFilesMenuItems()
 		{
 			// TODO: Find a few to update the recent menu without rebuilding it
-			int index = FileMenu.Items.IndexOf(RecentItems);
-			FileMenu.Items.Remove(RecentItems);
-
-
-
-			RecentItems = new MenuFlyoutSubItem() { Text = "Recent Items" };
-			var o = App.Current.Resources["FlyoutThemeMaxWidth"];
+			RecentItemsFlyout.Items.Clear();
 
 			if (Properties.Settings.Default.RecentFiles.Count == 0)
 			{
@@ -143,18 +137,28 @@ namespace Dependencies
 
 				AddRecentFilesMenuItem(RecentFilePath, Properties.Settings.Default.RecentFiles.IndexOf(RecentFilePath));
 			}
-			RecentItems.IsEnabled = RecentItems.Items.Count > 0;
-			FileMenu.Items.Insert(index, RecentItems);
+			if (RecentItemsFlyout.Items.Count == 0)
+			{
+				MenuFlyoutItem dummyItem = new MenuFlyoutItem() { Style = RecentMenuItemStyle, Text = "No recent items" };
+				RecentItemsFlyout.Items.Add(dummyItem);
+			}
 		}
 
 
 		private void AddRecentFilesMenuItem(string Filepath, int index)
 		{
-			RecentItems.Items.Add(new MenuFlyoutItem() { DataContext = new RecentMenuItem(Filepath), Style = RecentMenuItemStyle });
-			//_recentsItems.Add(new RecentMenuItem(Filepath));
+			RecentMenuItem item = new RecentMenuItem(Filepath);
+			Binding textBinding = new Binding();
+			textBinding.Source = item;
+			textBinding.Path = new PropertyPath(nameof(item.HeaderTitle));
+			textBinding.Mode = BindingMode.OneWay;
+			MenuFlyoutItem menuItem = new MenuFlyoutItem() { DataContext = item, Style = RecentMenuItemStyle };
+			menuItem.SetBinding(MenuFlyoutItem.TextProperty, textBinding);
+			menuItem.Click += RecentItem_Click;
+			RecentItemsFlyout.Items.Add(menuItem);
 		}
 
-		private async void OpenItem_Click(object sender, RoutedEventArgs e)
+		private async void OpenItem_Click(SplitButton sender, SplitButtonClickEventArgs e)
 		{
 			FileOpenPicker loadPicker = new FileOpenPicker();
 
@@ -181,10 +185,6 @@ namespace Dependencies
 			{
 				OpenNewDependencyWindow(RecentFilePath);
 			}
-
-			// TODO: Remove this once there is way to bind a list of MenuFlyoutItems
-			IExpandCollapseProvider provider = MenuBarItemAutomationPeer.FromElement(FileMenu) as IExpandCollapseProvider;
-			provider.Collapse();
 		}
 
 		private void ExitItem_Click(object sender, RoutedEventArgs e)
@@ -221,11 +221,6 @@ namespace Dependencies
 			dialog.PrimaryButtonClick += OkHandler;
 			await dialog.ShowAsync();
 			dialog.PrimaryButtonClick -= OkHandler;
-
-		}
-
-		private void Dialog_CloseButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
-		{
 
 		}
 
@@ -285,31 +280,47 @@ namespace Dependencies
 
 		private async void RootGrid_DragEnter(object sender, DragEventArgs e)
 		{
+			e.AcceptedOperation = DataPackageOperation.None;
+
 			// Check if the drag contains storage items
 			if (e.DataView == null)
 				return;
 
-			if (!e.DataView.Contains(StandardDataFormats.StorageItems))
+			if (!e.DataView.Contains(StandardDataFormats.StorageItems) && !e.DataView.Contains(StandardDataFormats.ApplicationLink))
 				return;
+
+			if (e.DataView.Properties.ContainsKey("windowHandle"))
+			{
+				// Make sure not to accept drops from the same window
+				Int64 handle = (Int64)e.DataView.Properties["windowHandle"];
+				if ((Int64)MainWindow.GetWindowHandle() == handle)
+					return;
+			}
 
 			// Get deferal
 			DragOperationDeferral deferal = e.GetDeferral();
 
-			e.AcceptedOperation = DataPackageOperation.None;
-
 			try
 			{
 				// Check that at least one file is included
-				IReadOnlyList<IStorageItem> files = await e.DataView.GetStorageItemsAsync();
-				foreach (IStorageItem item in files)
+				if (e.DataView.Contains(StandardDataFormats.StorageItems))
 				{
-					if (item.IsOfType(StorageItemTypes.File))
+					IReadOnlyList<IStorageItem> files = await e.DataView.GetStorageItemsAsync();
+					foreach (IStorageItem item in files)
 					{
-						e.AcceptedOperation = DataPackageOperation.Copy;
-						break;
+						if (item.IsOfType(StorageItemTypes.File))
+						{
+							e.AcceptedOperation = DataPackageOperation.Copy;
+							break;
+						}
 					}
 				}
-
+				else
+				{
+					Uri file = await e.DataView.GetApplicationLinkAsync();
+					if(file.IsFile)
+						e.AcceptedOperation = DataPackageOperation.Move;
+				}
 				// Complete operation
 				e.Handled = true;
 			}
@@ -319,28 +330,77 @@ namespace Dependencies
 			deferal.Complete();
 		}
 
-		private async void RootGrid_Drop(object sender, DragEventArgs e)
+		private async void RootGridOrFileTabs_Drop(object sender, DragEventArgs e)
 		{
-			e.AcceptedOperation = DataPackageOperation.Copy;
 			DragOperationDeferral deferal = e.GetDeferral();
 			e.Handled = true;
 			try
 			{
-				IReadOnlyList<IStorageItem> files = await e.DataView.GetStorageItemsAsync();
-				foreach (IStorageItem item in files)
+				if (e.DataView.Contains(StandardDataFormats.StorageItems))
 				{
-					if (item.IsOfType(StorageItemTypes.File))
+					IReadOnlyList<IStorageItem> files = await e.DataView.GetStorageItemsAsync();
+					foreach (IStorageItem item in files)
 					{
-						deferal.Complete();
-						OpenNewDependencyWindow(item.Path);
-						return;
+						if (item.IsOfType(StorageItemTypes.File))
+						{
+							deferal.Complete();
+							OpenNewDependencyWindow(item.Path);
+							return;
+						}
 					}
 				}
+				else
+				{
+					Uri file = await e.DataView.GetApplicationLinkAsync();
+					OpenNewDependencyWindow(file.AbsolutePath);
+				}
+				// Complete operation
+				e.Handled = true;
 			}
 			catch (Exception)
 			{
 			}
 			deferal.Complete();
+		}
+
+		private void FileTabs_TabStripDragOver(object sender, DragEventArgs e)
+		{
+			e.AcceptedOperation = DataPackageOperation.None;
+
+			if (e.DataView.Contains(StandardDataFormats.ApplicationLink))
+			{
+				e.Handled = true;
+				e.AcceptedOperation = DataPackageOperation.Move;
+			}
+		}
+
+		private void FileTabs_TabDragStarting(TabView sender, TabViewTabDragStartingEventArgs args)
+		{
+			try
+			{
+				DependencyWindow window = args.Tab as DependencyWindow;
+				args.Data.SetApplicationLink(new Uri(window.Tag.ToString(), UriKind.Absolute));
+				args.Data.RequestedOperation = DataPackageOperation.Move;
+				args.Data.Properties.ApplicationName = "Dependencies";
+				args.Data.Properties.Add("windowHandle", (Int64)MainWindow.GetWindowHandle());
+			}
+			catch (Exception)
+			{
+
+			}
+		}
+
+		private void FileTabs_TabDragCompleted(TabView sender, TabViewTabDragCompletedEventArgs args)
+		{
+			// There does not currently seem to be a way to detect if the drop target is the same window or 
+			// tabs are reordered in the same window
+			return;
+			/*
+			if (args.DropResult != DataPackageOperation.Move)
+				return;
+
+			// Remove tab if dragged to another window
+			FileTabs.TabItems.Remove(args.Tab);*/
 		}
 
 		public string VersionStr { get => Assembly.GetEntryAssembly().GetName().Version.ToString(); }

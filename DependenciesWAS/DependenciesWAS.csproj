@@ -18,6 +18,12 @@
 		<IntermediateOutputPath>$(SolutionDir)obj\$(ProjectName)\$(Configuration)$(Platform)</IntermediateOutputPath>
 		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
 	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Packaged'">
+		<DefineConstants>$(DefineConstants);RELEASE;TRACE</DefineConstants>
+		<DebugSymbols>false</DebugSymbols>
+		<DebugType>portable</DebugType>
+		<Optimize>true</Optimize>
+	</PropertyGroup>
 
 
 	<ItemGroup>
@@ -39,7 +45,7 @@
 		<PackageReference Include="CommunityToolkit.WinUI.UI.Controls" Version="7.1.2" />
 		<PackageReference Include="CommunityToolkit.WinUI.UI.Controls.DataGrid" Version="7.1.2" />
 		<PackageReference Include="Microsoft.Windows.Compatibility" Version="6.0.0" />
-		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.1.0-preview2" />
+		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.1.0-preview3" />
 		<PackageReference Include="Mono.Cecil" Version="0.11.4" />
 		<Manifest Include="$(ApplicationManifest)" />
 	</ItemGroup>

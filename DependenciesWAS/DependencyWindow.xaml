@@ -23,7 +23,7 @@
 
 	</TabViewItem.Resources>
 
-	<Grid x:Name="ResizeElemGrid" Margin="0,0,0,0" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+	<Grid x:Name="ResizeElemGrid" Margin="0,0,0,0" Background="{ThemeResource LayerFillColorDefaultBrush}">
 		<Grid.RowDefinitions>
 			<RowDefinition Height="146*"/>
 			<RowDefinition Height="5"/>
@@ -76,15 +76,10 @@
 					<Thickness x:Key="TreeViewItemPresenterMargin">4,0</Thickness>
 					<Thickness x:Key="TreeViewItemPresenterPadding">0,0,0,0</Thickness>
 					<x:Double x:Key="TreeViewItemMinHeight">20</x:Double>
-					<Style TargetType="TreeViewItem">
-						<Setter Property="ContextFlyout" Value="{StaticResource TreeItemContextMenu}"/>
-					</Style>
 				</TreeView.Resources>
 				<TreeView.ItemTemplate>
 					<DataTemplate x:DataType="local:ModuleTreeViewItem">
-						<!-- TODO: Do not register an event handler pointing to a method of the TabViewItem but use the item class instead. Otherwise
-						memory leaks will occur. Also set the context menu in a style -->
-						<TreeViewItem DoubleTapped="{x:Bind DoubleTappedEventHandler}" ToolTipService.ToolTip="{x:Bind Tooltip, Mode=OneWay}">
+						<TreeViewItem DoubleTapped="{x:Bind DoubleTappedEventHandler}" ContextFlyout="{StaticResource TreeItemContextMenu}" ToolTipService.ToolTip="{x:Bind Tooltip, Mode=OneWay}">
 							<Grid Margin="0,0,5,0">
 								<Grid.ColumnDefinitions>
 									<ColumnDefinition Width="24"/>

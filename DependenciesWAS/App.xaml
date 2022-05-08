@@ -10,6 +10,9 @@
 			<ResourceDictionary.MergedDictionaries>
 				<XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
 				<ResourceDictionary>
+					<StaticResource x:Key="WindowCaptionBackground" ResourceKey="SystemControlTransparentBrush" />
+					<StaticResource x:Key="WindowCaptionBackgroundDisabled" ResourceKey="SystemControlTransparentBrush" />
+					
 					<!-- Make everything a bit more compact -->
 					<Thickness x:Key="MenuBarHeight">32</Thickness>
 					<Thickness x:Key="MenuBarItemButtonPadding">10,2,10,2</Thickness>

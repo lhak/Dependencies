@@ -8,45 +8,46 @@
     mc:Ignorable="d">
 
 	<Page.Resources>
-		<Style x:Name="RecentMenuItemStyle" TargetType="MenuFlyoutItem">
-			<Setter Target="Template">
-				<Setter.Value>
-					<ControlTemplate TargetType="MenuFlyoutItem">
-						<MenuFlyoutItem Text="{Binding HeaderTitle}" FontSize="12" Padding="{StaticResource MenuFlyoutItemThemePaddingNarrow}" Click="RecentItem_Click"/>
-					</ControlTemplate>
-				</Setter.Value>
-			</Setter>
+		<Style x:Name="RecentMenuItemStyle" TargetType="MenuFlyoutItem" BasedOn="{StaticResource DefaultMenuFlyoutItemStyle}">
+			<Setter Property="Padding" Value="{StaticResource MenuFlyoutItemThemePaddingNarrow}"/>
+			<Setter Property="FontSize" Value="12"/>
 		</Style>
+
 	</Page.Resources>
 
-	<Grid AllowDrop="True" DragEnter="RootGrid_DragEnter" Drop="RootGrid_Drop">
+	<Grid AllowDrop="True" DragEnter="RootGrid_DragEnter" Drop="RootGridOrFileTabs_Drop">
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto"/>
 			<RowDefinition Height="*"/>
 			<RowDefinition Height="Auto"/>
 		</Grid.RowDefinitions>
-		<MenuBar Padding="4,0,0,0">
-			
-			<MenuBar.Items>
-				<MenuBarItem x:Name="FileMenu" Title="File" AccessKey="F">
-					<MenuBarItem.Items>
-						<MenuFlyoutItem x:Name="OpenItem" Text="Open" Click="OpenItem_Click" AccessKey="O">
-							<MenuFlyoutItem.KeyboardAccelerators>
-								<KeyboardAccelerator Modifiers="Control" Key="O"/>
-							</MenuFlyoutItem.KeyboardAccelerators>
-						</MenuFlyoutItem>
-						<MenuFlyoutSubItem x:Name="RecentItems" Text="Recent files"/>
-						<MenuFlyoutSeparator/>
-						<MenuFlyoutItem x:Name="ExitItem" Text="Exit" Click="ExitItem_Click" AccessKey="X">
-							<MenuFlyoutItem.KeyboardAccelerators>
-								<KeyboardAccelerator Modifiers="Control" Key="Q"/>
-							</MenuFlyoutItem.KeyboardAccelerators>
-						</MenuFlyoutItem>
-					</MenuBarItem.Items>
-				</MenuBarItem>
-				<MenuBarItem Title="View" AccessKey="V">
-					<MenuBarItem.Items>
-						<ToggleMenuFlyoutItem x:Name="FullPathItem" AccessKey="F" Text="Full Paths" IsChecked="{x:Bind FullPathSetting, Mode=TwoWay}">
+		<CommandBar Grid.Row="0" DefaultLabelPosition="Right" HorizontalAlignment="Left">
+			<AppBarElementContainer>
+				<SplitButton x:Name="FileOpenButton" Style="{ThemeResource SplitButtonCommandBarStyle}" Click="OpenItem_Click" AccessKey="O">
+					<StackPanel Orientation="Horizontal">
+						<Viewbox x:Name="ContentViewbox"
+                                Height="{ThemeResource AppBarButtonContentHeight}"
+                                HorizontalAlignment="Stretch"
+                                AutomationProperties.AccessibilityView="Raw" >
+							<SymbolIcon Symbol="OpenFile"/>
+						</Viewbox>
+						<TextBlock x:Name="TextLabel"
+                                FontSize="12"
+                                TextAlignment="Center"
+                                TextWrapping="Wrap"
+                                Margin="8,0,0,0"
+                                AutomationProperties.AccessibilityView="Raw"
+								   Text="Open"/>
+					</StackPanel>
+					<SplitButton.Flyout>
+						<MenuFlyout x:Name="RecentItemsFlyout"/>
+					</SplitButton.Flyout>
+				</SplitButton>
+			</AppBarElementContainer>
+			<AppBarButton Icon="View" Label="View" AccessKey="V">
+				<AppBarButton.Flyout>
+					<MenuFlyout Placement="Bottom">
+						<ToggleMenuFlyoutItem AccessKey="F" Text="Full Paths" IsChecked="{x:Bind FullPathSetting, Mode=TwoWay}">
 							<ToggleMenuFlyoutItem.KeyboardAccelerators>
 								<KeyboardAccelerator Modifiers="None" Key="F9"/>
 							</ToggleMenuFlyoutItem.KeyboardAccelerators>
@@ -64,29 +65,21 @@
 						</MenuFlyoutItem>
 						<MenuFlyoutSeparator/>
 						<ToggleMenuFlyoutItem AccessKey="S" Text="Status Bar" IsChecked="{x:Bind ShowStatusBarSetting, Mode=TwoWay }"/>
-					</MenuBarItem.Items>
-				</MenuBarItem>
-				<MenuBarItem Title="Options" AccessKey="O">
-					<MenuBarItem.Items>
-						<MenuFlyoutItem x:Name="CustomizeSearchFoldersItem" Text="Customize search folders" AccessKey="C" IsEnabled="False" Click="CustomizeSearchFolderItem_Click"/>
-						<MenuFlyoutSeparator/>
-						<MenuFlyoutItem x:Name="UserSettingsItem" Text="Properties" AccessKey="P" Click="UserSettingsItem_Click"/>
-					</MenuBarItem.Items>
-				</MenuBarItem>
-
-				<MenuBarItem Title="Help" AccessKey="H">
-					<MenuBarItem.Items>
-						<MenuFlyoutItem Text="About Dependencies" Click="AboutItem_Click"/>
-					</MenuBarItem.Items>
-				</MenuBarItem>
-			</MenuBar.Items>
-
-		</MenuBar>
+					</MenuFlyout>
+				</AppBarButton.Flyout>
+			</AppBarButton>
+			<AppBarButton x:Name="CustomizeSearchFoldersItem" Icon="Find" Label="Customize search folders" AccessKey="C" IsEnabled="True" Click="CustomizeSearchFolderItem_Click"/>
+			<CommandBar.SecondaryCommands>
+				<AppBarButton Icon="Setting" Label="Properties" AccessKey="P" Click="UserSettingsItem_Click"/>
+				<AppBarButton Icon="Help" Label="About Dependencies" AccessKey="H" Click="AboutItem_Click"/>
+			</CommandBar.SecondaryCommands>
+		</CommandBar>
 
 		<Grid Grid.Row="1" Background="{ThemeResource ControlAltFillColorQuarternary}" BorderBrush="{ThemeResource CardStrokeColorDefault}" BorderThickness="0,1,0,0"/>
 
-		<TabView x:Name="FileTabs" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsAddTabButtonVisible="False" Padding="4,4,0,0" TabCloseRequested="FileTabs_TabCloseRequested" TabItemsChanged="FileTabs_TabItemsChanged" >
-		</TabView>
+		<TabView x:Name="FileTabs" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsAddTabButtonVisible="False" CanReorderTabs="True" CanDragTabs="True" AllowDropTabs="True" Padding="4,4,0,0" 
+				 TabCloseRequested="FileTabs_TabCloseRequested" TabItemsChanged="FileTabs_TabItemsChanged" TabDragStarting="FileTabs_TabDragStarting" TabDragCompleted="FileTabs_TabDragCompleted" TabStripDragOver="FileTabs_TabStripDragOver" TabStripDrop="RootGridOrFileTabs_Drop"/>
+
 
 		<Grid   Name="DefaultMessage"
                 Grid.Row="1" 

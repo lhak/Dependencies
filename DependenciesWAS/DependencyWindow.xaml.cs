@@ -367,7 +367,7 @@ namespace Dependencies
 					ModuleInfo.Flags &= ~ModuleFlag.ChildrenError;
 				}
 
-                OnPropertyChanged(nameof(Tooltip));
+				OnPropertyChanged(nameof(Tooltip));
 
 				_has_child_errors = true;
 				OnPropertyChanged("HasChildErrors");
@@ -511,7 +511,6 @@ namespace Dependencies
 			}
 		}
 
-		// Add the event handler here instead of the DependencyWindow class to avoid memory leaks
 		public void DoubleTappedEventHandler(object sender, DoubleTappedRoutedEventArgs e)
 		{
 			IsExpanded = !IsExpanded;
@@ -566,11 +565,11 @@ namespace Dependencies
 		{
 			if (!NativeFile.Exists(this.Filename))
 			{
-                MessageBox.Show(
-                    String.Format("{0:s} is not present on the disk", this.Filename),
-                    "Invalid PE",
-                    MessageBoxButton.OK
-                );
+				MessageBox.Show(
+					String.Format("{0:s} is not present on the disk", this.Filename),
+					"Invalid PE",
+					MessageBoxButton.OK
+				);
 				return;
 			}
 
@@ -578,11 +577,11 @@ namespace Dependencies
 			if (this.Pe == null || !this.Pe.LoadSuccessful)
 			{
 
-                MessageBox.Show(
-                    String.Format("{0:s} is not a valid PE-COFF file", this.Filename),
-                    "Invalid PE",
-                    MessageBoxButton.OK
-                );
+				MessageBox.Show(
+					String.Format("{0:s} is not a valid PE-COFF file", this.Filename),
+					"Invalid PE",
+					MessageBoxButton.OK
+				);
 				return;
 			}
 
@@ -692,10 +691,10 @@ namespace Dependencies
 			{
 				if (!this._DisplayWarning)
 				{
-                    MessageBoxResult result = MessageBox.Show(
-                    "This binary use the App-V containerization technology which fiddle with search directories and PATH env in ways Dependencies can't handle.\n\nFollowing results are probably not quite exact.",
-                    "App-V ISV disclaimer"
-                    );
+					MessageBoxResult result = MessageBox.Show(
+					"This binary use the App-V containerization technology which fiddle with search directories and PATH env in ways Dependencies can't handle.\n\nFollowing results are probably not quite exact.",
+					"App-V ISV disclaimer"
+					);
 					this._DisplayWarning = true; // prevent the same warning window to popup several times
 				}
 
@@ -805,10 +804,10 @@ namespace Dependencies
 			}
 			catch (BadImageFormatException)
 			{
-                MessageBoxResult result = MessageBox.Show(
-                        String.Format("Cecil could not correctly parse {0:s}, which can happens on .NET Core executables. CLR imports will be not shown", AnalyzedPe.Filepath),
-                        "CLR parsing fail"
-                );
+				MessageBoxResult result = MessageBox.Show(
+						String.Format("Cecil could not correctly parse {0:s}, which can happens on .NET Core executables. CLR imports will be not shown", AnalyzedPe.Filepath),
+						"CLR parsing fail"
+				);
 				return;
 			}
 
@@ -1300,7 +1299,7 @@ namespace Dependencies
 				CollapseOrExpandAllNodes(ChildItem, ExpandNode);
 			}
 		}
-		
+
 		private void ExpandAllNodes_Executed(XamlUICommand sender, ExecuteRequestedEventArgs args)
 		{
 			// Expanding all nodes tends to slow down the application (massive allocations for node DataContext)
@@ -1326,7 +1325,7 @@ namespace Dependencies
 		private void DoFindModuleInList_Executed(XamlUICommand sender, ExecuteRequestedEventArgs args)
 		{
 			ModuleTreeViewItem Source = DllTreeView.SelectedItem as ModuleTreeViewItem;
-			
+
 			if (args.Parameter is TreeViewItem)
 				Source = (args.Parameter as TreeViewItem).DataContext as ModuleTreeViewItem;
 
@@ -1416,7 +1415,7 @@ namespace Dependencies
 				{
 					DisplayModuleInfo SelectedModule = (param as DisplayModuleInfo);
 					ModuleTreeViewItem TreeRootItem = this.DllTreeView.RootNodes[0] as ModuleTreeViewItem;
-                    FindModuleInTree(TreeRootItem, SelectedModule, true);
+					FindModuleInTree(TreeRootItem, SelectedModule, true);
 				});
 			}
 		}
@@ -1434,7 +1433,7 @@ namespace Dependencies
 				});
 			}
 		}
-#endregion // Commands 
+		#endregion // Commands 
 	}
 
 }

@@ -6,13 +6,18 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-	Closed="Window_Closed">
+	Closed="Window_Closed"
+	Activated="Window_Activated">
 
-	<Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-		<StackPanel x:Name="TitleBar" Height="24" Margin="16,4,0,0" Orientation="Horizontal" Visibility="Collapsed" VerticalAlignment="Top">
+	<Grid x:Name="RootGrid" ActualThemeChanged="RootGrid_ActualThemeChanged" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="*"/>
+		</Grid.RowDefinitions>
+		<StackPanel x:Name="TitleBar" Height="28" Padding="16,4,0,0" Orientation="Horizontal" VerticalAlignment="Top">
 			<Image Source="ms-appx:///Assets/Square44x44Logo.png" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Left"/>
 			<TextBlock x:Name="TitleBarText" Text="Dependencies" Margin="12,4,0,0" FontSize="12" VerticalAlignment="Top"/>
 		</StackPanel>
-		<local:MainPage x:Name="RootPage"/>
+		<local:MainPage x:Name="RootPage" Grid.Row="1"/>
 	</Grid>
 </Window>
