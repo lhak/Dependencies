@@ -18,9 +18,6 @@
 		</XamlUICommand>
 		<XamlUICommand x:Key="DoExpandAllNodes" Label="Expand All" ExecuteRequested="ExpandAllNodes_Executed"/>
 		<XamlUICommand x:Key="DoCollapseAllNodes" Label="Collapse All" ExecuteRequested="CollapseAllNodes_Executed"/>
-		<XamlUICommand x:Key="OpenInNewTab" Label="Open in new tab" ExecuteRequested="OpenInNewTab_Executed"/>
-
-
 	</TabViewItem.Resources>
 
 	<Grid x:Name="ResizeElemGrid" Margin="0,0,0,0" Background="{ThemeResource LayerFillColorDefaultBrush}">
@@ -52,25 +49,8 @@
 						<MenuFlyoutItem Command="{StaticResource DoExpandAllNodes}" CommandParameter="{x:Bind TreeItemContextMenu.Target, Mode=OneWay}"/>
 						<MenuFlyoutItem Command="{StaticResource DoCollapseAllNodes}" CommandParameter="{x:Bind TreeItemContextMenu.Target, Mode=OneWay}"/>
 						<MenuFlyoutSeparator/>
-						<MenuFlyoutItem Command="{StaticResource OpenInNewTab}" CommandParameter="{x:Bind TreeItemContextMenu.Target, Mode=OneWay}"/>
-
-
-						<!-- TODO
-				
-
-						<MenuItem Header="View Module in separate application" 
-                                Command="{Binding  Path=OpenNewAppCommand, RelativeSource={RelativeSource AncestorLevel=1,AncestorType=TreeViewItem,Mode=FindAncestor}}"
-                                CommandParameter ="{Binding DataContext, RelativeSource={RelativeSource AncestorLevel=1,AncestorType=Grid,Mode=FindAncestor}}"
-                                InputGestureText="Alt+Enter"  
-                                IsEnabled="True" />
-
-						<MenuItem Header="View Module in Peviewer" 
-                                Command="{Binding  Path=OpenPeviewerCommand, RelativeSource={RelativeSource AncestorLevel=1,AncestorType=TreeViewItem,Mode=FindAncestor}}"
-                                CommandParameter ="{Binding DataContext, RelativeSource={RelativeSource AncestorLevel=1,AncestorType=Grid,Mode=FindAncestor}}"
-                                InputGestureText="Alt+Enter"  
-                                IsEnabled="True" />-->
-
-						<!--AncestorType=Grid To get the current context feel like magic to me -->
+						<MenuFlyoutItem Text="Open in new tab" Command="{x:Bind TreeItemContextMenu.Target.DataContext.(local:ModuleTreeViewItem.OpenNewAppCommand), Mode=OneWay}" CommandParameter="{x:Bind TreeItemContextMenu.Target, Mode=OneWay}"/>
+						<MenuFlyoutItem Text="Open in Peviewer" Command="{x:Bind TreeItemContextMenu.Target.DataContext.(local:ModuleTreeViewItem.OpenPeviewerCommand), Mode=OneWay}" CommandParameter="{x:Bind TreeItemContextMenu.Target, Mode=OneWay}"/>
 					</MenuFlyout>
 
 					<Thickness x:Key="TreeViewItemPresenterMargin">4,0</Thickness>

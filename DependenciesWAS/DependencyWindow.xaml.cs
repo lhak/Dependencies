@@ -455,10 +455,8 @@ namespace Dependencies
 
 		public bool OpenPeviewer(object Context)
 		{
-#if TODO
-
             string programPath = Dependencies.Properties.Settings.Default.PeViewerPath;
-            Process PeviewerProcess = new Process();
+			Process PeviewerProcess = new Process();
 
             if (Context == null)
             {
@@ -467,7 +465,7 @@ namespace Dependencies
 
             if (!File.Exists(programPath))
             {
-                System.Windows.MessageBox.Show(String.Format("{0:s} file could not be found !", programPath));
+                MessageBox.Show(String.Format("{0:s} file could not be found !", programPath));
                 return false;
             }
 
@@ -480,15 +478,12 @@ namespace Dependencies
             PeviewerProcess.StartInfo.FileName = String.Format("\"{0:s}\"", programPath);
             PeviewerProcess.StartInfo.Arguments = String.Format("\"{0:s}\"", Filepath);
             return PeviewerProcess.Start();
-#endif
-			return false;
 		}
 
 		public RelayCommand OpenNewAppCommand
 		{
 			get
 			{
-#if TODO
 
                 if (_OpenNewAppCommand == null)
                 {
@@ -500,13 +495,10 @@ namespace Dependencies
                             return;
                         }
 
-                        Process OtherDependenciesProcess = new Process();
-                        OtherDependenciesProcess.StartInfo.FileName = System.Windows.Forms.Application.ExecutablePath;
-                        OtherDependenciesProcess.StartInfo.Arguments = String.Format("\"{0:s}\"", Filepath);
-                        OtherDependenciesProcess.Start();
+						MainWindow.GetWindow().OpenNewTab(ModuleFilePath);
                     });
                 }
-#endif
+
 				return _OpenNewAppCommand;
 			}
 		}
@@ -1314,12 +1306,6 @@ namespace Dependencies
 		{
 			object TreeNode = (args.Parameter as TreeViewItem).DataContext;
 			CollapseOrExpandAllNodes((TreeNode as ModuleTreeViewItem), false);
-		}
-
-		private void OpenInNewTab_Executed(XamlUICommand sender, ExecuteRequestedEventArgs args)
-		{
-			ModuleTreeViewItem item = (args.Parameter as TreeViewItem).DataContext as ModuleTreeViewItem;
-			MainWindow.GetWindow().OpenNewTab(item.ModuleFilePath);
 		}
 
 		private void DoFindModuleInList_Executed(XamlUICommand sender, ExecuteRequestedEventArgs args)

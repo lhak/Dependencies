@@ -62,18 +62,6 @@ namespace Dependencies
 				);
 			}
 
-			/*_CustomSearchFolders.Add(
-					new SearchFolderItem()
-					{
-						Folder = "Test folder"
-					}
-				);
-			_CustomSearchFolders.Add(
-					new SearchFolderItem()
-					{
-						Folder = "Test folder 2"
-					}
-				);*/
 			this.InitializeComponent();
 		}
 

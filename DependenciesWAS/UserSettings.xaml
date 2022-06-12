@@ -13,7 +13,7 @@
 		<local:BinaryCacheOption x:Key="BinaryCacheOptionConverter"/>
 	</UserControl.Resources>
 
-	<Grid Width="450" Height="200">
+	<Grid Width="450" Height="228" ColumnSpacing="8" RowSpacing="8">
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="Auto" />
 			<ColumnDefinition Width="*" />
@@ -24,8 +24,8 @@
 			<RowDefinition Height="Auto"/>
 			<RowDefinition Height="Auto"/>
 			<RowDefinition Height="Auto"/>
-			<RowDefinition Height="*"/>
 			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="*"/>
 		</Grid.RowDefinitions>
 
 		<TextBlock 
@@ -37,7 +37,6 @@
 
 
 		<ComboBox x:Name="BinaryCacheCombo"
-                  Margin="8"
                   Grid.Row="0"
                   Grid.Column="1" 
                   SelectedItem="{x:Bind BinaryCacheOptionValueSetting, Mode=TwoWay, Converter={StaticResource BinaryCacheOptionConverter}}"
@@ -45,33 +44,63 @@
 
 		<TextBlock Grid.Row="1" Grid.ColumnSpan="2" x:Name="UpdateNote" Text="The binary caching preference has been modified, you need to restart Dependencies for the modifications to be actually reloaded." TextWrapping="WrapWholeWords" FontSize="10" Foreground="Gray" x:Load="False"/>
 
+
+		<!-- Previewer Path selection -->
+		<TextBlock Text="Peviewer path:"
+               Grid.Column="0"
+               Grid.Row="2"
+               HorizontalAlignment="Left" 
+               VerticalAlignment="Center" />
+
+		<Grid Grid.Row="2" Grid.Column="1">
+
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="*" />
+				<ColumnDefinition Width="Auto" />
+			</Grid.ColumnDefinitions>
+
+			<TextBox Grid.Column="0"
+                     Text="{x:Bind PeViewerPathSetting, Mode=TwoWay}"
+                     TextWrapping="Wrap" 
+                     VerticalContentAlignment="Center"/>
+
+			<Button Margin="4,0,0,0"
+                    Grid.Column="1"
+					Click="OnPeviewerPathSettingChange">
+				<FontIcon 
+					FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                    FontSize="20"
+                    Glyph="&#xE10C;">
+				</FontIcon>
+			</Button>
+		</Grid>
+
+
 		<!-- Tree build behaviour selection -->
 		<TextBlock  
-               Grid.Row="2"
+               Grid.Row="3"
                Grid.Column="0"
                Text="Tree build behaviour:" 
                HorizontalAlignment="Left" 
                VerticalAlignment="Center" />
 
 		<ComboBox x:Name="TreeBuildCombo"
-                  Margin="8"
-                  Grid.Row="2"
+                  Grid.Row="3"
                   Grid.Column="1" 
                   SelectedItem="{x:Bind TreeBuildBehaviourSetting, Mode=TwoWay, Converter={StaticResource TreeBuildingBehaviourConverter}}"
                   />
 
 		<!-- Tree depth -->
 		<TextBlock 
-               Grid.Row="3"
+               Grid.Row="4"
                Grid.Column="0"
                Text="Tree depth:" 
                HorizontalAlignment="Left" 
                VerticalAlignment="Center" />
 
 		<NumberBox  Name="TreeDepthValue"
-                  Grid.Row="3"
+                  Grid.Row="4"
                   Grid.Column="1" 
-                  Margin="8"
 				  Width="150"
                   Text="{x:Bind TreeDepthSetting, Mode=TwoWay}" Minimum="1" Maximum="4" SpinButtonPlacementMode="Inline"
 		          HorizontalAlignment="Left"  
