@@ -6,7 +6,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	xmlns:toolkit="using:CommunityToolkit.WinUI.UI.Controls"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+	Loaded="Window_Loaded">
 
 	<TabViewItem.Resources>
 		<local:ImageToHeaderConverter x:Key="img"/>
@@ -40,7 +41,7 @@
 			<TreeView x:Name="DllTreeView" Margin="0,4,0,0"
                     HorizontalContentAlignment="Stretch" 
                     VerticalContentAlignment="Stretch" 
-                    Padding="0" Expanding="DllTreeView_Expanding" ItemInvoked="DllTreeView_ItemInvoked">
+                    Padding="0" Expanding="DllTreeView_Expanding" ItemInvoked="DllTreeView_ItemInvoked" CanReorderItems="False" CanDragItems="False" AllowDrop="False">
 				<TreeView.Resources>
 
 					<MenuFlyout x:Name="TreeItemContextMenu">

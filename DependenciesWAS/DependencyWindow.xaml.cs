@@ -550,7 +550,7 @@ namespace Dependencies
 
 			this.Filename = Filename;
 			this.WorkingDirectory = Path.GetDirectoryName(this.Filename);
-			InitializeView();
+			//InitializeView(); // This function is called in Window_Loaded to register for the container content changing event first
 		}
 
 		public void InitializeView()
@@ -1420,6 +1420,32 @@ namespace Dependencies
 			}
 		}
 		#endregion // Commands 
+
+		#region TreeViewItemDisableDropWorkaround
+		// By default the AllowDrop property of TreeViewItems is unconditionally set to true
+		// by the TreeView code. Register for the container content changing event
+		// here to set the value back to false. 
+		// The Loaded event might be called multiple times when the TabView is changed.
+		private void Window_Loaded(object sender, RoutedEventArgs e)
+		{
+			this.Loaded -= Window_Loaded;
+			TreeViewList list = DllTreeView.FindDescendant<TreeViewList>();
+			list.ContainerContentChanging += List_ContainerContentChanging;
+			InitializeView();
+		}
+
+		public void ShutdownView()
+		{
+			TreeViewList list = DllTreeView.FindDescendant<TreeViewList>();
+			list.ContainerContentChanging -= List_ContainerContentChanging;
+		}
+
+		private void List_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+		{
+			args.ItemContainer.AllowDrop = false;
+		}
+
+		#endregion // TreeViewItemDisableDropWorkaround
 	}
 
 }

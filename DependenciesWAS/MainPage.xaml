@@ -15,7 +15,7 @@
 
 	</Page.Resources>
 
-	<Grid AllowDrop="True" DragEnter="RootGrid_DragEnter" Drop="RootGridOrFileTabs_Drop">
+	<Grid AllowDrop="True" Background="Transparent" DragEnter="RootGrid_DragEnter" Drop="RootGridOrFileTabs_Drop">
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto"/>
 			<RowDefinition Height="*"/>

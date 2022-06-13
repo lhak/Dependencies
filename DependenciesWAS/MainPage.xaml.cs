@@ -268,6 +268,7 @@ namespace Dependencies
 
 		private void FileTabs_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args)
 		{
+			(args.Item as DependencyWindow).ShutdownView();
 			FileTabs.TabItems.Remove(args.Item);
 		}
 		private void FileTabs_TabItemsChanged(TabView sender, IVectorChangedEventArgs args)
