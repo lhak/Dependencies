@@ -101,12 +101,15 @@ namespace Dependencies
 		/// Open a new depedency tree window on a given PE.
 		/// </summary>
 		/// <param name="Filename">File path to a PE to process.</param>
-		public async void OpenNewDependencyWindow(String Filename)
+		public async void OpenNewDependencyWindow(String Filename, int tabIndex = -1)
 		{
 			DependencyWindow newDependencyWindow = new DependencyWindow(Filename);
 			newDependencyWindow.Header = Path.GetFileNameWithoutExtension(Filename);
 			newDependencyWindow.Tag = Filename;
-			FileTabs.TabItems.Add(newDependencyWindow);
+			if (tabIndex < 0 || tabIndex >= FileTabs.TabItems.Count)
+				FileTabs.TabItems.Add(newDependencyWindow);
+			else
+				FileTabs.TabItems.Insert(tabIndex, newDependencyWindow);
 			FileTabs.SelectedItem = newDependencyWindow;
 
 			// Update recent files entries
@@ -337,6 +340,7 @@ namespace Dependencies
 			e.Handled = true;
 			try
 			{
+				string sourcePath = null;
 				if (e.DataView.Contains(StandardDataFormats.StorageItems))
 				{
 					IReadOnlyList<IStorageItem> files = await e.DataView.GetStorageItemsAsync();
@@ -344,24 +348,46 @@ namespace Dependencies
 					{
 						if (item.IsOfType(StorageItemTypes.File))
 						{
-							deferal.Complete();
-							OpenNewDependencyWindow(item.Path);
-							return;
+							sourcePath = item.Path;
+							break;
 						}
 					}
 				}
 				else
 				{
 					Uri file = await e.DataView.GetApplicationLinkAsync();
-					OpenNewDependencyWindow(file.AbsolutePath);
+					sourcePath = file.AbsolutePath;
 				}
 				// Complete operation
 				e.Handled = true;
+				if(sourcePath != null)
+				{
+					int tabIndex = -1;
+					if(sender is TabView targetTabView)
+					{
+						// Determine which items in the list our pointer is between.
+						for (int i = 0; i < targetTabView.TabItems.Count; i++)
+						{
+							TabViewItem item = targetTabView.ContainerFromIndex(i) as TabViewItem;
+
+							if (e.GetPosition(item).X - item.ActualWidth < 0)
+							{
+								tabIndex = i;
+								break;
+							}
+						}
+
+					}
+					OpenNewDependencyWindow(sourcePath, tabIndex);
+				}
 			}
 			catch (Exception)
 			{
 			}
-			deferal.Complete();
+			finally
+			{
+				deferal.Complete();
+			}
 		}
 
 		private void FileTabs_TabStripDragOver(object sender, DragEventArgs e)
