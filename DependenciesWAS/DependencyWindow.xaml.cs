@@ -1140,6 +1140,18 @@ namespace Dependencies
 
 		#region Commands
 
+		private void OnModuleViewSelectedItemChanged(object sender, RoutedEventArgs e)
+		{
+			DisplayModuleInfo SelectedModule = (sender as DependencyModuleList).SelectedItem as DisplayModuleInfo;
+
+			// Selected Pe has not been found on disk
+			if (SelectedModule == null)
+				return;
+
+			// Display module as root (since we can't know which parent it's attached to)
+			UpdateImportExportLists(SelectedModule, null);
+		}
+
 		private void DllTreeView_ItemInvoked(TreeView sender, TreeViewItemInvokedEventArgs args)
 		{
 			ModuleTreeViewItem SelectedItem = args.InvokedItem as ModuleTreeViewItem;

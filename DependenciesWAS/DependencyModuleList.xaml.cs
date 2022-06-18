@@ -75,6 +75,8 @@ namespace Dependencies
 			set { SetValue(ConfigureSearchOrderCommandProperty, value); }
 		}
 
+		public event RoutedEventHandler SelectedModuleChanged;
+
 		// Using a DependencyProperty as the backing store for DoFindModuleInTreeCommand.  This enables animation, styling, binding, etc...
 		public static readonly DependencyProperty DoFindModuleInTreeCommandProperty =
 			DependencyProperty.Register("DoFindModuleInTreeCommand", typeof(RelayCommand), typeof(DependencyModuleList), new PropertyMetadata(null));
@@ -82,7 +84,6 @@ namespace Dependencies
 		public static readonly DependencyProperty ConfigureSearchOrderCommandProperty =
 			DependencyProperty.Register("ConfigureSearchOrderCommand", typeof(RelayCommand), typeof(DependencyModuleList), new PropertyMetadata(null));
 
-		
 		public DependencyModuleList()
 		{
 			SortedItems = new Toolkit.Uwp.UI.AdvancedCollectionView(Items, true);
@@ -114,6 +115,11 @@ namespace Dependencies
 			}
 		}
 
-		public ObservableCollection<DisplayModuleInfo> Items = new ObservableCollection<DisplayModuleInfo>();	
+		private void DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		{
+			SelectedModuleChanged.Invoke(this, e);
+		}
+
+		public ObservableCollection<DisplayModuleInfo> Items = new ObservableCollection<DisplayModuleInfo>();
 	}
 }

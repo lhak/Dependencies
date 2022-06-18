@@ -168,6 +168,7 @@
 
 
 		<local:DependencyModuleList x:Name="ModulesList"
+									SelectedModuleChanged="OnModuleViewSelectedItemChanged"
                                     Grid.Row="2"/>
 	</Grid>
 </TabViewItem>

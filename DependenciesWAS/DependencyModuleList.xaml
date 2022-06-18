@@ -17,7 +17,7 @@
 	Style="{StaticResource DataGridCompactStyle}"
 	ClipboardCopyMode="None"
 	SearchListFilter="ModuleName"
-	>
+	SelectionChanged="DataGrid_SelectionChanged">
 
 	<toolkit:DataGrid.Resources>
 		<local:ImageToHeaderConverter x:Key="img"/>
