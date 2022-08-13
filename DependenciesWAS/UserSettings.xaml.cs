@@ -1,20 +1,13 @@
 ﻿using Dependencies.Properties;
+using Microsoft.Graphics.Canvas.Text;
+using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
 using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 
@@ -27,10 +20,38 @@ namespace Dependencies
 	{
 		public UserSettings()
 		{
+			SortedFonts = new Toolkit.Uwp.UI.AdvancedCollectionView(Fonts, true);
+			SortedFonts.SortDescriptions.Add(new CommunityToolkit.WinUI.UI.SortDescription(null, CommunityToolkit.WinUI.UI.SortDirection.Ascending));
+
 			this.InitializeComponent();
 
 			TreeBuildCombo.ItemsSource = Enum.GetValues(typeof(TreeBuildingBehaviour.DependencyTreeBehaviour));
 			BinaryCacheCombo.ItemsSource = Enum.GetValues(typeof(BinaryCacheOption.BinaryCacheOptionValue));
+
+
+			// Get list of usable fonts
+			string[] fonts = CanvasTextFormat.GetSystemFontFamilies();
+			CanvasFontSet fontSet = CanvasFontSet.GetSystemFontSet();
+
+			using (SortedFonts.DeferRefresh())
+			{
+				foreach (var font in fonts)
+				{
+					CanvasFontSet matchingSet = fontSet.GetMatchingFonts(font, FontWeights.Normal, Windows.UI.Text.FontStretch.Normal, Windows.UI.Text.FontStyle.Normal);
+					if (matchingSet.Fonts.Count > 0)
+					{
+						CanvasFontFace matchingFont = matchingSet.Fonts.FirstOrDefault();
+						if (!matchingFont.IsSymbolFont)
+						{
+							Fonts.Add(font);
+						}
+					}
+				}
+			}
+			if(SortedFonts.Contains(Settings.Default.Font))
+			{
+				FontBox.SelectedItem = Settings.Default.Font;
+			}
 		}
 
 		private async void OnPeviewerPathSettingChange(object sender, RoutedEventArgs e)
@@ -53,6 +74,16 @@ namespace Dependencies
 			PeViewerPathSetting = loadFile.Path;
 		}
 
+		private void FontBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		{
+			string selectedFont = FontBox.SelectedItem as string;
+			if (string.IsNullOrEmpty(selectedFont))
+				return;
+
+			if(Settings.Default.Font != selectedFont)
+				Settings.Default.Font = selectedFont;
+		}
+
 		void OnPropertyChanged([CallerMemberName] string propertyName = null)
 		{
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -65,6 +96,10 @@ namespace Dependencies
 		string TreeBuildBehaviourSetting { get => Settings.Default.TreeBuildBehaviour; set { if (value != Settings.Default.TreeBuildBehaviour) { Settings.Default.TreeBuildBehaviour = value; OnPropertyChanged(); } } }
 
 		int TreeDepthSetting { get => Settings.Default.TreeDepth; set { if (value != Settings.Default.TreeDepth) { Settings.Default.TreeDepth = value; OnPropertyChanged(); } } }
+
+		ObservableCollection<string> Fonts = new();
+		Toolkit.Uwp.UI.AdvancedCollectionView SortedFonts;
+
 
 		public event PropertyChangedEventHandler PropertyChanged;
 	}

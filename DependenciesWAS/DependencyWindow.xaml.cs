@@ -550,6 +550,7 @@ namespace Dependencies
 
 			this.Filename = Filename;
 			this.WorkingDirectory = Path.GetDirectoryName(this.Filename);
+			UpdateFont();
 			//InitializeView(); // This function is called in Window_Loaded to register for the container content changing event first
 		}
 
@@ -1309,14 +1310,14 @@ namespace Dependencies
 			// Expanding all nodes tends to slow down the application (massive allocations for node DataContext)
 			// TODO : Reduce memory pressure by storing tree nodes data context in a HashSet and find an async trick
 			// to improve the command responsiveness.
-			object TreeNode = (args.Parameter as TreeViewItem).DataContext;
+			object TreeNode = (args.Parameter as FrameworkElement).DataContext;
 
 			CollapseOrExpandAllNodes((TreeNode as ModuleTreeViewItem), true);
 		}
 
 		private void CollapseAllNodes_Executed(XamlUICommand sender, ExecuteRequestedEventArgs args)
 		{
-			object TreeNode = (args.Parameter as TreeViewItem).DataContext;
+			object TreeNode = (args.Parameter as FrameworkElement).DataContext;
 			CollapseOrExpandAllNodes((TreeNode as ModuleTreeViewItem), false);
 		}
 
@@ -1324,8 +1325,8 @@ namespace Dependencies
 		{
 			ModuleTreeViewItem Source = DllTreeView.SelectedItem as ModuleTreeViewItem;
 
-			if (args.Parameter is TreeViewItem)
-				Source = (args.Parameter as TreeViewItem).DataContext as ModuleTreeViewItem;
+			if (args.Parameter is FrameworkElement)
+				Source = (args.Parameter as FrameworkElement).DataContext as ModuleTreeViewItem;
 
 			if (Source == null)
 				return;
@@ -1441,13 +1442,16 @@ namespace Dependencies
 		private void Window_Loaded(object sender, RoutedEventArgs e)
 		{
 			this.Loaded -= Window_Loaded;
+			Properties.Settings.Default.PropertyChanged += Font_PropertyChanged;
 			TreeViewList list = DllTreeView.FindDescendant<TreeViewList>();
 			list.ContainerContentChanging += List_ContainerContentChanging;
 			InitializeView();
 		}
 
+
 		public void ShutdownView()
 		{
+			Properties.Settings.Default.PropertyChanged -= Font_PropertyChanged;
 			TreeViewList list = DllTreeView.FindDescendant<TreeViewList>();
 			list.ContainerContentChanging -= List_ContainerContentChanging;
 		}
@@ -1458,6 +1462,37 @@ namespace Dependencies
 		}
 
 		#endregion // TreeViewItemDisableDropWorkaround
+
+		#region FontWorkaround
+		void UpdateFont()
+		{
+			// Binding the font style properties of the controls in a style does not work correctly.
+			// It sometimes works during debugging so seems to be a timing issue.
+			// Create new style here manually.
+
+			var treeViewContainerStyle = new Style();
+			treeViewContainerStyle.TargetType = typeof(TreeViewItem);
+			treeViewContainerStyle.Setters.Add(new Setter(TreeViewItem.FontFamilyProperty, Properties.Settings.Default.Font));
+
+			var dataGridCellStyle = new Style();
+			dataGridCellStyle.BasedOn = App.Current.Resources["DataGridCompactCellStyle"] as Style;
+			dataGridCellStyle.TargetType = typeof(CommunityToolkit.WinUI.UI.Controls.DataGridCell);
+			dataGridCellStyle.Setters.Add(new Setter(FontFamilyProperty, Properties.Settings.Default.Font));
+
+			DllTreeView.ItemContainerStyle = treeViewContainerStyle;
+			ImportList.CellStyle = dataGridCellStyle;
+			ExportList.CellStyle = dataGridCellStyle;
+			ModulesList.CellStyle = dataGridCellStyle;
+		}
+		private void Font_PropertyChanged(object sender, PropertyChangedEventArgs e)
+		{
+			if(e.PropertyName == nameof(Properties.Settings.Default.Font))
+			{
+				UpdateFont();
+			}
+		}
+
+		#endregion // FontWorkaround
 	}
 
 }

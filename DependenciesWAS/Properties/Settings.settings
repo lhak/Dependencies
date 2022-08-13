@@ -21,7 +21,7 @@
       <Value Profile="(Default)">ChildOnly</Value>
     </Setting>
     <Setting Name="Font" Type="System.String" Scope="User">
-      <Value Profile="(Default)">Courier New</Value>
+      <Value Profile="(Default)">Cascadia Code</Value>
     </Setting>
     <Setting Name="TreeDepth" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">2</Value>

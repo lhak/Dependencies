@@ -95,11 +95,7 @@ namespace Dependencies
 		{
 			Type elementType = SortedItems.SourceCollection.GetType().GetGenericArguments()[0];
 			PropertyInfo property = elementType.GetProperty(SearchListFilter);
-			foreach(object o in SortedItems.SourceCollection)
-			{
-				object val = property.GetValue(o);
-
-			}
+			
 			using (SortedItems.DeferRefresh())
 			{
 				SortedItems.Filter = x => (property.GetValue(x) as string).Contains(e, StringComparison.OrdinalIgnoreCase);

@@ -13,13 +13,14 @@
 		<local:BinaryCacheOption x:Key="BinaryCacheOptionConverter"/>
 	</UserControl.Resources>
 
-	<Grid Width="450" Height="228" ColumnSpacing="8" RowSpacing="8">
+	<Grid Width="450" Height="248" ColumnSpacing="8" RowSpacing="8">
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="Auto" />
 			<ColumnDefinition Width="*" />
 		</Grid.ColumnDefinitions>
 
 		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto"/>
 			<RowDefinition Height="Auto"/>
 			<RowDefinition Height="Auto"/>
 			<RowDefinition Height="Auto"/>
@@ -105,6 +106,20 @@
                   Text="{x:Bind TreeDepthSetting, Mode=TwoWay}" Minimum="1" Maximum="4" SpinButtonPlacementMode="Inline"
 		          HorizontalAlignment="Left"  
                   VerticalContentAlignment="Center" />
-
+		
+		<!-- Font -->
+		<TextBlock 
+               Grid.Row="5"
+               Grid.Column="0"
+               Text="Font family:" 
+               HorizontalAlignment="Left" 
+               VerticalAlignment="Center" />
+		<ComboBox x:Name="FontBox" Grid.Row="5" Grid.Column="1" ItemsSource="{x:Bind SortedFonts}" SelectionChanged="FontBox_SelectionChanged">
+			<ComboBox.ItemTemplate>
+				<DataTemplate x:DataType="x:String">
+					<TextBlock Text="{x:Bind}" FontFamily="{x:Bind}"/>
+				</DataTemplate>
+			</ComboBox.ItemTemplate>
+		</ComboBox>
 	</Grid>
 </UserControl>

@@ -60,8 +60,7 @@
 				</TreeView.Resources>
 				<TreeView.ItemTemplate>
 					<DataTemplate x:DataType="local:ModuleTreeViewItem">
-						<TreeViewItem DoubleTapped="{x:Bind DoubleTappedEventHandler}" ContextFlyout="{StaticResource TreeItemContextMenu}" ToolTipService.ToolTip="{x:Bind Tooltip, Mode=OneWay}">
-							<Grid Margin="0,0,5,0">
+						<Grid Margin="0,0,5,0"  DoubleTapped="{x:Bind DoubleTappedEventHandler}" ContextFlyout="{StaticResource TreeItemContextMenu}" ToolTipService.ToolTip="{x:Bind Tooltip, Mode=OneWay}">
 								<Grid.ColumnDefinitions>
 									<ColumnDefinition Width="24"/>
 									<ColumnDefinition Width="3" />
@@ -123,7 +122,6 @@
 
 								<TextBlock Grid.Column="2" Text="{x:Bind Header, Mode=OneWay}" FontSize="12"></TextBlock>
 							</Grid>
-						</TreeViewItem>
 					</DataTemplate>
 				</TreeView.ItemTemplate>
 
