@@ -609,6 +609,9 @@ namespace Dependencies
 			this.DllTreeView.RootNodes.Clear();
 			this.DllTreeView.RootNodes.Add(treeNode);
 
+			this.ModulesList.AddModule(RootModule);
+
+
 			// Recursively construct tree of dll imports
 			ConstructDependencyTree(treeNode, this.Pe);
 		}
