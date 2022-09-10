@@ -134,6 +134,13 @@ namespace Dependencies
             String WindowsSystemFolderPath = (RootPe.IsArm32Dll()) ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "SysArm32") 
             : Environment.GetFolderPath(WindowsSystemFolder);
 
+            string WindowsSystemAlternativeFolderPath = string.Empty;
+
+            if (Wow64Dll && Phlib.GetClrPhArch() == CLRPH_ARCH.ARM64)
+            {
+                WindowsSystemAlternativeFolderPath = WindowsSystemFolderPath;
+                WindowsSystemFolderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "SyCHPE32");
+            }
 
             // -1. Look in Sxs manifest (copious reversing needed)
             // TODO : find dll search order
@@ -176,6 +183,7 @@ namespace Dependencies
             // {2-3-4}. Look in system folders
             List<String> SystemFolders = new List<string>(new string[] {
                 WindowsSystemFolderPath,
+                WindowsSystemAlternativeFolderPath,
                 Environment.GetFolderPath(Environment.SpecialFolder.Windows)
                 }
             );

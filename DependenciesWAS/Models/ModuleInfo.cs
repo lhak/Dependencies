@@ -265,7 +265,7 @@ namespace Dependencies
                 switch (machine_id)
                 {
                     case 0x014c: /*IMAGE_FILE_MACHINE_I386*/
-                        return _Info.IsHybrid ? "i386/ARM32" : "i386";
+                        return _Info.IsHybrid ? "i386 CHPE" : "i386";
 
                     case 0x8664: /*IMAGE_FILE_MACHINE_AMD64*/
                         return _Info.IsHybrid ? "ARM64EC" : "AMD64";

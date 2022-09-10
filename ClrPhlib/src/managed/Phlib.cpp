@@ -55,7 +55,7 @@ List<String^>^ BuildKnownDllList(_In_ bool Wow64Dlls)
 	UNICODE_STRING name;
 	NTSTATUS status;
 	
-	const PWCHAR KnownDllObjectName = (Wow64Dlls) ? L"\\KnownDlls32" : L"\\KnownDlls";
+	const PWCHAR KnownDllObjectName = (Wow64Dlls) ? (Phlib::GetClrPhArch() == CLRPH_ARCH::ARM64 ? L"\\KnownDllsChpe32" : L"\\KnownDlls32") : L"\\KnownDlls";
 
 	name.Length = (USHORT) wcslen(KnownDllObjectName) * sizeof(wchar_t);
 	name.MaximumLength = (USHORT) wcslen(KnownDllObjectName) * sizeof(wchar_t);
