@@ -89,7 +89,6 @@ bool PE::InitProperties()
         Properties->ImageBase = (Int64)OptionalHeader->ImageBase;
         Properties->SizeOfImage = OptionalHeader->SizeOfImage;
         Properties->EntryPoint = (Int64)OptionalHeader->AddressOfEntryPoint;
-
     }
 
     Properties->Subsystem = PvMappedImage.NtHeaders->OptionalHeader.Subsystem;
@@ -100,6 +99,8 @@ bool PE::InitProperties()
     Properties->DllCharacteristics = PvMappedImage.NtHeaders->OptionalHeader.DllCharacteristics;
 
     Properties->FileSize = PvMappedImage.Size;
+
+    Properties->IsHybrid = m_Impl->IsHybrid();
 	return true;
 }
 

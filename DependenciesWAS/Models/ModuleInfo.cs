@@ -55,6 +55,7 @@ namespace Dependencies
         public Int16 DllCharacteristics;
 
         public UInt64 Filesize;
+        public Boolean IsHybrid;
     }
 
 	public class ApiSetNotFoundModuleInfo : NotFoundModuleInfo
@@ -192,6 +193,7 @@ namespace Dependencies
 
                 Characteristics = Pe.Properties.Characteristics,
                 DllCharacteristics = Pe.Properties.DllCharacteristics,
+                IsHybrid = Pe.Properties.IsHybrid
             };
 
             AddNewEventHandler("FullPath", "FullPath", "ModuleName", this.GetPathDisplayName);
@@ -263,10 +265,10 @@ namespace Dependencies
                 switch (machine_id)
                 {
                     case 0x014c: /*IMAGE_FILE_MACHINE_I386*/
-                        return "i386";
+                        return _Info.IsHybrid ? "i386/ARM32" : "i386";
 
                     case 0x8664: /*IMAGE_FILE_MACHINE_AMD64*/
-                        return "AMD64";
+                        return _Info.IsHybrid ? "ARM64EC" : "AMD64";
 
                     case 0x0200:/*IMAGE_FILE_MACHINE_IA64*/
                         return "IA64";
@@ -275,7 +277,7 @@ namespace Dependencies
                         return "ARM Thumb-2";
 
                     case 0xAA64:/*IMAGE_FILE_MACHINE_ARM64*/
-                        return "ARM64";
+                        return _Info.IsHybrid ? "ARM64X" : "ARM64";
 
                     default:
                         return "Unknown";

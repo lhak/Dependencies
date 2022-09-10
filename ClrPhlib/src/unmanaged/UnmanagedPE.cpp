@@ -44,6 +44,38 @@ void UnmanagedPE::UnloadPE()
     }
 }
 
+bool UnmanagedPE::IsHybrid()
+{
+    if (!m_bImageLoaded)
+        return false;
+
+    if (m_PvMappedImage.Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC)
+    {
+        PIMAGE_LOAD_CONFIG_DIRECTORY32 dir;
+
+        if (!NT_SUCCESS(PhGetMappedImageLoadConfig32(&m_PvMappedImage, &dir)))
+            return false;
+
+        if (dir->Size >= sizeof(IMAGE_LOAD_CONFIG_DIRECTORY32))
+        {
+            return(dir->CHPEMetadataPointer > 0);
+        }
+    }
+    else
+    {
+        PIMAGE_LOAD_CONFIG_DIRECTORY64 dir;
+
+        if (!NT_SUCCESS(PhGetMappedImageLoadConfig64(&m_PvMappedImage, &dir)))
+            return false;
+
+        if (dir->Size >= sizeof(IMAGE_LOAD_CONFIG_DIRECTORY64))
+        {
+            return(dir->CHPEMetadataPointer > 0);
+        }
+    }
+
+    return false;
+}
 
 bool UnmanagedPE::GetPeManifest(
 	_Out_ BYTE* *manifest,

@@ -19,6 +19,9 @@ public:
 
     // Unload the memory mapped PE in order to release the FS lock
     void UnloadPE();
+
+    // Check if the image contains code for multiple architectures
+    bool IsHybrid();
     
     // Extract the manifest embedded within the mapped PE
     //
@@ -38,7 +41,7 @@ public:
 
     union {
         PIMAGE_LOAD_CONFIG_DIRECTORY32 m_PvConfig32;
-        PIMAGE_LOAD_CONFIG_DIRECTORY64 m_PvCconfig64;
+        PIMAGE_LOAD_CONFIG_DIRECTORY64 m_PvConfig64;
     };
 
 private:

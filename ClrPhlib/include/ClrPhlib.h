@@ -139,6 +139,8 @@ namespace Dependencies {
             Int16 DllCharacteristics;
 
             UInt64 FileSize;
+
+            Boolean IsHybrid;
         };
 
 
