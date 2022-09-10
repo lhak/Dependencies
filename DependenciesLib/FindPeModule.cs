@@ -72,7 +72,7 @@ namespace Dependencies
 			// Filter out "problematic" search paths before it triggers an exception from Path.Combine
 			// see https://github.com/lucasg/Dependencies/issues/49
 			var CuratedCandidateFolders = CandidateFolders.Where(
-				path => !IsFilepathInvalid(path)
+				path => !string.IsNullOrEmpty(path) && !IsFilepathInvalid(path) 
 			);
 
 
