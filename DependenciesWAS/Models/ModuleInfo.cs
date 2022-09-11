@@ -394,33 +394,29 @@ namespace Dependencies
 
         public bool OpenPeviewer(object Module)
         {
-#if TODO
-            string programPath = Dependencies.Properties.Settings.Default.PeViewerPath;
-            Process PeviewerProcess = new Process();
-        
-            if ((Module == null))
-            {
-                return false;
-            }
+			string programPath = Dependencies.Properties.Settings.Default.PeViewerPath;
+			Process PeviewerProcess = new Process();
 
-            if (!File.Exists(programPath))
-            {
-                MessageBox.Show("peview.exe file could not be found !");
-                return false;
-            }
+			if (Module == null)
+			{
+				return false;
+			}
 
-            string Filepath = (Module as DisplayModuleInfo).GetPathDisplayName(true);
-            if (Filepath == null)
-            {
-                return false;
-            }
+			if (!File.Exists(programPath))
+			{
+				MessageBox.Show(String.Format("{0:s} file could not be found !", programPath));
+				return false;
+			}
 
-            PeviewerProcess.StartInfo.FileName = programPath;
-            PeviewerProcess.StartInfo.Arguments = Filepath;
-            return PeviewerProcess.Start();
-#else
-            return true;
-#endif
+			string Filepath = GetPathDisplayName(true);
+			if (Filepath == null)
+			{
+				return false;
+			}
+
+			PeviewerProcess.StartInfo.FileName = String.Format("\"{0:s}\"", programPath);
+			PeviewerProcess.StartInfo.Arguments = String.Format("\"{0:s}\"", Filepath);
+			return PeviewerProcess.Start();
         }
 
         public RelayCommand OpenNewAppCommand
@@ -431,19 +427,14 @@ namespace Dependencies
                 {
                     _OpenNewAppCommand = new RelayCommand((param) =>
                     {
-                        string Filepath = (param as DisplayModuleInfo).GetPathDisplayName(true);
+                        string Filepath = GetPathDisplayName(true);
                         if (Filepath == null)
                         {
                             return;
                         }
-#if TODO
 
-                        Process OtherDependenciesProcess = new Process();
-                        OtherDependenciesProcess.StartInfo.FileName = Application.ExecutablePath;
-                        OtherDependenciesProcess.StartInfo.Arguments = Filepath;
-                        OtherDependenciesProcess.Start();
-#endif
-                    });
+						MainWindow.GetWindow().OpenNewTab(Filepath);
+					});
                 }
 
                 return _OpenNewAppCommand;

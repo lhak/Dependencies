@@ -36,6 +36,9 @@
 			<MenuFlyoutItem Command="{StaticResource FilterCommand}"/>
 			<MenuFlyoutSeparator/>
 			<MenuFlyoutItem Text="Copy module name" Command="{Binding CopyValue}" CommandParameter ="{Binding ModuleName}"/>
+			<MenuFlyoutSeparator/>
+			<MenuFlyoutItem Text="Open in new tab" Command="{x:Bind ItemContextMenu.Target.DataContext.(local:DisplayModuleInfo.OpenNewAppCommand), Mode=OneWay}" CommandParameter="{x:Bind ItemContextMenu.Target, Mode=OneWay}"/>
+			<MenuFlyoutItem Text="Open in Peviewer" Command="{x:Bind ItemContextMenu.Target.DataContext.(local:DisplayModuleInfo.OpenPeviewerCommand), Mode=OneWay}" CommandParameter="{x:Bind ItemContextMenu.Target, Mode=OneWay}"/>
 		</MenuFlyout>
 
 		<Style x:Name="DataGridRowStyleWithContextMenu" BasedOn="{StaticResource DataGridCompactRowStyle}" TargetType="toolkit:DataGridRow">
