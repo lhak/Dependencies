@@ -42,6 +42,9 @@
 					<SplitButton.Flyout>
 						<MenuFlyout x:Name="RecentItemsFlyout"/>
 					</SplitButton.Flyout>
+					<SplitButton.KeyboardAccelerators>
+						<KeyboardAccelerator Modifiers="Control" Key="O"/>
+					</SplitButton.KeyboardAccelerators>
 				</SplitButton>
 			</AppBarElementContainer>
 			<AppBarButton Icon="View" Label="View" AccessKey="V">
@@ -102,7 +105,7 @@
                        FontSize="18"
                        Margin="20 0 0 00"
                        >
-                Analyze a new binary via "File -> Open" (Ctrl+O) <LineBreak/>
+                Analyze a new binary via "Open" (Ctrl+O) <LineBreak/>
                 or simply by dragging it into the application.
 			</TextBlock>
 		</Grid>
