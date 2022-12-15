@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 
 namespace Dependencies.Helpers
 {
@@ -13,9 +14,9 @@ namespace Dependencies.Helpers
 		}
 
 		[DllImport("CoreMessaging.dll")]
-		private static extern int CreateDispatcherQueueController([In] DispatcherQueueOptions options, [In, Out, MarshalAs(UnmanagedType.IUnknown)] ref object dispatcherQueueController);
+		private static extern int CreateDispatcherQueueController([In] DispatcherQueueOptions options, [In, Out] ref IntPtr dispatcherQueueController);
 
-		object m_dispatcherQueueController = null;
+		IntPtr m_dispatcherQueueController;
 		public void EnsureWindowsSystemDispatcherQueueController()
 		{
 			if (Windows.System.DispatcherQueue.GetForCurrentThread() != null)
@@ -24,7 +25,7 @@ namespace Dependencies.Helpers
 				return;
 			}
 
-			if (m_dispatcherQueueController == null)
+			if (m_dispatcherQueueController == IntPtr.Zero)
 			{
 				DispatcherQueueOptions options;
 				options.dwSize = Marshal.SizeOf(typeof(DispatcherQueueOptions));

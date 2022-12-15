@@ -379,6 +379,8 @@
     <Manifest Include="ClrPhlib.manifest" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <!-- Workaround to enable self contained publishing -->
+  <Target Name="_CheckForLanguageAndFeatureCombinationSupport"></Target>
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>

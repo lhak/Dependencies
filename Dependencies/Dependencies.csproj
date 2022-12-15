@@ -6,7 +6,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Dependencies</RootNamespace>
     <AssemblyName>Dependencies</AssemblyName>
-	<TargetFramework>net6.0-windows</TargetFramework>
+	<TargetFramework>net7.0-windows</TargetFramework>
 	<EnableDefaultItems>false</EnableDefaultItems>
 	<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 	<FileAlignment>512</FileAlignment>
@@ -101,9 +101,9 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-       <PackageReference Include="Mono.Cecil" Version="0.11.4" />
-       <PackageReference Include="NDesk.Options" Version="0.2.1" />
-       <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+	  <PackageReference Include="Mono.Cecil" Version="0.11.4" />
+	  <PackageReference Include="NDesk.Options" Version="0.2.1" />
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />

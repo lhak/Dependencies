@@ -6,7 +6,7 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>Dependencies</RootNamespace>
     <AssemblyName>DependenciesGui</AssemblyName>
-		<TargetFramework>net6.0-windows</TargetFramework>
+		<TargetFramework>net7.0-windows</TargetFramework>
 		<FileAlignment>512</FileAlignment>
 		<EnableDefaultItems>false</EnableDefaultItems>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -252,7 +252,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Dragablz" Version="0.0.3.223" />
+    <PackageReference Include="Dragablz" Version="0.0.3.234" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ClrPhlib\ClrPhlib.vcxproj">

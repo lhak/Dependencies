@@ -6,7 +6,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>binarycache_test</RootNamespace>
     <AssemblyName>binarycache-test</AssemblyName>
-	<TargetFramework>net6.0-windows</TargetFramework>
+	<TargetFramework>net7.0-windows</TargetFramework>
 	<EnableDefaultItems>false</EnableDefaultItems>
 	<GenerateAssemblyInfo>false</GenerateAssemblyInfo>   
 	<FileAlignment>512</FileAlignment>
