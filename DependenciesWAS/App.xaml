@@ -7,8 +7,16 @@
 	xmlns:toolkitprimitives="using:CommunityToolkit.WinUI.UI.Controls.Primitives"
 	xmlns:muxc="using:Microsoft.UI.Xaml.Controls">
 	<Application.Resources>
-		<muxc:XamlControlsResources>
-			<muxc:XamlControlsResources.MergedDictionaries>
+		<ResourceDictionary>
+			<ResourceDictionary.MergedDictionaries>
+				<muxc:XamlControlsResources>
+					<muxc:XamlControlsResources.MergedDictionaries>
+						<ResourceDictionary>
+							<!-- Needs to be placed here to work -->
+							<Thickness x:Key="ContentDialogPadding">12</Thickness>
+						</ResourceDictionary>
+					</muxc:XamlControlsResources.MergedDictionaries>
+				</muxc:XamlControlsResources>
 				<ResourceDictionary>
 					<StaticResource x:Key="WindowCaptionBackground" ResourceKey="SystemControlTransparentBrush" />
 					<StaticResource x:Key="WindowCaptionBackgroundDisabled" ResourceKey="SystemControlTransparentBrush" />
@@ -24,12 +32,11 @@
 					<!--<x:Double x:Key="ControlContentThemeFontSize">12</x:Double>-->
 					<x:Double x:Key="FlyoutThemeMaxWidth">1000</x:Double>
 					<x:Double x:Key="ListViewItemMinHeight">28</x:Double>
-					<Thickness x:Key="ContentDialogPadding">12</Thickness>
 				</ResourceDictionary>
 				<!-- The DataGrid resources need to be manually imported here so that the custom datagrid styles work -->
 				<ResourceDictionary Source="ms-appx:///CommunityToolkit.WinUI.UI.Controls.DataGrid/Themes/Generic.xaml"/>
 				<ResourceDictionary Source="ms-appx:///DataGridCompactStyle.xaml"/>
-			</muxc:XamlControlsResources.MergedDictionaries>
-		</muxc:XamlControlsResources>
+			</ResourceDictionary.MergedDictionaries>
+		</ResourceDictionary>
 	</Application.Resources>
 </Application>
