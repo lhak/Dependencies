@@ -17,6 +17,7 @@
 		<OutputPath>$(SolutionDir)bin\$(Configuration)$(Platform)</OutputPath>
 		<IntermediateOutputPath>$(SolutionDir)obj\$(ProjectName)\$(Configuration)$(Platform)</IntermediateOutputPath>
 		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+		<TrimMode>partial</TrimMode>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)'=='Packaged'">
 		<DefineConstants>$(DefineConstants);RELEASE;TRACE</DefineConstants>
@@ -35,6 +36,11 @@
 		<None Remove="MainPage.xaml" />
 		<None Remove="SearchFolder.xaml" />
 		<None Remove="UserSettings.xaml" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<TrimmerRootAssembly Include="System.Configuration.ConfigurationManager" />
+		<TrimmerRootAssembly Include="System" />
 	</ItemGroup>
 
 	<ItemGroup>
