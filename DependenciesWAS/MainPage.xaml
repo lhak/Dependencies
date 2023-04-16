@@ -6,7 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
-
+	
 	<Page.Resources>
 		<Style x:Name="RecentMenuItemStyle" TargetType="MenuFlyoutItem" BasedOn="{StaticResource DefaultMenuFlyoutItemStyle}">
 			<Setter Property="Padding" Value="{StaticResource MenuFlyoutItemThemePaddingNarrow}"/>
@@ -110,17 +110,17 @@
 			</TextBlock>
 		</Grid>
 
-		<InfoBar x:Name="AppStatusBar" 
+		<local:InfoBarHack x:Name="AppStatusBar" 
                    HorizontalContentAlignment="Stretch" 
                    VerticalContentAlignment="Bottom" 
                    Grid.Row="2" 
                    MinHeight="20" 
                    Margin="0" 
-                   VerticalAlignment="Bottom" IsClosable="False" IsOpen="True" Height="24" IsIconVisible="False" CornerRadius="0" BorderThickness="0,1,0,0" Background="{ThemeResource LayerFillColorDefaultBrush}"
+                   VerticalAlignment="Bottom" IsClosable="False" Height="24" IsIconVisible="False" CornerRadius="0" BorderThickness="0,1,0,0" Background="{ThemeResource LayerFillColorDefaultBrush}"
 				   Visibility="{x:Bind ShowStatusBarSetting, Mode=OneWay}">
-			<InfoBar.Message>
+			<local:InfoBarHack.Message>
 				"Welcome to Dependencies !"
-			</InfoBar.Message>
-		</InfoBar>
+			</local:InfoBarHack.Message>
+		</local:InfoBarHack>
 	</Grid>
 </Page>

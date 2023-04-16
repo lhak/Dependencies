@@ -63,14 +63,28 @@ namespace Dependencies
 		public string HeaderTitle { get; set; }
 	}
 
-	/// <summary>
-	/// An empty page that can be used on its own or navigated to within a Frame.
-	/// </summary>
-	public sealed partial class MainPage : Page, INotifyPropertyChanged
+    class InfoBarHack : InfoBar
+    {
+        // HACK to work around XAML reentrancy crash
+        protected override void OnApplyTemplate()
+        {
+            base.OnApplyTemplate();
+			DispatcherQueue.TryEnqueue(() =>
+			{
+				IsOpen = true;
+			});
+        }
+    }
+
+    /// <summary>
+    /// An empty page that can be used on its own or navigated to within a Frame.
+    /// </summary>
+    public sealed partial class MainPage : Page, INotifyPropertyChanged
 	{
 		public MainPage()
 		{
 			this.InitializeComponent();
+
 
 			PopulateRecentFilesMenuItems();
 
@@ -161,7 +175,7 @@ namespace Dependencies
 			RecentItemsFlyout.Items.Add(menuItem);
 		}
 
-		private async void OpenItem_Click(SplitButton sender, SplitButtonClickEventArgs e)
+        private async void OpenItem_Click(SplitButton sender, SplitButtonClickEventArgs e)
 		{
 			FileOpenPicker loadPicker = new FileOpenPicker();
 
@@ -437,5 +451,5 @@ namespace Dependencies
 		bool ShowStatusBarSetting { get => Settings.Default.ShowStatusBar; set { Settings.Default.ShowStatusBar = value; OnPropertyChanged(); } }
 
 		ObservableCollection<RecentMenuItem> _recentsItems = new ObservableCollection<RecentMenuItem>();
-	}
+    }
 }

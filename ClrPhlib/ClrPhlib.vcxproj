@@ -40,7 +40,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{FC5FFCAF-982F-4A95-8FA6-2A95B1F7CDC8}</ProjectGuid>
-    <TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net7.0</TargetFramework>
     <Keyword>ManagedCProj</Keyword>
     <RootNamespace>ClrPhlib</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
