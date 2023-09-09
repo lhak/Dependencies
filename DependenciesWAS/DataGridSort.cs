@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.WinUI.UI;
+﻿using CommunityToolkit.WinUI.Collections;
 using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -31,7 +31,7 @@ namespace Dependencies
 			if (category == null)
 				return;
 
-			SortDirection direction = SortDirection.Descending;
+            SortDirection direction = SortDirection.Descending;
 
 			if (e.Column.SortDirection == null || e.Column.SortDirection == DataGridSortDirection.Descending)
 			{
@@ -103,7 +103,7 @@ namespace Dependencies
 		}
 
 		private Popup _filterPopup = null;
-		protected Toolkit.Uwp.UI.AdvancedCollectionView SortedItems;
+		protected CommunityToolkit.WinUI.Collections.AdvancedCollectionView SortedItems;
 
 	}
 }

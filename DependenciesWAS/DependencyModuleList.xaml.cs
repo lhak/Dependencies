@@ -1,6 +1,4 @@
-﻿using CommunityToolkit.WinUI.UI;
-using CommunityToolkit.WinUI.UI.Controls;
-using Dependencies.Toolkit.Uwp.UI;
+﻿using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -86,7 +84,7 @@ namespace Dependencies
 
 		public DependencyModuleList()
 		{
-			SortedItems = new Toolkit.Uwp.UI.AdvancedCollectionView(Items, true);
+			SortedItems = new CommunityToolkit.WinUI.Collections.AdvancedCollectionView(Items, true);
 			this.InitializeComponent();
 			this.RowStyle = DataGridRowStyleWithContextMenu;
 		}

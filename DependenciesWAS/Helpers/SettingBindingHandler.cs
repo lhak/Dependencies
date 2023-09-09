@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Collections.Generic;
-using Dependencies.Toolkit.Uwp.Helpers;
+using CommunityToolkit.WinUI.Helpers;
 
 namespace Dependencies
 {

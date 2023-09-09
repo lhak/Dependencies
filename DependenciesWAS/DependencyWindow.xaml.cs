@@ -1,7 +1,7 @@
-﻿using CommunityToolkit.WinUI.UI;
+﻿using CommunityToolkit.WinUI;
+using CommunityToolkit.WinUI.Helpers;
 using Dependencies;
 using Dependencies.ClrPh;
-using Dependencies.Toolkit.Uwp.Helpers;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -232,8 +232,8 @@ namespace Dependencies
 
 		void RegisterPropertyChangedHandler()
 		{
-			// Use weak event listener here to avoid memory leaks
-			WeakEventListener<ModuleTreeViewItem, object, PropertyChangedEventArgs> propertyChangedWeakEventListener =
+            // Use weak event listener here to avoid memory leaks
+            WeakEventListener<ModuleTreeViewItem, object, PropertyChangedEventArgs> propertyChangedWeakEventListener =
 					   new WeakEventListener<ModuleTreeViewItem, object, PropertyChangedEventArgs>(this)
 					   {
 						   // Call the actual collection changed event
@@ -588,7 +588,7 @@ namespace Dependencies
 
 			// TODO : Find a way to properly bind commands instead of using this hack
 			this.ModulesList.Items.Clear();
-			this.ModulesList.DoFindModuleInTreeCommand = DoFindModuleInTree;
+            this.ModulesList.DoFindModuleInTreeCommand = DoFindModuleInTree;
 			this.ModulesList.ConfigureSearchOrderCommand = ConfigureSearchOrderCommand;
 
 			var RootFilename = Path.GetFileName(this.Filename);

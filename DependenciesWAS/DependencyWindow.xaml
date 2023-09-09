@@ -5,7 +5,7 @@
     xmlns:local="using:Dependencies"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-	xmlns:toolkit="using:CommunityToolkit.WinUI.UI.Controls"
+	xmlns:toolkit="using:CommunityToolkit.WinUI.Controls"
     mc:Ignorable="d"
 	Loaded="Window_Loaded">
 
@@ -24,7 +24,6 @@
 	<Grid x:Name="ResizeElemGrid" Margin="0,0,0,0" Background="{ThemeResource LayerFillColorDefaultBrush}">
 		<Grid.RowDefinitions>
 			<RowDefinition Height="146*"/>
-			<RowDefinition Height="5"/>
 			<RowDefinition Height="46*"/>
 		</Grid.RowDefinitions>
 
@@ -34,7 +33,6 @@
 
 			<Grid.ColumnDefinitions>
 				<ColumnDefinition Width="300*"/>
-				<ColumnDefinition Width="5"/>
 				<ColumnDefinition Width="600*"/>
 			</Grid.ColumnDefinitions>
 
@@ -61,29 +59,29 @@
 				<TreeView.ItemTemplate>
 					<DataTemplate x:DataType="local:ModuleTreeViewItem">
 						<Grid Margin="0,0,5,0"  DoubleTapped="{x:Bind DoubleTappedEventHandler}" ContextFlyout="{StaticResource TreeItemContextMenu}" ToolTipService.ToolTip="{x:Bind Tooltip, Mode=OneWay}">
-								<Grid.ColumnDefinitions>
-									<ColumnDefinition Width="24"/>
-									<ColumnDefinition Width="3" />
-									<ColumnDefinition Width="*" />
-								</Grid.ColumnDefinitions>
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="24"/>
+								<ColumnDefinition Width="3" />
+								<ColumnDefinition Width="*" />
+							</Grid.ColumnDefinitions>
 
 
-								<!--System icon for the current module-->
-								<Image Grid.Column="0" Width="16" Height="16" Margin="0,0,0,0" 
+							<!--System icon for the current module-->
+							<Image Grid.Column="0" Width="16" Height="16" Margin="0,0,0,0" 
                                                Source="{x:Bind Path=ModuleFilePath, Converter={StaticResource img} }">
-								</Image>
+							</Image>
 
-								<!--Overlay for additional flags (delay import, apiset, etc.)-->
-								<Image Grid.Column="0" Width="16" Height="16" Margin="4,0,0,0" Source="{x:Bind Path=Flags, Converter={StaticResource img_overlay} }"></Image>
+							<!--Overlay for additional flags (delay import, apiset, etc.)-->
+							<Image Grid.Column="0" Width="16" Height="16" Margin="4,0,0,0" Source="{x:Bind Path=Flags, Converter={StaticResource img_overlay} }"></Image>
 
-								<!--Another red rectangle overlay on modules issues-->
-								<Rectangle x:Name="ErrorModule"  Grid.Column="0" Width="14" Height="14" 
+							<!--Another red rectangle overlay on modules issues-->
+							<Rectangle x:Name="ErrorModule"  Grid.Column="0" Width="14" Height="14" 
                                                    Visibility="{x:Bind HasErrors, Mode=OneWay}" Opacity="0.2"
                                                    >
-									<Rectangle.Fill>
-										<SolidColorBrush Color="Red"/>
-									</Rectangle.Fill>
-									<!--TODO: <Rectangle.OpacityMask>
+								<Rectangle.Fill>
+									<SolidColorBrush Color="Red"/>
+								</Rectangle.Fill>
+								<!--TODO: <Rectangle.OpacityMask>
 										<DrawingBrush AlignmentX="Left" AlignmentY="Top">
 											<DrawingBrush.Drawing>
 												<DrawingGroup>
@@ -96,16 +94,16 @@
 											</DrawingBrush.Drawing>
 										</DrawingBrush>
 									</Rectangle.OpacityMask>-->
-								</Rectangle>
+							</Rectangle>
 
-								<!--Another red rectangle overlay on modules issues-->
-								<Rectangle x:Name="ChildErrorModule"  Grid.Column="0" Width="14" Height="14" 
+							<!--Another red rectangle overlay on modules issues-->
+							<Rectangle x:Name="ChildErrorModule"  Grid.Column="0" Width="14" Height="14" 
                                                    Visibility="{x:Bind HasChildErrors, Mode=OneWay}" Opacity="0.3"
                                                    >
-									<Rectangle.Fill>
-										<SolidColorBrush Color="DarkOrange" />
-									</Rectangle.Fill>
-									<!--TODO: <Rectangle.OpacityMask>
+								<Rectangle.Fill>
+									<SolidColorBrush Color="DarkOrange" />
+								</Rectangle.Fill>
+								<!--TODO: <Rectangle.OpacityMask>
 										<DrawingBrush AlignmentX="Left" AlignmentY="Top">
 											<DrawingBrush.Drawing>
 												<DrawingGroup>
@@ -118,55 +116,70 @@
 											</DrawingBrush.Drawing>
 										</DrawingBrush>
 									</Rectangle.OpacityMask>-->
-								</Rectangle>
+							</Rectangle>
 
-								<TextBlock Grid.Column="2" Text="{x:Bind Header, Mode=OneWay}" FontSize="12"></TextBlock>
-							</Grid>
+							<TextBlock Grid.Column="2" Text="{x:Bind Header, Mode=OneWay}" FontSize="12"></TextBlock>
+						</Grid>
 					</DataTemplate>
 				</TreeView.ItemTemplate>
 
 			</TreeView>
 
-			<local:GridSplitterWithCursor Grid.Column="1" MinWidth="8"
-                          HorizontalContentAlignment="Stretch"
-                          VerticalContentAlignment="Stretch"
-                          HorizontalAlignment="Stretch"/>
 
-			<Grid x:Name="ImportExportGrid" Grid.Column="2">
+			<Grid x:Name="ImportExportGrid" Grid.Column="1" BorderThickness="4,0,0,0" BorderBrush="{ThemeResource SystemControlHighlightChromeHighBrush}">
 
 				<Grid.RowDefinitions>
 					<RowDefinition Height="145*"/>
-					<RowDefinition Height="5"/>
 					<RowDefinition Height="142*"/>
 				</Grid.RowDefinitions>
 
 				<local:DependencyImportList x:Name="ImportList" 
                                             Grid.Row="0" />
 
-
-				<local:GridSplitterWithCursor x:Name="ImportExportSplitter" 
-                              HorizontalAlignment="Stretch" 
-                              HorizontalContentAlignment="Stretch" 
-                              VerticalContentAlignment="Center" 
-                              MinHeight="8" 
-                              Grid.Row="1"/>
-
 				<local:DependencyExportList x:Name="ExportList" 
-                                            Grid.Row="2" />
+                                            Grid.Row="1" BorderThickness="0,4,0,0" BorderBrush="{ThemeResource SystemControlHighlightChromeHighBrush}"/>
+
+
+				<toolkit:GridSplitter Grid.Row="1"         
+		                VerticalAlignment="Top"
+	                     ResizeBehavior="BasedOnAlignment"
+                         ResizeDirection="Auto"
+						 Height="12">
+					<toolkit:GridSplitter.RenderTransform>
+						<TranslateTransform Y="-4" />
+					</toolkit:GridSplitter.RenderTransform>
+				</toolkit:GridSplitter>
 
 			</Grid>
 
+			<toolkit:GridSplitter Grid.Column="1"         
+		                 HorizontalAlignment="Left"
+	                     ResizeBehavior="BasedOnAlignment"
+                         ResizeDirection="Auto"
+						 Width="12">
+				<toolkit:GridSplitter.RenderTransform>
+					<TranslateTransform X="-4" />
+				</toolkit:GridSplitter.RenderTransform>
+			</toolkit:GridSplitter>
+
+
 		</Grid>
 
-		<local:GridSplitterWithCursor x:Name="LogSplitter" 
-                      HorizontalAlignment="Stretch" 
-                      HorizontalContentAlignment="Stretch" 
-                      VerticalContentAlignment="Stretch"  MinHeight="8" 
-                      Grid.Row="1"/>
 
 
-		<local:DependencyModuleList x:Name="ModulesList"
+		<local:DependencyModuleList x:Name="ModulesList" BorderThickness="0,4,0,0" BorderBrush="{ThemeResource SystemControlHighlightChromeHighBrush}"
 									SelectedModuleChanged="OnModuleViewSelectedItemChanged"
-                                    Grid.Row="2"/>
+                                    Grid.Row="1"/>
+
+		<toolkit:GridSplitter Grid.Row="1" x:Name="LogSplitter" 
+                      VerticalAlignment="Top"
+	                  ResizeBehavior="BasedOnAlignment"
+                      ResizeDirection="Auto"
+							  Height="12">
+			<toolkit:GridSplitter.RenderTransform>
+				<TranslateTransform Y="-4" />
+			</toolkit:GridSplitter.RenderTransform>
+		</toolkit:GridSplitter>
+
 	</Grid>
 </TabViewItem>

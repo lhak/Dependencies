@@ -26,7 +26,7 @@ namespace Dependencies
 	{
 		public DependencyExportList()
 		{
-			SortedItems = new Toolkit.Uwp.UI.AdvancedCollectionView(Items, true);
+			SortedItems = new CommunityToolkit.WinUI.Collections.AdvancedCollectionView(Items, true);
 
 			this.InitializeComponent();
 			this.RowStyle = DataGridRowStyleWithContextMenu;

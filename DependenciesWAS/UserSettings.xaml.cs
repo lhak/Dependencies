@@ -1,4 +1,5 @@
-﻿using Dependencies.Properties;
+﻿using CommunityToolkit.WinUI.Collections;
+using Dependencies.Properties;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
@@ -20,8 +21,8 @@ namespace Dependencies
 	{
 		public UserSettings()
 		{
-			SortedFonts = new Toolkit.Uwp.UI.AdvancedCollectionView(Fonts, true);
-			SortedFonts.SortDescriptions.Add(new CommunityToolkit.WinUI.UI.SortDescription(null, CommunityToolkit.WinUI.UI.SortDirection.Ascending));
+			SortedFonts = new AdvancedCollectionView(Fonts, true);
+			SortedFonts.SortDescriptions.Add(new SortDescription(null, SortDirection.Ascending));
 
 			this.InitializeComponent();
 
@@ -98,7 +99,7 @@ namespace Dependencies
 		int TreeDepthSetting { get => Settings.Default.TreeDepth; set { if (value != Settings.Default.TreeDepth) { Settings.Default.TreeDepth = value; OnPropertyChanged(); } } }
 
 		ObservableCollection<string> Fonts = new();
-		Toolkit.Uwp.UI.AdvancedCollectionView SortedFonts;
+        AdvancedCollectionView SortedFonts;
 
 
 		public event PropertyChangedEventHandler PropertyChanged;
