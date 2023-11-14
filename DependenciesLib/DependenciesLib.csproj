@@ -6,7 +6,7 @@
 		<AppDesignerFolder>Properties</AppDesignerFolder>
 		<RootNamespace>Dependencies</RootNamespace>
 		<AssemblyName>DependenciesLib</AssemblyName>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net8.0-windows</TargetFramework>
 		<EnableDefaultItems>false</EnableDefaultItems>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 		<FileAlignment>512</FileAlignment>
