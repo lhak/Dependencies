@@ -6,19 +6,18 @@
 		<RootNamespace>Dependencies</RootNamespace>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 		<Platforms>x86;x64;arm64</Platforms>
-		<RuntimeIdentifiers>win10-x86;win10-x64;win10-arm64</RuntimeIdentifiers>
-		<PublishProfile>win10-$(Platform).pubxml</PublishProfile>
+		<RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+		<PublishProfile>win-$(Platform).pubxml</PublishProfile>
 		<UseWinUI>true</UseWinUI>
 		<EnableMsixTooling>true</EnableMsixTooling>
 		<WindowsPackageType Condition="'$(Configuration)' != 'Packaged'">None</WindowsPackageType>
-		<ApplicationIcon>Dependencies.ico</ApplicationIcon>
+		<ApplicationIcon>Assets\Dependencies.ico</ApplicationIcon>
 		<Version>0.1</Version>
 		<Configurations>Debug;Release;Packaged</Configurations>
 		<OutputPath>$(SolutionDir)bin\$(Configuration)$(Platform)</OutputPath>
 		<IntermediateOutputPath>$(SolutionDir)obj\$(ProjectName)\$(Configuration)$(Platform)</IntermediateOutputPath>
 		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
 		<TrimMode>partial</TrimMode>
-		<UseRidGraph>true</UseRidGraph>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)'=='Packaged'">
 		<DefineConstants>$(DefineConstants);RELEASE;TRACE</DefineConstants>
@@ -45,19 +44,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Include="Dependencies.ico" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="CommunityToolkit.WinUI.Collections" Version="8.0.230907" />
-		<PackageReference Include="CommunityToolkit.WinUI.Controls.Sizers" Version="8.0.230907" />
-		<PackageReference Include="CommunityToolkit.WinUI.Extensions" Version="8.0.230907" />
-		<PackageReference Include="CommunityToolkit.WinUI.Helpers" Version="8.0.230907" />
+		<PackageReference Include="CommunityToolkit.WinUI.Collections" Version="8.0.240109" />
+		<PackageReference Include="CommunityToolkit.WinUI.Controls.Sizers" Version="8.0.240109" />
+		<PackageReference Include="CommunityToolkit.WinUI.Extensions" Version="8.0.240109" />
+		<PackageReference Include="CommunityToolkit.WinUI.Helpers" Version="8.0.240109" />
 		<PackageReference Include="CommunityToolkit.WinUI.UI.Controls.DataGrid" Version="7.1.2" />
 		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
-		<PackageReference Include="Microsoft.Graphics.Win2D" Version="1.1.0" />
-		<PackageReference Include="Microsoft.Windows.Compatibility" Version="8.0.0" />
-		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.4.231115000" />
+		<PackageReference Include="Microsoft.Graphics.Win2D" Version="1.1.1" />
+		<PackageReference Include="Microsoft.Windows.Compatibility" Version="8.0.1" />
+		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.4.231219000" />
 		<PackageReference Include="Mono.Cecil" Version="0.11.5" />
 		<Manifest Include="$(ApplicationManifest)" />
 	</ItemGroup>
@@ -80,6 +75,9 @@
 		</Compile>
 	</ItemGroup>
 	<ItemGroup>
+		<Content Update="Assets\Dependencies.ico">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
 		<Content Update="Assets\Square44x44Logo.scale-100.png">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>

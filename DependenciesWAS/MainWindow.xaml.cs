@@ -38,7 +38,7 @@ namespace Dependencies
 				this.ExtendsContentIntoTitleBar = true;
 				SetTitleBar(TitleBar);
 			}
-			appWindow.SetIcon("Dependencies.ico");
+			appWindow.SetIcon("Assets\\Dependencies.ico");
 
             this.SystemBackdrop = new MicaBackdrop();
         }
