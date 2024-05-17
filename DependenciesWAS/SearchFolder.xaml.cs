@@ -100,7 +100,24 @@ namespace Dependencies
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 		}
 
-		private async void SearchFolderList_DragEnter(object sender, DragEventArgs e)
+        private async void BinaryWorkingDirectoryChange_Click(object sender, RoutedEventArgs e)
+        {
+            FolderPicker folderPicker = new FolderPicker();
+
+            folderPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+            folderPicker.FileTypeFilter.Add("*");
+
+            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, MainWindow.GetWindowHandle());
+
+            StorageFolder folder = await folderPicker.PickSingleFolderAsync();
+
+            if (folder == null)
+                return;
+
+			WorkingDirectory = folder.Path;
+        }
+
+        private async void SearchFolderList_DragEnter(object sender, DragEventArgs e)
 		{
 			// Check if the drag contains storage items
 			if (e.DataView == null)
@@ -171,6 +188,7 @@ namespace Dependencies
 			FolderPicker folderPicker = new FolderPicker();
 
 			folderPicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+			folderPicker.FileTypeFilter.Add("*");
 
 			WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, MainWindow.GetWindowHandle());
 
@@ -194,5 +212,5 @@ namespace Dependencies
 		private DependencyWindow _SelectedItem;
 		private string _working_directory;
 		private ObservableCollection<SearchFolderItem> _CustomSearchFolders;
-	}
+    }
 }
