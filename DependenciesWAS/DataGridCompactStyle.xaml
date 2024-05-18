@@ -98,5 +98,6 @@
 		<Setter Property="RowStyle" Value="{StaticResource DataGridCompactRowStyle}"/>
 		<Setter Property="CellStyle" Value="{StaticResource DataGridCompactCellStyle}"/>
 		<Setter Property="ColumnHeaderStyle" Value="{StaticResource DataGridCompactColumnHeaderStyle}"/>
+		<Setter Property="AlternatingRowBackground" Value="{ThemeResource SolidBackgroundFillColorTertiaryBrush}"/>
 	</Style>
 </ResourceDictionary>
