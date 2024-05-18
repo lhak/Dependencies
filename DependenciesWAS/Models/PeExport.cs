@@ -7,7 +7,9 @@ using Dependencies;
 using Dependencies.ClrPh;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.ApplicationModel.DataTransfer;
+using System.Diagnostics.CodeAnalysis;
 
+[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 public class DisplayPeExport : SettingBindingHandler
 {
     # region Constructors
