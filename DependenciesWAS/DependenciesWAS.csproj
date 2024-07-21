@@ -51,8 +51,8 @@
 		<PackageReference Include="CommunityToolkit.WinUI.UI.Controls.DataGrid" Version="7.1.2" />
 		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Graphics.Win2D" Version="1.2.0" />
-		<PackageReference Include="Microsoft.Windows.Compatibility" Version="8.0.6" />
-		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.5.240607001" />
+		<PackageReference Include="Microsoft.Windows.Compatibility" Version="8.0.7" />
+		<PackageReference Include="Microsoft.WindowsAppSDK" Version="1.5.240627000" />
 		<PackageReference Include="Mono.Cecil" Version="0.11.5" />
 		<Manifest Include="$(ApplicationManifest)" />
 	</ItemGroup>
