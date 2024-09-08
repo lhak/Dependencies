@@ -63,19 +63,6 @@ namespace Dependencies
 		public string HeaderTitle { get; set; }
 	}
 
-    partial class InfoBarHack : InfoBar
-    {
-        // HACK to work around XAML reentrancy crash
-        protected override void OnApplyTemplate()
-        {
-            base.OnApplyTemplate();
-			DispatcherQueue.TryEnqueue(() =>
-			{
-				IsOpen = true;
-			});
-        }
-    }
-
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
