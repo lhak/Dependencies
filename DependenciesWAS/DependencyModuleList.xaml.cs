@@ -54,7 +54,7 @@ namespace Dependencies
 		public ModuleFlag Flags;
 	}
 
-	public class ModulesCache : Dictionary<ModuleCacheKey, DisplayModuleInfo>
+	public partial class ModulesCache : Dictionary<ModuleCacheKey, DisplayModuleInfo>
 	{
 
 	}

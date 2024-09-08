@@ -115,7 +115,7 @@ namespace Dependencies
 
 #endif
 
-	public class ImageToHeaderConverter : IValueConverter
+	public partial class ImageToHeaderConverter : IValueConverter
 	{
 		public object Convert(object value, Type targetType, object parameter, string culture)
 		{
@@ -130,7 +130,7 @@ namespace Dependencies
 		}
 	}
 
-	public class OverlayImageToHeaderConverter : IValueConverter
+	public partial class OverlayImageToHeaderConverter : IValueConverter
 	{
 		public object GetImageFile(object value, Type targetType, object parameter, string culture)
 		{

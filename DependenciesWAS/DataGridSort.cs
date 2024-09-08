@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -13,7 +14,7 @@ using Windows.Foundation;
 
 namespace Dependencies
 {
-	public class DataGridSort : DataGrid
+	public partial class DataGridSort : DataGrid
 	{
 		public static readonly DependencyProperty SearchListFilterProperty = DependencyProperty.Register(
 		 "SearchListFilter", typeof(string), typeof(DataGridSort), new PropertyMetadata(null));
@@ -91,7 +92,9 @@ namespace Dependencies
 			filterControl.FilterTextChanged -= FilterControl_FilterTextChanged1;
 		}
 
-		private void FilterControl_FilterTextChanged1(object sender, string e)
+        [UnconditionalSuppressMessage("", "IL2065:The method has a DynamicallyAccessedMembersAttribute(which applies to the implicit 'this' parameter), but the value used for the 'this' parameter can not be statically analyzed.",
+          Justification = "Accessed classes are annotated with [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] attribute")]
+        private void FilterControl_FilterTextChanged1(object sender, string e)
 		{
 			Type elementType = SortedItems.SourceCollection.GetType().GetGenericArguments()[0];
 			PropertyInfo property = elementType.GetProperty(SearchListFilter);

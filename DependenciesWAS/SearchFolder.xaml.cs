@@ -24,7 +24,7 @@ using Windows.Storage.Pickers;
 
 namespace Dependencies
 {
-	public class SearchFolderItem : INotifyPropertyChanged
+    public partial class SearchFolderItem : INotifyPropertyChanged
 	{
 		public event PropertyChangedEventHandler PropertyChanged;
 

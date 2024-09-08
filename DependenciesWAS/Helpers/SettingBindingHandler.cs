@@ -4,7 +4,7 @@ using CommunityToolkit.WinUI.Helpers;
 
 namespace Dependencies
 {
-    public class SettingBindingHandler : INotifyPropertyChanged
+    public partial class SettingBindingHandler : INotifyPropertyChanged
     {
         public delegate string CallbackEventHandler(bool settingValue);
         public struct EventHandlerInfo
