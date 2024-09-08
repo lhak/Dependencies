@@ -14,7 +14,7 @@ using Windows.Foundation;
 
 namespace Dependencies
 {
-	public class DataGridSort : DataGrid
+	public partial class DataGridSort : DataGrid
 	{
 		public static readonly DependencyProperty SearchListFilterProperty = DependencyProperty.Register(
 		 "SearchListFilter", typeof(string), typeof(DataGridSort), new PropertyMetadata(null));

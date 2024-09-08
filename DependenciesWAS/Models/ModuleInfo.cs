@@ -7,6 +7,7 @@ using System.ComponentModel;
 using Dependencies.ClrPh;
 using Windows.ApplicationModel.DataTransfer;
 using System.Diagnostics.CodeAnalysis;
+using WinRT;
 
 [Flags]
 public enum PeTypes
@@ -58,8 +59,9 @@ namespace Dependencies
         public UInt64 Filesize;
     }
 
+    [GeneratedBindableCustomProperty]
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-    public class ApiSetNotFoundModuleInfo : NotFoundModuleInfo
+    public partial class ApiSetNotFoundModuleInfo : NotFoundModuleInfo
 	{
 		public ApiSetNotFoundModuleInfo(string ApiSetModuleName, string NotFoundHostModule)
 		:base(ApiSetModuleName)
@@ -79,8 +81,9 @@ namespace Dependencies
 		private string _HostName;
 	}
 
+    [GeneratedBindableCustomProperty]
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-    public class NotFoundModuleInfo : DisplayModuleInfo
+    public partial class NotFoundModuleInfo : DisplayModuleInfo
     {
         public NotFoundModuleInfo(string NotFoundModuleName)
         : base(NotFoundModuleName)
@@ -106,8 +109,9 @@ namespace Dependencies
 
     }
 
+    [GeneratedBindableCustomProperty]
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-    public class ApiSetModuleInfo : DisplayModuleInfo
+    public partial class ApiSetModuleInfo : DisplayModuleInfo
     {
         public ApiSetModuleInfo(string ApiSetModuleName, ref DisplayModuleInfo _UnderlyingModule)
         : base(ApiSetModuleName)
@@ -148,8 +152,9 @@ namespace Dependencies
         private DisplayModuleInfo UnderlyingModule;
     }
 
+    [GeneratedBindableCustomProperty]
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-    public class DisplayModuleInfo : SettingBindingHandler, INotifyPropertyChanged
+    public partial class DisplayModuleInfo : SettingBindingHandler, INotifyPropertyChanged
     {
 #region Constructors 
         public DisplayModuleInfo(string ModuleName)

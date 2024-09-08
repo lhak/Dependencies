@@ -4,7 +4,7 @@ using System.Windows.Input;
 
 namespace Dependencies
 {
-    public class RelayCommand : ICommand
+    public partial class RelayCommand : ICommand
     {
         #region Fields 
         readonly Action<object> _execute;

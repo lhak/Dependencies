@@ -58,7 +58,7 @@ namespace Dependencies
 	/// A full recursive dependency tree can be memory intensive, therefore the
 	/// choice is left to the user to override the default behaviour.
 	/// </summary>
-	public class TreeBuildingBehaviour : IValueConverter
+	public partial class TreeBuildingBehaviour : IValueConverter
 	{
 		public enum DependencyTreeBehaviour
 		{
@@ -119,7 +119,7 @@ namespace Dependencies
 	/// A full recursive dependency tree can be memory intensive, therefore the
 	/// choice is left to the user to override the default behaviour.
 	/// </summary>
-	public class BinaryCacheOption : IValueConverter
+	public partial class BinaryCacheOption : IValueConverter
 	{
 		public enum BinaryCacheOptionValue
 		{
@@ -200,7 +200,7 @@ namespace Dependencies
 	/// <summary>
 	/// Deprendency Tree custom node. It's DataContext is a DependencyNodeContext struct
 	/// </summary>
-	public class ModuleTreeViewItem : TreeViewNode, INotifyPropertyChanged
+	public partial class ModuleTreeViewItem : TreeViewNode, INotifyPropertyChanged
 	{
 		public event PropertyChangedEventHandler PropertyChanged;
 

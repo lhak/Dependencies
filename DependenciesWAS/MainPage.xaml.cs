@@ -31,7 +31,7 @@ using Windows.Storage.Pickers;
 namespace Dependencies
 {
 
-	public class RecentMenuItem : SettingBindingHandler
+	public partial class RecentMenuItem : SettingBindingHandler
 	{
 		public RecentMenuItem(string _Filepath)
 		{
@@ -63,7 +63,7 @@ namespace Dependencies
 		public string HeaderTitle { get; set; }
 	}
 
-    class InfoBarHack : InfoBar
+    partial class InfoBarHack : InfoBar
     {
         // HACK to work around XAML reentrancy crash
         protected override void OnApplyTemplate()

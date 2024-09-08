@@ -8,9 +8,11 @@ using Dependencies.ClrPh;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.ApplicationModel.DataTransfer;
 using System.Diagnostics.CodeAnalysis;
+using WinRT;
 
+[GeneratedBindableCustomProperty]
 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-public class DisplayPeImport : SettingBindingHandler
+public partial class DisplayPeImport : SettingBindingHandler
 {
 	#region Constructors
 	public DisplayPeImport(

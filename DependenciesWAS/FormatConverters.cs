@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Dependencies
 {
-    public class StringFormatConverter : IValueConverter
+    public partial class StringFormatConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
@@ -26,7 +26,7 @@ namespace Dependencies
         }
     }
 
-    public class ChecksumConverter : IValueConverter
+    public partial class ChecksumConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
