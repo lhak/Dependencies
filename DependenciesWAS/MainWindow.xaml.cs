@@ -27,17 +27,9 @@ namespace Dependencies
 
 			AppWindow appWindow = AppWindow.GetFromWindowId(myWndId);
 
-			if (AppWindowTitleBar.IsCustomizationSupported()) // Check for Windows 11
-			{
-				appWindow.TitleBar.ExtendsContentIntoTitleBar = true;
-				appWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
-				appWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
-			}
-			else
-			{
-				this.ExtendsContentIntoTitleBar = true;
-				SetTitleBar(TitleBar);
-			}
+			this.ExtendsContentIntoTitleBar = true;
+			SetTitleBar(TitleBar);
+
 			appWindow.SetIcon("Assets\\Dependencies.ico");
 
             this.SystemBackdrop = new MicaBackdrop();

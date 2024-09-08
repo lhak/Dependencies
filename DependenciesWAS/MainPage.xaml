@@ -110,17 +110,18 @@
 			</TextBlock>
 		</Grid>
 
-		<local:InfoBarHack x:Name="AppStatusBar" 
+		<InfoBar x:Name="AppStatusBar" 
                    HorizontalContentAlignment="Stretch" 
                    VerticalContentAlignment="Bottom" 
                    Grid.Row="2" 
                    MinHeight="20" 
                    Margin="0" 
                    VerticalAlignment="Bottom" IsClosable="False" Height="24" IsIconVisible="False" CornerRadius="0" BorderThickness="0,1,0,0" Background="{ThemeResource LayerFillColorDefaultBrush}"
-				   Visibility="{x:Bind ShowStatusBarSetting, Mode=OneWay}">
-			<local:InfoBarHack.Message>
+				   Visibility="{x:Bind ShowStatusBarSetting, Mode=OneWay}"
+				   IsOpen="True">
+			<InfoBar.Message>
 				"Welcome to Dependencies !"
-			</local:InfoBarHack.Message>
-		</local:InfoBarHack>
+			</InfoBar.Message>
+		</InfoBar>
 	</Grid>
 </Page>
