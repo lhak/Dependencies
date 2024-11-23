@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI.Popups;
@@ -1442,14 +1443,17 @@ namespace Dependencies
 		// by the TreeView code. Register for the container content changing event
 		// here to set the value back to false. 
 		// The Loaded event might be called multiple times when the TabView is changed.
-		private void Window_Loaded(object sender, RoutedEventArgs e)
+		private async void Window_Loaded(object sender, RoutedEventArgs e)
 		{
 			this.Loaded -= Window_Loaded;
 			Properties.Settings.Default.PropertyChanged += Font_PropertyChanged;
 			TreeViewList list = DllTreeView.FindDescendant<TreeViewList>();
 			list.ContainerContentChanging += List_ContainerContentChanging;
 			InitializeView();
-		}
+			await Task.Delay(3000);
+            DependencyListAll allList = new DependencyListAll();
+            allList.SetPe(this.Pe, CustomSearchFolders, this.SxsEntriesCache, this.WorkingDirectory);
+        }
 
 
 		public void ShutdownView()
