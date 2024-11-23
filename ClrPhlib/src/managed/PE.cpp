@@ -16,12 +16,14 @@ PE::PE(
 
     this->m_ExportsInit = false;
     this->m_ImportsInit = false;
+    this->m_cacheLock = gcnew System::Threading::Mutex();
 }
 
 PE::~PE()
 {
     Unload();
     delete m_Impl;
+    delete m_cacheLock;
 }
 
 PE::!PE() {
@@ -105,14 +107,23 @@ bool PE::InitProperties()
 
 Collections::Generic::List<PeExport^> ^ PE::GetExports()
 {
+    m_cacheLock->WaitOne();
+
     if (m_ExportsInit)
+    {
+        m_cacheLock->ReleaseMutex();
         return m_Exports;
+    }
+        
 
     m_ExportsInit = true;
     m_Exports = gcnew Collections::Generic::List<PeExport^>();
 
     if (!LoadSuccessful)
+    {
+        m_cacheLock->ReleaseMutex();
         return m_Exports;
+    }
 
     if (NT_SUCCESS(PhGetMappedImageExports(&m_Impl->m_PvExports, &m_Impl->m_PvMappedImage)))
     {
@@ -128,20 +139,30 @@ Collections::Generic::List<PeExport^> ^ PE::GetExports()
         }
     }
 
+    m_cacheLock->ReleaseMutex();
+
     return m_Exports;
 }
 
 
 Collections::Generic::List<PeImportDll^> ^ PE::GetImports()
 {
+    m_cacheLock->WaitOne();
+
     if (m_ImportsInit)
+    {
+        m_cacheLock->ReleaseMutex();
         return m_Imports;
+    }
 
     m_ImportsInit = true;
     m_Imports = gcnew Collections::Generic::List<PeImportDll^>();
 
     if (!LoadSuccessful)
+    {
+        m_cacheLock->ReleaseMutex();
         return m_Imports;
+    }
 
     // Standard Imports
     if (NT_SUCCESS(PhGetMappedImageImports(&m_Impl->m_PvImports, &m_Impl->m_PvMappedImage)))
@@ -161,6 +182,7 @@ Collections::Generic::List<PeImportDll^> ^ PE::GetImports()
         }
     }
 
+    m_cacheLock->ReleaseMutex();
     return m_Imports;
 }
 
