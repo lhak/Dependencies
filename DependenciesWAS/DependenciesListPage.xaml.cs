@@ -40,6 +40,7 @@ namespace Dependencies
         SxsEntries _sxsEntriesCache;
         Dictionary<string, ModuleFlag> _processedFiles;
         CancellationTokenSource _cts;
+        int _runningWorkers = 0;
 
         ObservableCollection<DisplayModuleInfo> _items;
         CommunityToolkit.WinUI.Collections.AdvancedCollectionView _filteredItems;
@@ -143,7 +144,7 @@ namespace Dependencies
 
         public bool ProcessPe(string path, CancellationToken cancelToken, int recursionLevel)
         {
-            if (recursionLevel > 0)
+            if (recursionLevel > 2)
                 return false;
 
             if (cancelToken.IsCancellationRequested)
@@ -174,77 +175,92 @@ namespace Dependencies
 
             bw.DoWork += (sender, e) =>
             {
+                _runningWorkers++;
+
                 ProcessPeImports(NewTreeContexts, binary);
             };
 
 
             bw.RunWorkerCompleted += (sender, e) =>
             {
-
-                foreach (ImportContext NewTreeContext in NewTreeContexts.Values)
+                try
                 {
-                    if (cancelToken.IsCancellationRequested)
-                        return;
-
-                    DependencyNodeContext childTreeNodeContext = new DependencyNodeContext();
-                    childTreeNodeContext.IsDummy = false;
-
-                    string identifier;
-
-                    if (NewTreeContext.PeFilePath == null || NewTreeContext.ModuleLocation == ModuleSearchStrategy.NOT_FOUND)
+                    foreach (ImportContext NewTreeContext in NewTreeContexts.Values)
                     {
-                        identifier = NewTreeContext.ModuleName;
-                    }
+                        if (cancelToken.IsCancellationRequested)
+                            return;
 
-                    else
-                    {
-                        identifier = Path.GetFullPath(NewTreeContext.PeFilePath).ToLowerInvariant();
-                    }
+                        DependencyNodeContext childTreeNodeContext = new DependencyNodeContext();
+                        childTreeNodeContext.IsDummy = false;
 
+                        string identifier;
 
-                    //string ModuleName = NewTreeContext.ModuleName;
-                    //string ModuleFilePath = NewTreeContext.PeFilePath;
-                    //ModuleCacheKey ModuleKey = new ModuleCacheKey(, null, NewTreeContext.Flags);
-
-                    // Newly seen modules
-                    if (!_processedFiles.ContainsKey(identifier))
-                    {
-
-                        this._processedFiles[identifier] = NewTreeContext.Flags;
-
-                        _items.Add(new DisplayModuleInfo(NewTreeContext.ModuleName, NewTreeContext.PeProperties, NewTreeContext.ModuleLocation, NewTreeContext.Flags));
-
-                        // Missing module "found"
-                        if ((NewTreeContext.PeFilePath == null) || !NativeFile.Exists(NewTreeContext.PeFilePath))
+                        if (NewTreeContext.PeFilePath == null || NewTreeContext.ModuleLocation == ModuleSearchStrategy.NOT_FOUND)
                         {
-                            this._processedFiles[identifier] |= ModuleFlag.NotFound;
+                            identifier = NewTreeContext.ModuleName;
+                        }
+
+                        else
+                        {
+                            identifier = Path.GetFullPath(NewTreeContext.PeFilePath).ToLowerInvariant();
+                        }
+
+
+                        //string ModuleName = NewTreeContext.ModuleName;
+                        //string ModuleFilePath = NewTreeContext.PeFilePath;
+                        //ModuleCacheKey ModuleKey = new ModuleCacheKey(, null, NewTreeContext.Flags);
+
+                        // Newly seen modules
+                        if (!_processedFiles.ContainsKey(identifier))
+                        {
+
+                            this._processedFiles[identifier] = NewTreeContext.Flags;
+
+
+                            // Missing module "found"
+                            if ((NewTreeContext.PeFilePath == null) || !NativeFile.Exists(NewTreeContext.PeFilePath))
+                            {
+                                _items.Add(new NotFoundModuleInfo(NewTreeContext.ModuleName));
+                                this._processedFiles[identifier] |= ModuleFlag.NotFound;
+                            }
+                            else
+                            {
+                                _items.Add(new DisplayModuleInfo(NewTreeContext.ModuleName, NewTreeContext.PeProperties, NewTreeContext.ModuleLocation, NewTreeContext.Flags));
+                                moduleBackLog.Add(NewTreeContext.PeFilePath);
+                            }
                         }
                         else
                         {
-                            moduleBackLog.Add(NewTreeContext.PeFilePath);
+                            this._processedFiles[identifier] |= NewTreeContext.Flags;
+                        }
+
+                    }
+
+                    bool allProcessed = true;
+
+                    foreach (string newModule in moduleBackLog)
+                    {
+                        if (cancelToken.IsCancellationRequested)
+                            return;
+
+                        if (ProcessPe(newModule, cancelToken, recursionLevel + 1) == false)
+                        {
+                            allProcessed = false;
                         }
                     }
-                    else
-                    {
-                        this._processedFiles[identifier] |= NewTreeContext.Flags;
-                    }
-
                 }
-
-                bool allProcessed = true;
-
-                foreach (string newModule in moduleBackLog)
+                finally
                 {
-                    if (cancelToken.IsCancellationRequested)
-                        return;
+                    _runningWorkers--;
 
-                    if (ProcessPe(newModule, cancelToken, recursionLevel + 1) == false)
+                    //System.Diagnostics.Debug.WriteLine("Worker: " + _runningWorkers);
+                    if (_runningWorkers == 0)
                     {
-                        allProcessed = false;
+                        ProgressIndicator.IsActive = false;
                     }
                 }
-
             };
+
 
             bw.RunWorkerAsync();
 
@@ -267,7 +283,15 @@ namespace Dependencies
             bool allProcessed = ProcessPe(_rootModule.Filepath, _cts.Token, 0);
 
 
+        }
 
+        private void SelectorBar_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
+        {
+            bool showNotFound = (sender.SelectedItem.Tag as string) == "Unresolved";
+            using (_filteredItems.DeferRefresh())
+            {
+                _filteredItems.Filter = showNotFound ?  x => (x as DisplayModuleInfo).Flags.HasFlag(ModuleFlag.NotFound) : null;
+            }
         }
     }
 }

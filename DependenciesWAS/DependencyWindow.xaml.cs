@@ -1452,6 +1452,7 @@ namespace Dependencies
 			InitializeView();
 			//await Task.Delay(3000);
 			Window w = new Window();
+			w.SystemBackdrop = new MicaBackdrop();
             DependenciesListPage allList = new DependenciesListPage();
 			w.Content = allList;
 			w.Activate();
