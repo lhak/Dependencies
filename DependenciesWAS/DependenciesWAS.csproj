@@ -32,7 +32,6 @@
 		<None Remove="DataGridCompactStyle.xaml" />
 		<None Remove="DependencyExportList.xaml" />
 		<None Remove="DependencyImportList.xaml" />
-		<None Remove="DependencyListAll.xaml" />
 		<None Remove="DependencyWindow.xaml" />
 		<None Remove="FilterControl.xaml" />
 		<None Remove="MainPage.xaml" />
@@ -101,7 +100,7 @@
 		<Page Update="DataGridCompactStyle.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</Page>
-		<Page Update="DependencyListAll.xaml">
+		<Page Update="DependenciesListPage.xaml">
 		  <Generator>MSBuild:Compile</Generator>
 		</Page>
 		<None Update="DependencyModuleList.xaml">

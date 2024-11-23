@@ -1450,8 +1450,11 @@ namespace Dependencies
 			TreeViewList list = DllTreeView.FindDescendant<TreeViewList>();
 			list.ContainerContentChanging += List_ContainerContentChanging;
 			InitializeView();
-			await Task.Delay(3000);
-            DependencyListAll allList = new DependencyListAll();
+			//await Task.Delay(3000);
+			Window w = new Window();
+            DependenciesListPage allList = new DependenciesListPage();
+			w.Content = allList;
+			w.Activate();
             allList.SetPe(this.Pe, CustomSearchFolders, this.SxsEntriesCache, this.WorkingDirectory);
         }
 

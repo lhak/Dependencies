@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -21,12 +22,14 @@ using Windows.Foundation.Collections;
 namespace Dependencies
 {
 
-    public sealed partial class DependencyListAll : Page
+    public sealed partial class DependenciesListPage : Page
     {
-        public DependencyListAll()
+        public DependenciesListPage()
         {
             _processedFiles = new();
             _cts = new();
+            _items = new();
+            _filteredItems = new(_items, true);
 
             this.InitializeComponent();
         }
@@ -37,6 +40,9 @@ namespace Dependencies
         SxsEntries _sxsEntriesCache;
         Dictionary<string, ModuleFlag> _processedFiles;
         CancellationTokenSource _cts;
+
+        ObservableCollection<DisplayModuleInfo> _items;
+        CommunityToolkit.WinUI.Collections.AdvancedCollectionView _filteredItems;
 
 
         private ImportContext ResolveImport(PeImportDll DllImport)
@@ -69,7 +75,7 @@ namespace Dependencies
                 if (ResolvedModule.Item2 != null)
                 {
                     ImportModule.PeFilePath = ResolvedModule.Item2.Filepath;
-                    foreach (var Import in BinaryCache.LookupImports(DllImport, ImportModule.PeFilePath))
+                    /*foreach (var Import in BinaryCache.LookupImports(DllImport, ImportModule.PeFilePath))
                     {
                         if (!Import.Item2)
                         {
@@ -77,7 +83,7 @@ namespace Dependencies
                             break;
                         }
 
-                    }
+                    }*/
                 }
             }
             else
@@ -137,7 +143,7 @@ namespace Dependencies
 
         public bool ProcessPe(string path, CancellationToken cancelToken, int recursionLevel)
         {
-            if (recursionLevel > 20)
+            if (recursionLevel > 0)
                 return false;
 
             if (cancelToken.IsCancellationRequested)
@@ -206,6 +212,7 @@ namespace Dependencies
 
                         this._processedFiles[identifier] = NewTreeContext.Flags;
 
+                        _items.Add(new DisplayModuleInfo(NewTreeContext.ModuleName, NewTreeContext.PeProperties, NewTreeContext.ModuleLocation, NewTreeContext.Flags));
 
                         // Missing module "found"
                         if ((NewTreeContext.PeFilePath == null) || !NativeFile.Exists(NewTreeContext.PeFilePath))
