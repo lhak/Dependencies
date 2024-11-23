@@ -8,10 +8,13 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.Store;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 
@@ -23,6 +26,8 @@ namespace Dependencies
         public DependencyListAll()
         {
             _processedFiles = new();
+            _cts = new();
+
             this.InitializeComponent();
         }
 
@@ -31,6 +36,8 @@ namespace Dependencies
         string _workingDirectory;
         SxsEntries _sxsEntriesCache;
         Dictionary<string, ModuleFlag> _processedFiles;
+        CancellationTokenSource _cts;
+
 
         private ImportContext ResolveImport(PeImportDll DllImport)
         {
@@ -128,82 +135,116 @@ namespace Dependencies
             }
         }
 
-        public bool ProcessPe(string path, int recursionLevel)
+        public bool ProcessPe(string path, CancellationToken cancelToken, int recursionLevel)
         {
             if (recursionLevel > 20)
+                return false;
+
+            if (cancelToken.IsCancellationRequested)
                 return false;
 
             // "Closured" variables (it 's a scope hack really).
             Dictionary<string, ImportContext> NewTreeContexts = new Dictionary<string, ImportContext>();
             List<string> moduleBackLog = new();
 
-            PE binary = (Application.Current as App).LoadBinary(path);
 
-            if (binary == null)
+            BackgroundWorker bw = new BackgroundWorker();
+            bw.WorkerReportsProgress = true; // useless here for now
+
+
+            if (!NativeFile.Exists(path))
             {
                 return true;
             }
 
-            ProcessPeImports(NewTreeContexts, binary);
+            PE binary = BinaryCache.LoadPe(path);
 
-
-            foreach (ImportContext NewTreeContext in NewTreeContexts.Values)
+            if (binary == null || !binary.LoadSuccessful)
             {
-                DependencyNodeContext childTreeNodeContext = new DependencyNodeContext();
-                childTreeNodeContext.IsDummy = false;
+                return true;
+            }
 
-                string identifier;
 
-                if (NewTreeContext.PeFilePath == null || NewTreeContext.ModuleLocation == ModuleSearchStrategy.NOT_FOUND)
+
+            bw.DoWork += (sender, e) =>
+            {
+                ProcessPeImports(NewTreeContexts, binary);
+            };
+
+
+            bw.RunWorkerCompleted += (sender, e) =>
+            {
+
+                foreach (ImportContext NewTreeContext in NewTreeContexts.Values)
                 {
-                    identifier = NewTreeContext.ModuleName;
-                }
+                    if (cancelToken.IsCancellationRequested)
+                        return;
 
-                else
-                {
-                    identifier = Path.GetFullPath(NewTreeContext.PeFilePath).ToLowerInvariant();
-                }
+                    DependencyNodeContext childTreeNodeContext = new DependencyNodeContext();
+                    childTreeNodeContext.IsDummy = false;
 
+                    string identifier;
 
-                //string ModuleName = NewTreeContext.ModuleName;
-                //string ModuleFilePath = NewTreeContext.PeFilePath;
-                //ModuleCacheKey ModuleKey = new ModuleCacheKey(, null, NewTreeContext.Flags);
-
-                // Newly seen modules
-                if (!_processedFiles.ContainsKey(identifier))
-                {
-
-                    this._processedFiles[identifier] = NewTreeContext.Flags;
-
-
-                    // Missing module "found"
-                    if ((NewTreeContext.PeFilePath == null) || !NativeFile.Exists(NewTreeContext.PeFilePath))
+                    if (NewTreeContext.PeFilePath == null || NewTreeContext.ModuleLocation == ModuleSearchStrategy.NOT_FOUND)
                     {
-                        this._processedFiles[identifier] |= ModuleFlag.NotFound;
+                        identifier = NewTreeContext.ModuleName;
+                    }
+
+                    else
+                    {
+                        identifier = Path.GetFullPath(NewTreeContext.PeFilePath).ToLowerInvariant();
+                    }
+
+
+                    //string ModuleName = NewTreeContext.ModuleName;
+                    //string ModuleFilePath = NewTreeContext.PeFilePath;
+                    //ModuleCacheKey ModuleKey = new ModuleCacheKey(, null, NewTreeContext.Flags);
+
+                    // Newly seen modules
+                    if (!_processedFiles.ContainsKey(identifier))
+                    {
+
+                        this._processedFiles[identifier] = NewTreeContext.Flags;
+
+
+                        // Missing module "found"
+                        if ((NewTreeContext.PeFilePath == null) || !NativeFile.Exists(NewTreeContext.PeFilePath))
+                        {
+                            this._processedFiles[identifier] |= ModuleFlag.NotFound;
+                        }
+                        else
+                        {
+                            moduleBackLog.Add(NewTreeContext.PeFilePath);
+                        }
                     }
                     else
                     {
-                        moduleBackLog.Add(NewTreeContext.PeFilePath);
+                        this._processedFiles[identifier] |= NewTreeContext.Flags;
+                    }
+
+                }
+
+                bool allProcessed = true;
+
+                foreach (string newModule in moduleBackLog)
+                {
+                    if (cancelToken.IsCancellationRequested)
+                        return;
+
+                    if (ProcessPe(newModule, cancelToken, recursionLevel + 1) == false)
+                    {
+                        allProcessed = false;
                     }
                 }
-                else
-                {
-                    this._processedFiles[identifier] |= NewTreeContext.Flags;
-                }
 
-            }
+            };
 
-            bool allProcessed = true;
+            bw.RunWorkerAsync();
 
-            foreach (string newModule in moduleBackLog)
-            {
-                if (ProcessPe(newModule, recursionLevel + 1) == false)
-                {
-                    allProcessed = false;
-                }
-            }
 
-            return allProcessed;
+            //return allProcessed;
+
+            return true;
         }
 
 
@@ -214,8 +255,9 @@ namespace Dependencies
             _sxsEntriesCache = sxsEntriesCache;
             _workingDirectory = workingDirectory;
 
+            CancellationTokenSource cts = new CancellationTokenSource();
 
-            bool allProcessed = ProcessPe(_rootModule.Filepath, 0);
+            bool allProcessed = ProcessPe(_rootModule.Filepath, _cts.Token, 0);
 
 
 
