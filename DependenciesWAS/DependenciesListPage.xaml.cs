@@ -144,7 +144,7 @@ namespace Dependencies
 
         public bool ProcessPe(string path, CancellationToken cancelToken, int recursionLevel)
         {
-            if (recursionLevel > 2)
+            if (recursionLevel > 10)
                 return false;
 
             if (cancelToken.IsCancellationRequested)
@@ -177,7 +177,10 @@ namespace Dependencies
             {
                 _runningWorkers++;
 
-                ProcessPeImports(NewTreeContexts, binary);
+                if (!cancelToken.IsCancellationRequested)
+                {
+                    ProcessPeImports(NewTreeContexts, binary);
+                }
             };
 
 
@@ -253,7 +256,7 @@ namespace Dependencies
                 {
                     _runningWorkers--;
 
-                    //System.Diagnostics.Debug.WriteLine("Worker: " + _runningWorkers);
+                    System.Diagnostics.Debug.WriteLine("Worker: " + _runningWorkers);
                     if (_runningWorkers == 0)
                     {
                         ProgressIndicator.IsActive = false;
@@ -283,6 +286,11 @@ namespace Dependencies
             bool allProcessed = ProcessPe(_rootModule.Filepath, _cts.Token, 0);
 
 
+        }
+
+        public void Stop()
+        {
+            _cts.Cancel();
         }
 
         private void SelectorBar_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)

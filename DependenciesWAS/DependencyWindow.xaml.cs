@@ -1455,6 +1455,7 @@ namespace Dependencies
 			w.SystemBackdrop = new MicaBackdrop();
             DependenciesListPage allList = new DependenciesListPage();
 			w.Content = allList;
+			w.Closed += (o, e) => { allList.Stop(); };
 			w.Activate();
             allList.SetPe(this.Pe, CustomSearchFolders, this.SxsEntriesCache, this.WorkingDirectory);
         }
