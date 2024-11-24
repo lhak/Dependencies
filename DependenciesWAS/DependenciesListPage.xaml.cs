@@ -29,23 +29,29 @@ namespace Dependencies
 
     public sealed partial class DependenciesListPage : Page
     {
-        public DependenciesListPage()
+        public DependenciesListPage(PE rootModule, List<string> customSearchFolders, SxsEntries sxsEntriesCache, string workingDirectory, string filepath)
         {
             _processedFiles = new();
             _cts = new();
             _items = new();
             _filteredItems = new(_items, true);
 
+            _rootModule = rootModule;
+            _customSearchFolders = customSearchFolders;
+            _sxsEntriesCache = sxsEntriesCache;
+            _workingDirectory = workingDirectory;
+            _filePath = filepath;
+
             this.InitializeComponent();
 
             UpdateFont();
-            Settings.Default.PropertyChanged += Font_PropertyChanged;
         }
 
         PE _rootModule;
         List<string> _customSearchFolders;
         string _workingDirectory;
         SxsEntries _sxsEntriesCache;
+        string _filePath;
         Dictionary<string, ModuleFlag> _processedFiles;
         CancellationTokenSource _cts;
         int _runningWorkers = 0;
@@ -262,23 +268,21 @@ namespace Dependencies
             return true;
         }
 
-        public void SetPe(PE rootModule, List<string> customSearchFolders, SxsEntries sxsEntriesCache, string workingDirectory, string filepath)
+        public void WindowOpened()
         {
-            _rootModule = rootModule;
-            _customSearchFolders = customSearchFolders;
-            _sxsEntriesCache = sxsEntriesCache;
-            _workingDirectory = workingDirectory;
-
             CancellationTokenSource cts = new CancellationTokenSource();
 
-            bool allProcessed = ProcessPe(filepath, _cts.Token, 0);
+            Settings.Default.PropertyChanged += Font_PropertyChanged;
+
+            ProcessPe(_filePath, _cts.Token, 0);
         }
 
-        public void Close()
+        public void WindowClosed()
         {
             Settings.Default.PropertyChanged -= Font_PropertyChanged;
 
             _cts.Cancel();
+            _cts.Dispose();
         }
 
         private void SelectorBar_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
@@ -290,10 +294,11 @@ namespace Dependencies
             }
         }
 
-        void UpdateFont()
+        private void UpdateFont()
         {
             ItemList.FontFamily = new FontFamily(Properties.Settings.Default.Font);
         }
+
         private void Font_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(Properties.Settings.Default.Font))
@@ -304,7 +309,6 @@ namespace Dependencies
 
         private void SelectAllCommand_ExecuteRequested(XamlUICommand sender, ExecuteRequestedEventArgs args)
         {
-            Debug.WriteLine("Select all");
             ItemList.SelectAll();
         }
 
@@ -326,7 +330,6 @@ namespace Dependencies
                 }
             }
 
-
             if (stringBuilder.Length == 0)
             {
                 if(ItemList.SelectedItems == null)
@@ -347,7 +350,6 @@ namespace Dependencies
 
             var str = stringBuilder.ToString();
 
-
             DataPackage dataPackage = new DataPackage();
             dataPackage.RequestedOperation = DataPackageOperation.Copy;
             dataPackage.SetText(stringBuilder.ToString());
@@ -359,6 +361,22 @@ namespace Dependencies
                 Clipboard.Flush();
             }
             catch { }
+        }
+
+
+        public static void OpenInNewWindow(XamlRoot parent, PE rootModule, List<string> customSearchFolders, SxsEntries sxsEntriesCache, string workingDirectory, string filepath)
+        {
+            DependenciesListPage listPage = new DependenciesListPage(rootModule, customSearchFolders, sxsEntriesCache, workingDirectory, filepath);
+
+            Window win = new Window();
+            win.SystemBackdrop = new MicaBackdrop();
+            win.Content = listPage;
+            win.ExtendsContentIntoTitleBar = true;
+            win.Closed += (o, e) => { listPage.WindowClosed(); };
+            win.AppWindow.Resize(new Windows.Graphics.SizeInt32((int)(parent.RasterizationScale * 500), (int)(parent.RasterizationScale * 600)));
+            win.Activate();
+
+            listPage.WindowOpened();
         }
     }
 }

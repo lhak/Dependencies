@@ -1451,15 +1451,7 @@ namespace Dependencies
 			list.ContainerContentChanging += List_ContainerContentChanging;
 			InitializeView();
 			//await Task.Delay(3000);
-			Window w = new Window();
-			w.SystemBackdrop = new MicaBackdrop();
-            DependenciesListPage allList = new DependenciesListPage();
-			w.Content = allList;
-			w.ExtendsContentIntoTitleBar = true;
-			w.Closed += (o, e) => { allList.Close(); };
-			w.AppWindow.Resize(new Windows.Graphics.SizeInt32((int)(this.XamlRoot.RasterizationScale * 500), (int)(this.XamlRoot.RasterizationScale * 600)));
-			w.Activate();
-            allList.SetPe(this.Pe, CustomSearchFolders, this.SxsEntriesCache, this.WorkingDirectory, this.Pe.Filepath);
+			DependenciesListPage.OpenInNewWindow(this.XamlRoot, this.Pe, CustomSearchFolders, this.SxsEntriesCache, this.WorkingDirectory, this.Pe.Filepath);
         }
 
 
