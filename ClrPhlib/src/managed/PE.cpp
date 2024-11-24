@@ -29,6 +29,7 @@ PE::~PE()
 PE::!PE() {
     Unload();
     delete m_Impl;
+    delete m_cacheLock;
 }
 
 bool PE::Load()
