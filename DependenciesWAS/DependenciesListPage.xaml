@@ -19,9 +19,9 @@
 			<RowDefinition Height="28"/>
 			<RowDefinition Height="Auto"/>
 			<RowDefinition Height="*"/>
+			<RowDefinition Height="Auto"/>
 		</Grid.RowDefinitions>
 		<TextBlock Text="All Dependencies" Margin="12,8,0,0" FontSize="12" VerticalAlignment="Top"/>
-		<ProgressRing x:Name="ProgressIndicator" Grid.Row="1" IsIndeterminate="True" IsActive="True" HorizontalAlignment="Right" Width="20" Height="20" Margin="8" VerticalAlignment="Center"/>
 		<SelectorBar Grid.Row="1" SelectionChanged="SelectorBar_SelectionChanged">
 			<SelectorBarItem Text="Show all"/>
 			<SelectorBarItem Text="Show unresolved" Tag="Unresolved"/>
@@ -49,5 +49,6 @@
 				<StackLayout Spacing="2"/>
 			</ItemsView.Layout>
 		</ItemsView>
+		<ProgressBar x:Name="ProgressIndicator" Grid.Row="3" IsIndeterminate="True" Margin="8" VerticalAlignment="Center"/>
 	</Grid>
 </Page>

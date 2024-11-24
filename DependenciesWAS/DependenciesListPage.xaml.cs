@@ -248,7 +248,7 @@ namespace Dependencies
                     System.Diagnostics.Debug.WriteLine("Worker: " + _runningWorkers);
                     if (_runningWorkers == 0)
                     {
-                        ProgressIndicator.IsActive = false;
+                        ProgressIndicator.Visibility = Visibility.Collapsed;
                     }
                 }
             };
