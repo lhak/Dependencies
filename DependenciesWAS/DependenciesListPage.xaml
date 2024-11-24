@@ -6,8 +6,7 @@
     xmlns:local="using:Dependencies"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    mc:Ignorable="d">
 
 	<Page.Resources>
 		<local:ImageToHeaderConverter x:Key="img"/>
@@ -40,7 +39,7 @@
 								<Image Grid.Column="0" Width="16" Height="16" Margin="0,0,0,0" Source="{x:Bind Filepath, Mode=OneWay, Converter={StaticResource img}}"></Image>
 								<Image Grid.Column="0" Width="16" Height="16" Margin="4,0,0,0" Source="{x:Bind Flags, Mode=OneWay, Converter={StaticResource img_overlay}}"></Image>
 							</Grid>
-							<TextBlock FontSize="12"  Text="{x:Bind ModuleName, Mode=OneWay}"/>
+							<TextBlock FontSize="12" Text="{x:Bind ModuleName, Mode=OneWay}" VerticalAlignment="Center"/>
 						</StackPanel>
 					</ItemContainer>
 				</DataTemplate>

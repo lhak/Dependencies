@@ -118,7 +118,7 @@
 									</Rectangle.OpacityMask>-->
 							</Rectangle>
 
-							<TextBlock Grid.Column="2" Text="{x:Bind Header, Mode=OneWay}" FontSize="12"></TextBlock>
+							<TextBlock Grid.Column="2" Text="{x:Bind Header, Mode=OneWay}" FontSize="12" VerticalAlignment="Center"></TextBlock>
 						</Grid>
 					</DataTemplate>
 				</TreeView.ItemTemplate>
