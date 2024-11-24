@@ -14,12 +14,12 @@
 		<local:OverlayImageToHeaderConverter x:Key="img_overlay"/>
 	</Page.Resources>
 
-	<Grid RowSpacing="8">
+	<Grid>
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto"/>
 			<RowDefinition Height="*"/>
 		</Grid.RowDefinitions>
-		<ProgressRing x:Name="ProgressIndicator" IsIndeterminate="True" IsActive="True" HorizontalAlignment="Right" Width="20" Height="20" Margin="8"/>
+		<ProgressRing x:Name="ProgressIndicator" IsIndeterminate="True" IsActive="True" HorizontalAlignment="Right" Width="20" Height="20" Margin="8" VerticalAlignment="Center"/>
 		<SelectorBar SelectionChanged="SelectorBar_SelectionChanged">
 			<SelectorBarItem Text="Show all"/>
 			<SelectorBarItem Text="Show unresolved" Tag="Unresolved"/>

@@ -45,6 +45,7 @@ namespace Dependencies
         ObservableCollection<DisplayModuleInfo> _items;
         CommunityToolkit.WinUI.Collections.AdvancedCollectionView _filteredItems;
 
+        // Copied from DependencyWindow.cs
 
         private ImportContext ResolveImport(PeImportDll DllImport)
         {
@@ -154,10 +155,8 @@ namespace Dependencies
             Dictionary<string, ImportContext> NewTreeContexts = new Dictionary<string, ImportContext>();
             List<string> moduleBackLog = new();
 
-
             BackgroundWorker bw = new BackgroundWorker();
             bw.WorkerReportsProgress = true; // useless here for now
-
 
             if (!NativeFile.Exists(path))
             {
@@ -171,8 +170,6 @@ namespace Dependencies
                 return true;
             }
 
-
-
             bw.DoWork += (sender, e) =>
             {
                 _runningWorkers++;
@@ -182,7 +179,6 @@ namespace Dependencies
                     ProcessPeImports(NewTreeContexts, binary);
                 }
             };
-
 
             bw.RunWorkerCompleted += (sender, e) =>
             {
@@ -208,20 +204,14 @@ namespace Dependencies
                             identifier = Path.GetFullPath(NewTreeContext.PeFilePath).ToLowerInvariant();
                         }
 
-
-                        //string ModuleName = NewTreeContext.ModuleName;
-                        //string ModuleFilePath = NewTreeContext.PeFilePath;
-                        //ModuleCacheKey ModuleKey = new ModuleCacheKey(, null, NewTreeContext.Flags);
-
                         // Newly seen modules
                         if (!_processedFiles.ContainsKey(identifier))
                         {
 
                             this._processedFiles[identifier] = NewTreeContext.Flags;
 
-
                             // Missing module "found"
-                            if ((NewTreeContext.PeFilePath == null) || !NativeFile.Exists(NewTreeContext.PeFilePath))
+                            if ((NewTreeContext.PeFilePath == null) || !NativeFile.Exists(NewTreeContext.PeFilePath) || NewTreeContext.PeProperties == null)
                             {
                                 _items.Add(new NotFoundModuleInfo(NewTreeContext.ModuleName));
                                 this._processedFiles[identifier] |= ModuleFlag.NotFound;
@@ -239,17 +229,12 @@ namespace Dependencies
 
                     }
 
-                    bool allProcessed = true;
-
                     foreach (string newModule in moduleBackLog)
                     {
                         if (cancelToken.IsCancellationRequested)
                             return;
 
-                        if (ProcessPe(newModule, cancelToken, recursionLevel + 1) == false)
-                        {
-                            allProcessed = false;
-                        }
+                        ProcessPe(newModule, cancelToken, recursionLevel + 1);
                     }
                 }
                 finally
@@ -264,17 +249,12 @@ namespace Dependencies
                 }
             };
 
-
             bw.RunWorkerAsync();
-
-
-            //return allProcessed;
 
             return true;
         }
 
-
-        public void SetPe(PE rootModule, List<string> customSearchFolders, SxsEntries sxsEntriesCache, string workingDirectory)
+        public void SetPe(PE rootModule, List<string> customSearchFolders, SxsEntries sxsEntriesCache, string workingDirectory, string filepath)
         {
             _rootModule = rootModule;
             _customSearchFolders = customSearchFolders;
@@ -283,9 +263,7 @@ namespace Dependencies
 
             CancellationTokenSource cts = new CancellationTokenSource();
 
-            bool allProcessed = ProcessPe(_rootModule.Filepath, _cts.Token, 0);
-
-
+            bool allProcessed = ProcessPe(filepath, _cts.Token, 0);
         }
 
         public void Stop()
