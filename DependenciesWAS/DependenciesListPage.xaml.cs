@@ -11,11 +11,15 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.ApplicationModel.Store;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
@@ -282,7 +286,7 @@ namespace Dependencies
             bool showNotFound = (sender.SelectedItem.Tag as string) == "Unresolved";
             using (_filteredItems.DeferRefresh())
             {
-                _filteredItems.Filter = showNotFound ?  x => (x as DisplayModuleInfo).Flags.HasFlag(ModuleFlag.NotFound) : null;
+                _filteredItems.Filter = showNotFound ? x => (x as DisplayModuleInfo).Flags.HasFlag(ModuleFlag.NotFound) : null;
             }
         }
 
@@ -296,6 +300,65 @@ namespace Dependencies
             {
                 UpdateFont();
             }
+        }
+
+        private void SelectAllCommand_ExecuteRequested(XamlUICommand sender, ExecuteRequestedEventArgs args)
+        {
+            Debug.WriteLine("Select all");
+            ItemList.SelectAll();
+        }
+
+        private void CopyCommand_ExecuteRequested(XamlUICommand sender, ExecuteRequestedEventArgs args)
+        {
+            DisplayModuleInfo targetItem = null;
+            if (args.Parameter is FrameworkElement fe)
+            {
+                targetItem = fe.DataContext as DisplayModuleInfo;
+            }
+
+            StringBuilder stringBuilder = new();
+
+            if (targetItem != null)
+            {
+                if (!ItemList.SelectedItems.Contains(targetItem))
+                {
+                    stringBuilder.Append(targetItem.Filepath);
+                }
+            }
+
+
+            if (stringBuilder.Length == 0)
+            {
+                if(ItemList.SelectedItems == null)
+                {
+                    return;
+                }
+                else
+                {
+                    foreach (var item in ItemList.SelectedItems)
+                    {
+                        if (item is DisplayModuleInfo module)
+                        {
+                            stringBuilder.AppendLine(module.Filepath);
+                        }
+                    }
+                }
+            }
+
+            var str = stringBuilder.ToString();
+
+
+            DataPackage dataPackage = new DataPackage();
+            dataPackage.RequestedOperation = DataPackageOperation.Copy;
+            dataPackage.SetText(stringBuilder.ToString());
+
+            try
+            {
+
+                Clipboard.SetContent(dataPackage);
+                Clipboard.Flush();
+            }
+            catch { }
         }
     }
 }

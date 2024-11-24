@@ -11,6 +11,15 @@
 	<Page.Resources>
 		<local:ImageToHeaderConverter x:Key="img"/>
 		<local:OverlayImageToHeaderConverter x:Key="img_overlay"/>
+
+		<StandardUICommand x:Key="CopyCommand" Kind="Copy" ExecuteRequested="CopyCommand_ExecuteRequested"/>
+		<StandardUICommand x:Key="SelectAllCommand" Kind="SelectAll" ExecuteRequested="SelectAllCommand_ExecuteRequested"/>
+
+		<MenuFlyout x:Name="ListContextMenu">
+			<MenuFlyoutItem Command="{StaticResource CopyCommand}" CommandParameter="{x:Bind ListContextMenu.Target, Mode=OneWay}"/>
+			<MenuFlyoutSeparator/>
+			<MenuFlyoutItem Command="{StaticResource SelectAllCommand}" CommandParameter="{x:Bind ListContextMenu.Target, Mode=OneWay}"/>
+		</MenuFlyout>
 	</Page.Resources>
 
 	<Grid>
@@ -28,7 +37,7 @@
 		<ItemsView x:Name="ItemList" Grid.Row="2" ItemsSource="{x:Bind _filteredItems}" SelectionMode="Extended" Padding="8" Background="{ThemeResource LayerFillColorDefaultBrush}">
 			<ItemsView.ItemTemplate>
 				<DataTemplate x:DataType="local:DisplayModuleInfo">
-					<ItemContainer>
+					<ItemContainer ContextFlyout="{StaticResource ListContextMenu}" DataContext="{x:Bind Mode=TwoWay}">
 						<StackPanel Orientation="Horizontal">
 							<Grid Width="27" Margin="0,2">
 								<Grid.ColumnDefinitions>
