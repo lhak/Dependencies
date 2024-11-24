@@ -16,15 +16,17 @@
 
 	<Grid>
 		<Grid.RowDefinitions>
+			<RowDefinition Height="28"/>
 			<RowDefinition Height="Auto"/>
 			<RowDefinition Height="*"/>
 		</Grid.RowDefinitions>
-		<ProgressRing x:Name="ProgressIndicator" IsIndeterminate="True" IsActive="True" HorizontalAlignment="Right" Width="20" Height="20" Margin="8" VerticalAlignment="Center"/>
-		<SelectorBar SelectionChanged="SelectorBar_SelectionChanged">
+		<TextBlock Text="All Dependencies" Margin="12,8,0,0" FontSize="12" VerticalAlignment="Top"/>
+		<ProgressRing x:Name="ProgressIndicator" Grid.Row="1" IsIndeterminate="True" IsActive="True" HorizontalAlignment="Right" Width="20" Height="20" Margin="8" VerticalAlignment="Center"/>
+		<SelectorBar Grid.Row="1" SelectionChanged="SelectorBar_SelectionChanged">
 			<SelectorBarItem Text="Show all"/>
 			<SelectorBarItem Text="Show unresolved" Tag="Unresolved"/>
 		</SelectorBar>
-		<ItemsView Grid.Row="1" ItemsSource="{x:Bind _filteredItems}" SelectionMode="Extended" Padding="8" Background="{ThemeResource LayerFillColorDefaultBrush}">
+		<ItemsView x:Name="ItemList" Grid.Row="2" ItemsSource="{x:Bind _filteredItems}" SelectionMode="Extended" Padding="8" Background="{ThemeResource LayerFillColorDefaultBrush}">
 			<ItemsView.ItemTemplate>
 				<DataTemplate x:DataType="local:DisplayModuleInfo">
 					<ItemContainer>

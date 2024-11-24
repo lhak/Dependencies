@@ -1,4 +1,5 @@
 using Dependencies.ClrPh;
+using Dependencies.Properties;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -32,6 +33,9 @@ namespace Dependencies
             _filteredItems = new(_items, true);
 
             this.InitializeComponent();
+
+            UpdateFont();
+            Settings.Default.PropertyChanged += Font_PropertyChanged;
         }
 
         PE _rootModule;
@@ -266,8 +270,10 @@ namespace Dependencies
             bool allProcessed = ProcessPe(filepath, _cts.Token, 0);
         }
 
-        public void Stop()
+        public void Close()
         {
+            Settings.Default.PropertyChanged -= Font_PropertyChanged;
+
             _cts.Cancel();
         }
 
@@ -277,6 +283,18 @@ namespace Dependencies
             using (_filteredItems.DeferRefresh())
             {
                 _filteredItems.Filter = showNotFound ?  x => (x as DisplayModuleInfo).Flags.HasFlag(ModuleFlag.NotFound) : null;
+            }
+        }
+
+        void UpdateFont()
+        {
+            ItemList.FontFamily = new FontFamily(Properties.Settings.Default.Font);
+        }
+        private void Font_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(Properties.Settings.Default.Font))
+            {
+                UpdateFont();
             }
         }
     }
