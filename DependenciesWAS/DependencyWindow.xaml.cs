@@ -1341,7 +1341,6 @@ namespace Dependencies
 			{
 				if (item.ModuleName == SelectedModuleName)
 				{
-
 					this.ModulesList.SelectedItem = item;
 					this.ModulesList.ScrollIntoView(item, null);
 					return;
@@ -1349,7 +1348,23 @@ namespace Dependencies
 			}
 		}
 
-		private void ExpandAllParentNode(ModuleTreeViewItem Item)
+        private void ShowAllDependencies_ExecuteRequested(XamlUICommand sender, ExecuteRequestedEventArgs args)
+        {
+            ModuleTreeViewItem Source = DllTreeView.SelectedItem as ModuleTreeViewItem;
+
+            if (args.Parameter is FrameworkElement)
+                Source = (args.Parameter as FrameworkElement).DataContext as ModuleTreeViewItem;
+
+            if (Source == null)
+                return;
+
+			if(!string.IsNullOrEmpty(Source.ModuleFilePath))
+			{
+				DependenciesListPage.OpenInNewWindow(this.XamlRoot, this.Pe, this.CustomSearchFolders, this.SxsEntriesCache, this.WorkingDirectory, Source.ModuleFilePath);
+			}
+        }
+
+        private void ExpandAllParentNode(ModuleTreeViewItem Item)
 		{
 			if (Item != null)
 			{
@@ -1443,15 +1458,13 @@ namespace Dependencies
 		// by the TreeView code. Register for the container content changing event
 		// here to set the value back to false. 
 		// The Loaded event might be called multiple times when the TabView is changed.
-		private async void Window_Loaded(object sender, RoutedEventArgs e)
+		private void Window_Loaded(object sender, RoutedEventArgs e)
 		{
 			this.Loaded -= Window_Loaded;
 			Properties.Settings.Default.PropertyChanged += Font_PropertyChanged;
 			TreeViewList list = DllTreeView.FindDescendant<TreeViewList>();
 			list.ContainerContentChanging += List_ContainerContentChanging;
 			InitializeView();
-			//await Task.Delay(3000);
-			DependenciesListPage.OpenInNewWindow(this.XamlRoot, this.Pe, CustomSearchFolders, this.SxsEntriesCache, this.WorkingDirectory, this.Pe.Filepath);
         }
 
 
@@ -1498,8 +1511,8 @@ namespace Dependencies
 			}
 		}
 
-		#endregion // FontWorkaround
-	}
+        #endregion // FontWorkaround
+    }
 
 }
 
