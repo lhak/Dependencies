@@ -224,11 +224,14 @@ namespace Dependencies
 
                             this._processedFiles[identifier] = NewTreeContext.Flags;
 
-                            // Missing module "found"
                             if ((NewTreeContext.PeFilePath == null) || !NativeFile.Exists(NewTreeContext.PeFilePath) || NewTreeContext.PeProperties == null)
                             {
-                                _items.Add(new NotFoundModuleInfo(NewTreeContext.ModuleName));
                                 this._processedFiles[identifier] |= ModuleFlag.NotFound;
+                                if (!NewTreeContext.Flags.HasFlag(ModuleFlag.ApiSetExt))
+                                {
+                                    // Skip ext api sets
+                                    _items.Add(new NotFoundModuleInfo(NewTreeContext.ModuleName));
+                                }                  
                             }
                             else
                             {
