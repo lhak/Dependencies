@@ -111,7 +111,7 @@ namespace Dependencies
 
             // ApiSet override the underneath search location if found or not
             ModuleSearchStrategy ModuleLocation = ResolvedFilepath.Item1;
-            if (!string.IsNullOrEmpty(ApiSetName) /*&& (ResolvedFilepath.Item2 != null)*/)
+            if (ApiSetName != null /*&& (ResolvedFilepath.Item2 != null)*/)
                 ModuleLocation = ModuleSearchStrategy.ApiSetSchema;
 
             // 
@@ -135,7 +135,7 @@ namespace Dependencies
         {
             // Look for api set target 
             if (!ImportDllName.StartsWith("api-", StringComparison.CurrentCultureIgnoreCase) && !ImportDllName.StartsWith("ext-", StringComparison.CurrentCultureIgnoreCase))
-                return "";
+                return null;
 
            
             // Strip the .dll extension and search for matching targets
@@ -144,7 +144,7 @@ namespace Dependencies
             if ((Targets != null) && (Targets.Count > 0))
                 return Targets[0];
 
-            return "";
+            return null;
         }
 
         public static bool LookupImport(string ModuleFilePath, string ImportName, int ImportOrdinal, bool ImportByOrdinal)
