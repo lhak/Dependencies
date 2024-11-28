@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -123,6 +124,80 @@ namespace Dependencies
             return ImportModule;
         }
 
+        private void ProcessAppInitDlls(Dictionary<string, ImportContext> NewTreeContexts, PE AnalyzedPe, ImportContext ImportModule)
+        {
+            List<PeImportDll> PeImports = AnalyzedPe.GetImports();
+
+            // only user32 triggers appinit dlls
+            string User32Filepath = Path.Combine(FindPe.GetSystemPath(this._rootModule), "user32.dll");
+            if (string.Compare(ImportModule.PeFilePath, User32Filepath, StringComparison.OrdinalIgnoreCase) != 0)
+            {
+                return;
+            }
+
+            string AppInitRegistryKey =
+                (this._rootModule.IsArm32Dll()) ?
+                "SOFTWARE\\WowAA32Node\\Microsoft\\Windows NT\\CurrentVersion\\Windows" :
+                (this._rootModule.IsWow64Dll()) ?
+                "SOFTWARE\\Wow6432Node\\Microsoft\\Windows NT\\CurrentVersion\\Windows" :
+                "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows";
+
+            // Opening registry values
+            RegistryKey localKey = RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, RegistryView.Registry64);
+            localKey = localKey.OpenSubKey(AppInitRegistryKey);
+            int LoadAppInitDlls = (int)localKey.GetValue("LoadAppInit_DLLs", 0);
+            string AppInitDlls = (string)localKey.GetValue("AppInit_DLLs", "");
+            if (LoadAppInitDlls == 0 || String.IsNullOrEmpty(AppInitDlls))
+            {
+                return;
+            }
+
+            // Extremely crude parser. TODO : Add support for quotes wrapped paths with spaces
+            foreach (var AppInitDll in AppInitDlls.Split(' '))
+            {
+                Debug.WriteLine("AppInit loading " + AppInitDll);
+
+                // Do not process twice the same imported module
+                if (null != PeImports.Find(module => module.Name == AppInitDll))
+                {
+                    continue;
+                }
+
+                if (NewTreeContexts.ContainsKey(AppInitDll))
+                {
+                    continue;
+                }
+
+                ImportContext AppInitImportModule = new ImportContext();
+                AppInitImportModule.PeFilePath = null;
+                AppInitImportModule.PeProperties = null;
+                AppInitImportModule.ModuleName = AppInitDll;
+                AppInitImportModule.ApiSetModuleName = null;
+                AppInitImportModule.Flags = 0;
+                AppInitImportModule.ModuleLocation = ModuleSearchStrategy.AppInitDLL;
+
+
+
+                Tuple<ModuleSearchStrategy, PE> ResolvedAppInitModule = BinaryCache.ResolveModule(
+                    this._rootModule,
+                    AppInitDll,
+                    this._sxsEntriesCache,
+                    this._customSearchFolders,
+                    this._workingDirectory
+                );
+                if (ResolvedAppInitModule.Item1 != ModuleSearchStrategy.NOT_FOUND)
+                {
+                    AppInitImportModule.PeProperties = ResolvedAppInitModule.Item2;
+                    AppInitImportModule.PeFilePath = ResolvedAppInitModule.Item2.Filepath;
+                }
+                else
+                {
+                    AppInitImportModule.Flags |= ModuleFlag.NotFound;
+                }
+
+                NewTreeContexts.Add(AppInitDll, AppInitImportModule);
+            }
+        }
 
         /// <summary>
 		/// Background processing of a single PE file.
@@ -149,7 +224,7 @@ namespace Dependencies
 
 
                 // AppInitDlls are triggered by user32.dll, so if the binary does not import user32.dll they are not loaded.
-                //ProcessAppInitDlls(NewTreeContexts, newPe, ImportModule);
+                ProcessAppInitDlls(NewTreeContexts, newPe, ImportModule);
 
 
                 // if mscoree.dll is imported, it means the module is a C# assembly, and we can use Mono.Cecil to enumerate its references
