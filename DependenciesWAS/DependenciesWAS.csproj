@@ -18,6 +18,7 @@
 		<IntermediateOutputPath>$(SolutionDir)obj\$(ProjectName)\$(Configuration)$(Platform)</IntermediateOutputPath>
 		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
 		<CsWinRTAotWarningLevel>1</CsWinRTAotWarningLevel>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)'=='Packaged'">
 		<DefineConstants>$(DefineConstants);RELEASE;TRACE</DefineConstants>
