@@ -305,7 +305,7 @@ namespace Dependencies
                                 if (!NewTreeContext.Flags.HasFlag(ModuleFlag.ApiSetExt))
                                 {
                                     // Skip ext api sets
-                                    _items.Add(new NotFoundModuleInfo(NewTreeContext.ModuleName));
+                                    _items.Add(new NotFoundModuleInfo(NewTreeContext.ModuleName, NewTreeContext.Flags.HasFlag(ModuleFlag.DelayLoad)));
                                 }                  
                             }
                             else

@@ -85,10 +85,14 @@ namespace Dependencies
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
     public partial class NotFoundModuleInfo : DisplayModuleInfo
     {
-        public NotFoundModuleInfo(string NotFoundModuleName)
+        public NotFoundModuleInfo(string NotFoundModuleName, bool delayLoad = false)
         : base(NotFoundModuleName)
         {
 			_Flags |= ModuleFlag.NotFound;
+            if(delayLoad)
+            {
+                _Flags |= ModuleFlag.DelayLoad;
+            }
         }
 
         public override string Filepath { get { return _Name; } }
