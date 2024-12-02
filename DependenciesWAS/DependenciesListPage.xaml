@@ -37,7 +37,7 @@
 		<ItemsView x:Name="ItemList" Grid.Row="2" ItemsSource="{x:Bind _filteredItems}" SelectionMode="Extended" Padding="8" Background="{ThemeResource LayerFillColorDefaultBrush}">
 			<ItemsView.ItemTemplate>
 				<DataTemplate x:DataType="local:DisplayModuleInfo">
-					<ItemContainer ContextFlyout="{StaticResource ListContextMenu}" DataContext="{x:Bind Mode=TwoWay}">
+					<ItemContainer ContextFlyout="{StaticResource ListContextMenu}" DataContext="{x:Bind Mode=TwoWay}" ToolTipService.ToolTip="{x:Bind Status, Mode=OneWay}">
 						<StackPanel Orientation="Horizontal">
 							<Grid Width="27" Margin="0,2">
 								<Grid.ColumnDefinitions>
