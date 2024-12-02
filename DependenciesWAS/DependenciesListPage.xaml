@@ -34,7 +34,8 @@
 			<SelectorBarItem Text="Show all"/>
 			<SelectorBarItem Text="Show unresolved" Tag="Unresolved"/>
 		</SelectorBar>
-		<ItemsView x:Name="ItemList" Grid.Row="2" ItemsSource="{x:Bind _filteredItems}" SelectionMode="Extended" Padding="8" Background="{ThemeResource LayerFillColorDefaultBrush}">
+		<ItemsView x:Name="ItemList" Grid.Row="2" ItemsSource="{x:Bind _filteredItems}" SelectionMode="Extended" Padding="8" Background="{ThemeResource LayerFillColorDefaultBrush}" 
+				   BorderBrush="{ThemeResource CardStrokeColorDefault}" BorderThickness="0,1,0,0" CornerRadius="0">
 			<ItemsView.ItemTemplate>
 				<DataTemplate x:DataType="local:DisplayModuleInfo">
 					<ItemContainer ContextFlyout="{StaticResource ListContextMenu}" DataContext="{x:Bind Mode=TwoWay}" ToolTipService.ToolTip="{x:Bind Status, Mode=OneWay}">
