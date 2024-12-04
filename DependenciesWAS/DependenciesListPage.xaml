@@ -43,7 +43,7 @@
 
 		<SemanticZoom  Grid.Row="2">
 			<SemanticZoom.ZoomedInView>
-				<ListView x:Name="ItemList" ItemsSource="{x:Bind groupViewSource.View}" SelectionMode="Extended" Padding="8" Background="{ThemeResource LayerFillColorDefaultBrush}" 
+				<ListView x:Name="ItemList" ItemsSource="{x:Bind groupViewSource.View}" SelectionMode="Extended" Padding="8,0,8,8" Background="{ThemeResource LayerFillColorDefaultBrush}" 
 			   BorderBrush="{ThemeResource CardStrokeColorDefault}" BorderThickness="0,1,0,0" CornerRadius="0">
 
 					<ListView.ItemTemplate>
@@ -68,7 +68,7 @@
 			<StackLayout Spacing="2"/>
 		</ListView.Layout>-->
 					<ListView.GroupStyle>
-						<GroupStyle >
+						<GroupStyle HidesIfEmpty="True">
 							<GroupStyle.HeaderTemplate>
 								<DataTemplate x:DataType="local:CustomDataGroup">
 									<Border>
@@ -88,16 +88,12 @@
 					<ListView.ItemTemplate>
 						<DataTemplate x:DataType="ICollectionViewGroup">
 							<TextBlock Text="{x:Bind Group.(local:CustomDataGroup.Key)}"
-               Style="{StaticResource BaseTextBlockStyle}" TextWrapping="Wrap"/>
+               Style="{StaticResource BaseTextBlockStyle}"/>
 						</DataTemplate>
 					</ListView.ItemTemplate>
 				</ListView>
-				<!-- Put the ListView for the zoomed out view here. -->
 			</SemanticZoom.ZoomedOutView>
 		</SemanticZoom>
-
-
-
 		<ProgressBar x:Name="ProgressIndicator" Grid.Row="3" IsIndeterminate="True" Margin="8" VerticalAlignment="Center"/>
 	</Grid>
 </Page>
