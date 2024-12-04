@@ -423,7 +423,11 @@ namespace Dependencies
 
         private void UpdateFont()
         {
-            ItemList.FontFamily = new FontFamily(Properties.Settings.Default.Font);
+            var listViewContainerStyle = new Style();
+            listViewContainerStyle.BasedOn = App.Current.Resources["DefaultListViewItemStyle"] as Style;
+            listViewContainerStyle.TargetType = typeof(ListViewItem);
+            listViewContainerStyle.Setters.Add(new Setter(FontFamilyProperty, Properties.Settings.Default.Font));
+            ItemList.ItemContainerStyle = listViewContainerStyle;
         }
 
         private void Font_PropertyChanged(object sender, PropertyChangedEventArgs e)
