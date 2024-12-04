@@ -24,9 +24,23 @@ using Windows.ApplicationModel.DataTransfer;
 using Windows.ApplicationModel.Store;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using WinRT;
 
 namespace Dependencies
 {
+    [GeneratedBindableCustomProperty]
+    public partial class CustomDataGroup
+    {
+        public CustomDataGroup()
+        {
+            //this.Items = new ObservableCollection<DisplayModuleInfo>();
+            //this.Key = new string("Test");
+        }
+
+        public object Key { get; set; }
+
+        public ICollectionView Items { get; set; }
+    }
 
     public sealed partial class DependenciesListPage : Page
     {
@@ -35,7 +49,8 @@ namespace Dependencies
             _processedFiles = new();
             _cts = new();
             _items = new();
-            _filteredItems = new(_items, true);
+            _filteredItems = new();
+            //_filteredItems = new(_items, true);
 
             _rootModule = rootModule;
             _customSearchFolders = customSearchFolders;
@@ -43,7 +58,19 @@ namespace Dependencies
             _workingDirectory = workingDirectory;
             _filePath = filepath;
 
+            this.DataContext = this;
+
             this.InitializeComponent();
+
+            /*groups.Add(new CustomDataGroup() { Items = _filteredItems });
+
+
+            CollectionViewSource src = new CollectionViewSource();
+            src.ItemsPath = new PropertyPath("Items");
+            src.IsSourceGrouped = true;
+            src.Source = groups;
+            */
+            //ItemList.ItemsSource = src;
 
             UpdateFont();
         }
@@ -57,8 +84,27 @@ namespace Dependencies
         CancellationTokenSource _cts;
         int _runningWorkers = 0;
 
-        ObservableCollection<DisplayModuleInfo> _items;
-        CommunityToolkit.WinUI.Collections.AdvancedCollectionView _filteredItems;
+        Dictionary<ModuleSearchStrategy, ObservableCollection<DisplayModuleInfo>> _items;
+        Dictionary<ModuleSearchStrategy, CommunityToolkit.WinUI.Collections.AdvancedCollectionView> _filteredItems;
+
+        ObservableCollection<CustomDataGroup> groups = new ObservableCollection<CustomDataGroup>();
+
+        private void AddItem(DisplayModuleInfo info)
+        {
+            ObservableCollection<DisplayModuleInfo> itemList;
+
+            if (_items.TryGetValue(info.Location, out itemList) == false)
+            {
+                itemList = new();
+                CommunityToolkit.WinUI.Collections.AdvancedCollectionView filteredList = new(itemList, true);
+
+                _items[info.Location] = itemList;
+                _filteredItems[info.Location] = filteredList;
+
+                groups.Add(new CustomDataGroup() { Key = info.Location.ToString(), Items = filteredList });
+            }
+            itemList.Add(info);
+        }
 
         // Copied from DependencyWindow.cs
 
@@ -234,7 +280,7 @@ namespace Dependencies
 
         public bool ProcessPe(string path, CancellationToken cancelToken, int recursionLevel)
         {
-            if (recursionLevel > 10)
+            if (recursionLevel > 100)
                 return false;
 
             if (cancelToken.IsCancellationRequested)
@@ -305,12 +351,12 @@ namespace Dependencies
                                 if (!NewTreeContext.Flags.HasFlag(ModuleFlag.ApiSetExt))
                                 {
                                     // Skip ext api sets
-                                    _items.Add(new NotFoundModuleInfo(NewTreeContext.ModuleName, NewTreeContext.Flags.HasFlag(ModuleFlag.DelayLoad)));
-                                }                  
+                                    AddItem(new NotFoundModuleInfo(NewTreeContext.ModuleName, NewTreeContext.Flags.HasFlag(ModuleFlag.DelayLoad)));
+                                }
                             }
                             else
                             {
-                                _items.Add(new DisplayModuleInfo(NewTreeContext.ModuleName, NewTreeContext.PeProperties, NewTreeContext.ModuleLocation, NewTreeContext.Flags));
+                                AddItem(new DisplayModuleInfo(NewTreeContext.ModuleName, NewTreeContext.PeProperties, NewTreeContext.ModuleLocation, NewTreeContext.Flags));
                                 moduleBackLog.Add(NewTreeContext.PeFilePath);
                             }
                         }
@@ -366,9 +412,12 @@ namespace Dependencies
         private void SelectorBar_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
         {
             bool showNotFound = (sender.SelectedItem.Tag as string) == "Unresolved";
-            using (_filteredItems.DeferRefresh())
+            foreach (var filteredList in _filteredItems.Values)
             {
-                _filteredItems.Filter = showNotFound ? x => (x as DisplayModuleInfo).Flags.HasFlag(ModuleFlag.NotFound) : null;
+                using (filteredList.DeferRefresh())
+                {
+                    filteredList.Filter = showNotFound ? x => (x as DisplayModuleInfo).Flags.HasFlag(ModuleFlag.NotFound) : null;
+                }
             }
         }
 
@@ -410,7 +459,7 @@ namespace Dependencies
 
             if (stringBuilder.Length == 0)
             {
-                if(ItemList.SelectedItems == null)
+                if (ItemList.SelectedItems == null)
                 {
                     return;
                 }

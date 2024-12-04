@@ -20,6 +20,11 @@
 			<MenuFlyoutSeparator/>
 			<MenuFlyoutItem Command="{StaticResource SelectAllCommand}" CommandParameter="{x:Bind ListContextMenu.Target, Mode=OneWay}"/>
 		</MenuFlyout>
+		<CollectionViewSource
+                x:Name='groupViewSource'
+                IsSourceGrouped='true'
+                Source='{x:Bind groups}'
+                ItemsPath='Items' />
 	</Page.Resources>
 
 	<Grid>
@@ -34,12 +39,14 @@
 			<SelectorBarItem Text="Show all"/>
 			<SelectorBarItem Text="Show unresolved" Tag="Unresolved"/>
 		</SelectorBar>
-		<ItemsView x:Name="ItemList" Grid.Row="2" ItemsSource="{x:Bind _filteredItems}" SelectionMode="Extended" Padding="8" Background="{ThemeResource LayerFillColorDefaultBrush}" 
+		<!-- ItemsSource="{x:Bind _filteredItems}"  -->
+		<ListView x:Name="ItemList" ItemsSource="{x:Bind groupViewSource.View}" Grid.Row="2" SelectionMode="Extended" Padding="8" Background="{ThemeResource LayerFillColorDefaultBrush}" 
 				   BorderBrush="{ThemeResource CardStrokeColorDefault}" BorderThickness="0,1,0,0" CornerRadius="0">
-			<ItemsView.ItemTemplate>
+		
+			<ListView.ItemTemplate>
 				<DataTemplate x:DataType="local:DisplayModuleInfo">
-					<ItemContainer ContextFlyout="{StaticResource ListContextMenu}" DataContext="{x:Bind Mode=TwoWay}" ToolTipService.ToolTip="{x:Bind Status, Mode=OneWay}">
-						<StackPanel Orientation="Horizontal">
+					<!--<ItemContainer FontSize="30" ContextFlyout="{StaticResource ListContextMenu}" DataContext="{x:Bind Mode=TwoWay}" ToolTipService.ToolTip="{x:Bind Status, Mode=OneWay}">-->
+					<StackPanel ContextFlyout="{StaticResource ListContextMenu}" DataContext="{x:Bind Mode=OneWay}" ToolTipService.ToolTip="{x:Bind Status, Mode=OneWay}" Orientation="Horizontal">
 							<Grid Width="27" Margin="0,2">
 								<Grid.ColumnDefinitions>
 									<ColumnDefinition Width="24" />
@@ -51,13 +58,24 @@
 							</Grid>
 							<TextBlock FontSize="12" Text="{x:Bind ModuleName, Mode=OneWay}" VerticalAlignment="Center"/>
 						</StackPanel>
-					</ItemContainer>
+					<!--</ItemContainer>-->
 				</DataTemplate>
-			</ItemsView.ItemTemplate>
-			<ItemsView.Layout>
+			</ListView.ItemTemplate>
+			<!--<ListView.Layout>
 				<StackLayout Spacing="2"/>
-			</ItemsView.Layout>
-		</ItemsView>
+			</ListView.Layout>-->
+			<ListView.GroupStyle>
+				<GroupStyle >
+					<GroupStyle.HeaderTemplate>
+						<DataTemplate x:DataType="local:CustomDataGroup">
+							<Border>
+								<TextBlock Text="{x:Bind Key}" Style="{ThemeResource BaseTextBlockStyle}"/>
+							</Border>
+						</DataTemplate>
+					</GroupStyle.HeaderTemplate>
+				</GroupStyle>
+			</ListView.GroupStyle>
+		</ListView>
 		<ProgressBar x:Name="ProgressIndicator" Grid.Row="3" IsIndeterminate="True" Margin="8" VerticalAlignment="Center"/>
 	</Grid>
 </Page>
