@@ -62,6 +62,10 @@ namespace Dependencies
 
             this.InitializeComponent();
 
+            //groups.Add(new CustomDataGroup() { Key = "Test", Items = new CommunityToolkit.WinUI.Collections.AdvancedCollectionView() });
+
+            //var g = groupViewSource.View.CollectionGroups;
+
             /*groups.Add(new CustomDataGroup() { Items = _filteredItems });
 
 

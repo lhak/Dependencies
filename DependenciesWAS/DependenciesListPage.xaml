@@ -40,42 +40,64 @@
 			<SelectorBarItem Text="Show unresolved" Tag="Unresolved"/>
 		</SelectorBar>
 		<!-- ItemsSource="{x:Bind _filteredItems}"  -->
-		<ListView x:Name="ItemList" ItemsSource="{x:Bind groupViewSource.View}" Grid.Row="2" SelectionMode="Extended" Padding="8" Background="{ThemeResource LayerFillColorDefaultBrush}" 
-				   BorderBrush="{ThemeResource CardStrokeColorDefault}" BorderThickness="0,1,0,0" CornerRadius="0">
-		
-			<ListView.ItemTemplate>
-				<DataTemplate x:DataType="local:DisplayModuleInfo">
-					<!--<ItemContainer FontSize="30" ContextFlyout="{StaticResource ListContextMenu}" DataContext="{x:Bind Mode=TwoWay}" ToolTipService.ToolTip="{x:Bind Status, Mode=OneWay}">-->
-					<StackPanel ContextFlyout="{StaticResource ListContextMenu}" DataContext="{x:Bind Mode=OneWay}" ToolTipService.ToolTip="{x:Bind Status, Mode=OneWay}" Orientation="Horizontal">
-							<Grid Width="27" Margin="0,2">
-								<Grid.ColumnDefinitions>
-									<ColumnDefinition Width="24" />
-									<ColumnDefinition Width="3" />
-								</Grid.ColumnDefinitions>
 
-								<Image Grid.Column="0" Width="16" Height="16" Margin="0,0,0,0" Source="{x:Bind Filepath, Mode=OneWay, Converter={StaticResource img}}"></Image>
-								<Image Grid.Column="0" Width="16" Height="16" Margin="4,0,0,0" Source="{x:Bind Flags, Mode=OneWay, Converter={StaticResource img_overlay}}"></Image>
-							</Grid>
-							<TextBlock FontSize="12" Text="{x:Bind ModuleName, Mode=OneWay}" VerticalAlignment="Center"/>
-						</StackPanel>
-					<!--</ItemContainer>-->
-				</DataTemplate>
-			</ListView.ItemTemplate>
-			<!--<ListView.Layout>
-				<StackLayout Spacing="2"/>
-			</ListView.Layout>-->
-			<ListView.GroupStyle>
-				<GroupStyle >
-					<GroupStyle.HeaderTemplate>
-						<DataTemplate x:DataType="local:CustomDataGroup">
-							<Border>
-								<TextBlock Text="{x:Bind Key}" Style="{ThemeResource BaseTextBlockStyle}"/>
-							</Border>
+		<SemanticZoom  Grid.Row="2">
+			<SemanticZoom.ZoomedInView>
+				<ListView x:Name="ItemList" ItemsSource="{x:Bind groupViewSource.View}" SelectionMode="Extended" Padding="8" Background="{ThemeResource LayerFillColorDefaultBrush}" 
+			   BorderBrush="{ThemeResource CardStrokeColorDefault}" BorderThickness="0,1,0,0" CornerRadius="0">
+
+					<ListView.ItemTemplate>
+						<DataTemplate x:DataType="local:DisplayModuleInfo">
+							<!--<ItemContainer FontSize="30" ContextFlyout="{StaticResource ListContextMenu}" DataContext="{x:Bind Mode=TwoWay}" ToolTipService.ToolTip="{x:Bind Status, Mode=OneWay}">-->
+							<StackPanel ContextFlyout="{StaticResource ListContextMenu}" DataContext="{x:Bind Mode=OneWay}" ToolTipService.ToolTip="{x:Bind Status, Mode=OneWay}" Orientation="Horizontal">
+								<Grid Width="27" Margin="0,2">
+									<Grid.ColumnDefinitions>
+										<ColumnDefinition Width="24" />
+										<ColumnDefinition Width="3" />
+									</Grid.ColumnDefinitions>
+
+									<Image Grid.Column="0" Width="16" Height="16" Margin="0,0,0,0" Source="{x:Bind Filepath, Mode=OneWay, Converter={StaticResource img}}"></Image>
+									<Image Grid.Column="0" Width="16" Height="16" Margin="4,0,0,0" Source="{x:Bind Flags, Mode=OneWay, Converter={StaticResource img_overlay}}"></Image>
+								</Grid>
+								<TextBlock FontSize="12" Text="{x:Bind ModuleName, Mode=OneWay}" VerticalAlignment="Center"/>
+							</StackPanel>
+							<!--</ItemContainer>-->
 						</DataTemplate>
-					</GroupStyle.HeaderTemplate>
-				</GroupStyle>
-			</ListView.GroupStyle>
-		</ListView>
+					</ListView.ItemTemplate>
+					<!--<ListView.Layout>
+			<StackLayout Spacing="2"/>
+		</ListView.Layout>-->
+					<ListView.GroupStyle>
+						<GroupStyle >
+							<GroupStyle.HeaderTemplate>
+								<DataTemplate x:DataType="local:CustomDataGroup">
+									<Border>
+										<TextBlock Text="{x:Bind Key}" Style="{ThemeResource BaseTextBlockStyle}"/>
+									</Border>
+								</DataTemplate>
+							</GroupStyle.HeaderTemplate>
+						</GroupStyle>
+					</ListView.GroupStyle>
+				</ListView>
+			</SemanticZoom.ZoomedInView>
+
+			<SemanticZoom.ZoomedOutView>
+				<ListView ItemsSource="{x:Bind groupViewSource.View.CollectionGroups}"
+  SelectionMode="None"
+ >
+					<ListView.ItemTemplate>
+						<DataTemplate x:DataType="ICollectionViewGroup">
+							<TextBlock Text="{x:Bind Group.(local:CustomDataGroup.Key)}"
+               Style="{StaticResource BaseTextBlockStyle}" TextWrapping="Wrap"/>
+						</DataTemplate>
+					</ListView.ItemTemplate>
+				</ListView>
+				<!-- Put the ListView for the zoomed out view here. -->
+			</SemanticZoom.ZoomedOutView>
+		</SemanticZoom>
+
+
+
 		<ProgressBar x:Name="ProgressIndicator" Grid.Row="3" IsIndeterminate="True" Margin="8" VerticalAlignment="Center"/>
 	</Grid>
 </Page>
