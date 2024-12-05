@@ -52,8 +52,6 @@ namespace Dependencies
             _workingDirectory = workingDirectory;
             _filePath = filepath;
 
-            this.DataContext = this;
-
             this.InitializeComponent();
 
             UpdateFont();
