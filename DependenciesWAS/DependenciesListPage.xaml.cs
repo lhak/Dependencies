@@ -28,18 +28,14 @@ using WinRT;
 
 namespace Dependencies
 {
-    [GeneratedBindableCustomProperty]
-    public partial class CustomDataGroup
+    public partial class DisplayModuleInfoGroup : CommunityToolkit.WinUI.Collections.AdvancedCollectionView
     {
-        public CustomDataGroup()
+        public DisplayModuleInfoGroup(ObservableCollection<DisplayModuleInfo> source, string key) : base(source, true)
         {
-            //this.Items = new ObservableCollection<DisplayModuleInfo>();
-            //this.Key = new string("Test");
+            Key = key;
         }
 
-        public object Key { get; set; }
-
-        public ICollectionView Items { get; set; }
+        public object Key { get; private set; }
     }
 
     public sealed partial class DependenciesListPage : Page
@@ -49,9 +45,7 @@ namespace Dependencies
             _processedFiles = new();
             _cts = new();
             _items = new();
-            _filteredItems = new();
-            //_filteredItems = new(_items, true);
-
+        
             _rootModule = rootModule;
             _customSearchFolders = customSearchFolders;
             _sxsEntriesCache = sxsEntriesCache;
@@ -61,20 +55,6 @@ namespace Dependencies
             this.DataContext = this;
 
             this.InitializeComponent();
-
-            //groups.Add(new CustomDataGroup() { Key = "Test", Items = new CommunityToolkit.WinUI.Collections.AdvancedCollectionView() });
-
-            //var g = groupViewSource.View.CollectionGroups;
-
-            /*groups.Add(new CustomDataGroup() { Items = _filteredItems });
-
-
-            CollectionViewSource src = new CollectionViewSource();
-            src.ItemsPath = new PropertyPath("Items");
-            src.IsSourceGrouped = true;
-            src.Source = groups;
-            */
-            //ItemList.ItemsSource = src;
 
             UpdateFont();
         }
@@ -89,9 +69,8 @@ namespace Dependencies
         int _runningWorkers = 0;
 
         Dictionary<ModuleSearchStrategy, ObservableCollection<DisplayModuleInfo>> _items;
-        Dictionary<ModuleSearchStrategy, CommunityToolkit.WinUI.Collections.AdvancedCollectionView> _filteredItems;
 
-        ObservableCollection<CustomDataGroup> groups = new ObservableCollection<CustomDataGroup>();
+        ObservableCollection<DisplayModuleInfoGroup> _groups = new();
 
         private void AddItem(DisplayModuleInfo info)
         {
@@ -100,12 +79,9 @@ namespace Dependencies
             if (_items.TryGetValue(info.Location, out itemList) == false)
             {
                 itemList = new();
-                CommunityToolkit.WinUI.Collections.AdvancedCollectionView filteredList = new(itemList, true);
-
                 _items[info.Location] = itemList;
-                _filteredItems[info.Location] = filteredList;
 
-                groups.Add(new CustomDataGroup() { Key = info.Location.ToString(), Items = filteredList });
+                _groups.Add(new DisplayModuleInfoGroup(itemList, info.Location.ToString()));
             }
             itemList.Add(info);
         }
@@ -416,7 +392,7 @@ namespace Dependencies
         private void SelectorBar_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
         {
             bool showNotFound = (sender.SelectedItem.Tag as string) == "Unresolved";
-            foreach (var filteredList in _filteredItems.Values)
+            foreach (var filteredList in _groups)
             {
                 using (filteredList.DeferRefresh())
                 {

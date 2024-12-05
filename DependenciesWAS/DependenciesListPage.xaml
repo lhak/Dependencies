@@ -20,11 +20,7 @@
 			<MenuFlyoutSeparator/>
 			<MenuFlyoutItem Command="{StaticResource SelectAllCommand}" CommandParameter="{x:Bind ListContextMenu.Target, Mode=OneWay}"/>
 		</MenuFlyout>
-		<CollectionViewSource
-                x:Name='groupViewSource'
-                IsSourceGrouped='true'
-                Source='{x:Bind groups}'
-                ItemsPath='Items' />
+		<CollectionViewSource x:Name="groupViewSource" IsSourceGrouped="True" Source="{x:Bind _groups}"/>
 	</Page.Resources>
 
 	<Grid>
@@ -39,16 +35,13 @@
 			<SelectorBarItem Text="Show all"/>
 			<SelectorBarItem Text="Show unresolved" Tag="Unresolved"/>
 		</SelectorBar>
-		<!-- ItemsSource="{x:Bind _filteredItems}"  -->
 
 		<SemanticZoom  Grid.Row="2">
 			<SemanticZoom.ZoomedInView>
 				<ListView x:Name="ItemList" ItemsSource="{x:Bind groupViewSource.View}" SelectionMode="Extended" Padding="8,0,8,8" Background="{ThemeResource LayerFillColorDefaultBrush}" 
 			   BorderBrush="{ThemeResource CardStrokeColorDefault}" BorderThickness="0,1,0,0" CornerRadius="0">
-
 					<ListView.ItemTemplate>
 						<DataTemplate x:DataType="local:DisplayModuleInfo">
-							<!--<ItemContainer FontSize="30" ContextFlyout="{StaticResource ListContextMenu}" DataContext="{x:Bind Mode=TwoWay}" ToolTipService.ToolTip="{x:Bind Status, Mode=OneWay}">-->
 							<StackPanel ContextFlyout="{StaticResource ListContextMenu}" DataContext="{x:Bind Mode=OneWay}" ToolTipService.ToolTip="{x:Bind Status, Mode=OneWay}" Orientation="Horizontal">
 								<Grid Width="27" Margin="0,2">
 									<Grid.ColumnDefinitions>
@@ -61,16 +54,12 @@
 								</Grid>
 								<TextBlock FontSize="12" Text="{x:Bind ModuleName, Mode=OneWay}" VerticalAlignment="Center"/>
 							</StackPanel>
-							<!--</ItemContainer>-->
 						</DataTemplate>
 					</ListView.ItemTemplate>
-					<!--<ListView.Layout>
-			<StackLayout Spacing="2"/>
-		</ListView.Layout>-->
 					<ListView.GroupStyle>
 						<GroupStyle HidesIfEmpty="True">
 							<GroupStyle.HeaderTemplate>
-								<DataTemplate x:DataType="local:CustomDataGroup">
+								<DataTemplate x:DataType="local:DisplayModuleInfoGroup">
 									<Border>
 										<TextBlock Text="{x:Bind Key}" Style="{ThemeResource BaseTextBlockStyle}"/>
 									</Border>
@@ -80,15 +69,11 @@
 					</ListView.GroupStyle>
 				</ListView>
 			</SemanticZoom.ZoomedInView>
-
 			<SemanticZoom.ZoomedOutView>
-				<ListView ItemsSource="{x:Bind groupViewSource.View.CollectionGroups}"
-  SelectionMode="None"
- >
+				<ListView ItemsSource="{x:Bind groupViewSource.View.CollectionGroups}" SelectionMode="None">
 					<ListView.ItemTemplate>
 						<DataTemplate x:DataType="ICollectionViewGroup">
-							<TextBlock Text="{x:Bind Group.(local:CustomDataGroup.Key)}"
-               Style="{StaticResource BaseTextBlockStyle}"/>
+							<TextBlock Text="{x:Bind Group.(local:DisplayModuleInfoGroup.Key)}" Style="{StaticResource BaseTextBlockStyle}"/>
 						</DataTemplate>
 					</ListView.ItemTemplate>
 				</ListView>
