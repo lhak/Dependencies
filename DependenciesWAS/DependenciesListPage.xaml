@@ -42,7 +42,8 @@
 			   BorderBrush="{ThemeResource CardStrokeColorDefault}" BorderThickness="0,1,0,0" CornerRadius="0">
 					<ListView.ItemTemplate>
 						<DataTemplate x:DataType="local:DisplayModuleInfo">
-							<StackPanel ContextFlyout="{StaticResource ListContextMenu}" DataContext="{x:Bind Mode=OneWay}" ToolTipService.ToolTip="{x:Bind Status, Mode=OneWay}" Orientation="Horizontal">
+							<StackPanel ContextFlyout="{StaticResource ListContextMenu}" DataContext="{x:Bind Mode=OneWay}" ToolTipService.ToolTip="{x:Bind Status, Mode=OneWay}"
+										Orientation="Horizontal" Background="Transparent">
 								<Grid Width="27" Margin="0,2">
 									<Grid.ColumnDefinitions>
 										<ColumnDefinition Width="24" />

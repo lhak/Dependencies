@@ -406,7 +406,7 @@ namespace Dependencies
             var listViewContainerStyle = new Style();
             listViewContainerStyle.BasedOn = App.Current.Resources["DefaultListViewItemStyle"] as Style;
             listViewContainerStyle.TargetType = typeof(ListViewItem);
-            listViewContainerStyle.Setters.Add(new Setter(FontFamilyProperty, Properties.Settings.Default.Font));
+            listViewContainerStyle.Setters.Add(new Setter(ListViewItem.FontFamilyProperty, Properties.Settings.Default.Font));
             ItemList.ItemContainerStyle = listViewContainerStyle;
         }
 
