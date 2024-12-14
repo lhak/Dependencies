@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI.Popups;
@@ -1340,7 +1341,6 @@ namespace Dependencies
 			{
 				if (item.ModuleName == SelectedModuleName)
 				{
-
 					this.ModulesList.SelectedItem = item;
 					this.ModulesList.ScrollIntoView(item, null);
 					return;
@@ -1348,7 +1348,23 @@ namespace Dependencies
 			}
 		}
 
-		private void ExpandAllParentNode(ModuleTreeViewItem Item)
+        private void ShowAllDependencies_ExecuteRequested(XamlUICommand sender, ExecuteRequestedEventArgs args)
+        {
+            ModuleTreeViewItem Source = DllTreeView.SelectedItem as ModuleTreeViewItem;
+
+            if (args.Parameter is FrameworkElement)
+                Source = (args.Parameter as FrameworkElement).DataContext as ModuleTreeViewItem;
+
+            if (Source == null)
+                return;
+
+			if(!string.IsNullOrEmpty(Source.ModuleFilePath))
+			{
+				DependenciesListPage.OpenInNewWindow(this.XamlRoot, this.Pe, this.CustomSearchFolders, this.SxsEntriesCache, this.WorkingDirectory, Source.ModuleFilePath);
+			}
+        }
+
+        private void ExpandAllParentNode(ModuleTreeViewItem Item)
 		{
 			if (Item != null)
 			{
@@ -1449,7 +1465,7 @@ namespace Dependencies
 			TreeViewList list = DllTreeView.FindDescendant<TreeViewList>();
 			list.ContainerContentChanging += List_ContainerContentChanging;
 			InitializeView();
-		}
+        }
 
 
 		public void ShutdownView()
@@ -1495,8 +1511,8 @@ namespace Dependencies
 			}
 		}
 
-		#endregion // FontWorkaround
-	}
+        #endregion // FontWorkaround
+    }
 
 }
 

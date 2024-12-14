@@ -19,6 +19,7 @@
 		</XamlUICommand>
 		<XamlUICommand x:Key="DoExpandAllNodes" Label="Expand All" ExecuteRequested="ExpandAllNodes_Executed"/>
 		<XamlUICommand x:Key="DoCollapseAllNodes" Label="Collapse All" ExecuteRequested="CollapseAllNodes_Executed"/>
+		<XamlUICommand x:Key="DoShowAllDepdencies" Label="Show all dependencies..." ExecuteRequested="ShowAllDependencies_ExecuteRequested"/>
 	</TabViewItem.Resources>
 
 	<Grid x:Name="ResizeElemGrid" Margin="0,0,0,0" Background="{ThemeResource LayerFillColorDefaultBrush}">
@@ -50,6 +51,7 @@
 						<MenuFlyoutSeparator/>
 						<MenuFlyoutItem Text="Open in new tab" Command="{x:Bind TreeItemContextMenu.Target.DataContext.(local:ModuleTreeViewItem.OpenNewAppCommand), Mode=OneWay}" CommandParameter="{x:Bind TreeItemContextMenu.Target, Mode=OneWay}"/>
 						<MenuFlyoutItem Text="Open in Peviewer" Command="{x:Bind TreeItemContextMenu.Target.DataContext.(local:ModuleTreeViewItem.OpenPeviewerCommand), Mode=OneWay}" CommandParameter="{x:Bind TreeItemContextMenu.Target, Mode=OneWay}"/>
+						<MenuFlyoutItem Command="{StaticResource DoShowAllDepdencies}" CommandParameter="{x:Bind TreeItemContextMenu.Target, Mode=OneWay}"/>
 					</MenuFlyout>
 
 					<Thickness x:Key="TreeViewItemPresenterMargin">4,0</Thickness>
@@ -118,7 +120,7 @@
 									</Rectangle.OpacityMask>-->
 							</Rectangle>
 
-							<TextBlock Grid.Column="2" Text="{x:Bind Header, Mode=OneWay}" FontSize="12"></TextBlock>
+							<TextBlock Grid.Column="2" Text="{x:Bind Header, Mode=OneWay}" FontSize="12" VerticalAlignment="Center"></TextBlock>
 						</Grid>
 					</DataTemplate>
 				</TreeView.ItemTemplate>

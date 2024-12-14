@@ -205,6 +205,7 @@ namespace Dependencies {
             List<PeExport ^>^  m_Exports;
             bool m_ExportsInit;
             bool m_ImportsInit;
+            System::Threading::Mutex^ m_cacheLock;
         };
         
     }

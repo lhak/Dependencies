@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="Dependencies.DependenciesListPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Dependencies"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+	<Page.Resources>
+		<local:ImageToHeaderConverter x:Key="img"/>
+		<local:OverlayImageToHeaderConverter x:Key="img_overlay"/>
+
+		<StandardUICommand x:Key="CopyCommand" Kind="Copy" ExecuteRequested="CopyCommand_ExecuteRequested"/>
+		<StandardUICommand x:Key="SelectAllCommand" Kind="SelectAll" ExecuteRequested="SelectAllCommand_ExecuteRequested"/>
+
+		<MenuFlyout x:Name="ListContextMenu">
+			<MenuFlyoutItem Command="{StaticResource CopyCommand}" CommandParameter="{x:Bind ListContextMenu.Target, Mode=OneWay}"/>
+			<MenuFlyoutSeparator/>
+			<MenuFlyoutItem Command="{StaticResource SelectAllCommand}" CommandParameter="{x:Bind ListContextMenu.Target, Mode=OneWay}"/>
+		</MenuFlyout>
+		<CollectionViewSource x:Name="groupViewSource" IsSourceGrouped="True" Source="{x:Bind _groups}"/>
+	</Page.Resources>
+
+	<Grid>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="28"/>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="*"/>
+			<RowDefinition Height="Auto"/>
+		</Grid.RowDefinitions>
+		<TextBlock Text="All Dependencies" Margin="12,8,0,0" FontSize="12" VerticalAlignment="Top"/>
+		<SelectorBar Grid.Row="1" SelectionChanged="SelectorBar_SelectionChanged">
+			<SelectorBarItem Text="Show all"/>
+			<SelectorBarItem Text="Show unresolved" Tag="Unresolved"/>
+		</SelectorBar>
+
+		<SemanticZoom  Grid.Row="2">
+			<SemanticZoom.ZoomedInView>
+				<ListView x:Name="ItemList" ItemsSource="{x:Bind groupViewSource.View}" SelectionMode="Extended" Padding="8,0,8,8" Background="{ThemeResource LayerFillColorDefaultBrush}" 
+			   BorderBrush="{ThemeResource CardStrokeColorDefault}" BorderThickness="0,1,0,0" CornerRadius="0">
+					<ListView.ItemTemplate>
+						<DataTemplate x:DataType="local:DisplayModuleInfo">
+							<StackPanel ContextFlyout="{StaticResource ListContextMenu}" DataContext="{x:Bind Mode=OneWay}" ToolTipService.ToolTip="{x:Bind Status, Mode=OneWay}"
+										Orientation="Horizontal" Background="Transparent">
+								<Grid Width="27" Margin="0,2">
+									<Grid.ColumnDefinitions>
+										<ColumnDefinition Width="24" />
+										<ColumnDefinition Width="3" />
+									</Grid.ColumnDefinitions>
+
+									<Image Grid.Column="0" Width="16" Height="16" Margin="0,0,0,0" Source="{x:Bind Filepath, Mode=OneWay, Converter={StaticResource img}}"></Image>
+									<Image Grid.Column="0" Width="16" Height="16" Margin="4,0,0,0" Source="{x:Bind Flags, Mode=OneWay, Converter={StaticResource img_overlay}}"></Image>
+								</Grid>
+								<TextBlock FontSize="12" Text="{x:Bind ModuleName, Mode=OneWay}" VerticalAlignment="Center"/>
+							</StackPanel>
+						</DataTemplate>
+					</ListView.ItemTemplate>
+					<ListView.GroupStyle>
+						<GroupStyle HidesIfEmpty="True">
+							<GroupStyle.HeaderTemplate>
+								<DataTemplate x:DataType="local:DisplayModuleInfoGroup">
+									<Border>
+										<TextBlock Text="{x:Bind Key}" Style="{ThemeResource BaseTextBlockStyle}"/>
+									</Border>
+								</DataTemplate>
+							</GroupStyle.HeaderTemplate>
+						</GroupStyle>
+					</ListView.GroupStyle>
+				</ListView>
+			</SemanticZoom.ZoomedInView>
+			<SemanticZoom.ZoomedOutView>
+				<ListView ItemsSource="{x:Bind groupViewSource.View.CollectionGroups}" SelectionMode="None">
+					<ListView.ItemTemplate>
+						<DataTemplate x:DataType="ICollectionViewGroup">
+							<TextBlock Text="{x:Bind Group.(local:DisplayModuleInfoGroup.Key)}" Style="{StaticResource BaseTextBlockStyle}"/>
+						</DataTemplate>
+					</ListView.ItemTemplate>
+				</ListView>
+			</SemanticZoom.ZoomedOutView>
+		</SemanticZoom>
+		<ProgressBar x:Name="ProgressIndicator" Grid.Row="3" IsIndeterminate="True" Margin="8" VerticalAlignment="Center"/>
+	</Grid>
+</Page>

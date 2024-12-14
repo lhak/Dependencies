@@ -50,7 +50,7 @@
 			<toolkit:DataGridTemplateColumn.CellTemplate>
 
 				<DataTemplate>
-					<Grid Margin="0,2">
+					<Grid Margin="0,2" ToolTipService.ToolTip="{Binding Status}">
 						<Grid.ColumnDefinitions>
 							<ColumnDefinition Width="24" />
 							<ColumnDefinition Width="3" />
