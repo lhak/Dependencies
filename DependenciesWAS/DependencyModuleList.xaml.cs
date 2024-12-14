@@ -67,10 +67,10 @@ namespace Dependencies
 			set { SetValue(DoFindModuleInTreeCommandProperty, value); }
 		}
 
-		public RelayCommand ConfigureSearchOrderCommand
-		{
-			get { return (RelayCommand)GetValue(ConfigureSearchOrderCommandProperty); }
-			set { SetValue(ConfigureSearchOrderCommandProperty, value); }
+		public RelayCommand ShowAllDependenciesCommand
+        {
+			get { return (RelayCommand)GetValue(ShowAllDependenciesCommandProperty); }
+			set { SetValue(ShowAllDependenciesCommandProperty, value); }
 		}
 
 		public event RoutedEventHandler SelectedModuleChanged;
@@ -79,8 +79,8 @@ namespace Dependencies
 		public static readonly DependencyProperty DoFindModuleInTreeCommandProperty =
 			DependencyProperty.Register("DoFindModuleInTreeCommand", typeof(RelayCommand), typeof(DependencyModuleList), new PropertyMetadata(null));
 
-		public static readonly DependencyProperty ConfigureSearchOrderCommandProperty =
-			DependencyProperty.Register("ConfigureSearchOrderCommand", typeof(RelayCommand), typeof(DependencyModuleList), new PropertyMetadata(null));
+		public static readonly DependencyProperty ShowAllDependenciesCommandProperty =
+			DependencyProperty.Register("ShowAllDependenciesCommand", typeof(RelayCommand), typeof(DependencyModuleList), new PropertyMetadata(null));
 
 		public DependencyModuleList()
 		{
@@ -93,7 +93,7 @@ namespace Dependencies
 		{
 			// TODO : Find a way to properly bind commands instead of using this hack
 			NewModule.DoFindModuleInTreeCommand = DoFindModuleInTreeCommand;
-			NewModule.ConfigureSearchOrderCommand = ConfigureSearchOrderCommand;
+			NewModule.ShowAllDependenciesCommand = ShowAllDependenciesCommand;
 
 			Items.Add(NewModule);
 		}
@@ -113,11 +113,11 @@ namespace Dependencies
 			}
 		}
 
-		private void DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
 			SelectedModuleChanged.Invoke(this, e);
 		}
 
 		public ObservableCollection<DisplayModuleInfo> Items = new ObservableCollection<DisplayModuleInfo>();
-	}
+    }
 }

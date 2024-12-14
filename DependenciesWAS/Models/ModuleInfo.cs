@@ -375,7 +375,7 @@ namespace Dependencies
 
 #region Commands 
         private RelayCommand _DoFindModuleInTreeCommand;
-        private RelayCommand _ConfigureSearchOrderCommand;
+        private RelayCommand _ShowAllDependenciesCommand;
 
         public RelayCommand DoFindModuleInTreeCommand
         {
@@ -383,10 +383,10 @@ namespace Dependencies
             set { _DoFindModuleInTreeCommand = value; }
         }
 
-        public RelayCommand ConfigureSearchOrderCommand
+        public RelayCommand ShowAllDependenciesCommand
         {
-            get { return _ConfigureSearchOrderCommand; }
-            set { _ConfigureSearchOrderCommand = value; }
+            get { return _ShowAllDependenciesCommand; }
+            set { _ShowAllDependenciesCommand = value; }
         }
 
 

@@ -590,7 +590,7 @@ namespace Dependencies
 			// TODO : Find a way to properly bind commands instead of using this hack
 			this.ModulesList.Items.Clear();
             this.ModulesList.DoFindModuleInTreeCommand = DoFindModuleInTree;
-			this.ModulesList.ConfigureSearchOrderCommand = ConfigureSearchOrderCommand;
+			this.ModulesList.ShowAllDependenciesCommand = ShowAllDependenciesCommand;
 
 			var RootFilename = Path.GetFileName(this.Filename);
 			var RootModule = new DisplayModuleInfo(RootFilename, this.Pe, ModuleSearchStrategy.ROOT);
@@ -1432,23 +1432,25 @@ namespace Dependencies
 				return new RelayCommand((param) =>
 				{
 					DisplayModuleInfo SelectedModule = (param as DisplayModuleInfo);
-					ModuleTreeViewItem TreeRootItem = this.DllTreeView.RootNodes[0] as ModuleTreeViewItem;
+                    ModuleTreeViewItem TreeRootItem = this.DllTreeView.RootNodes[0] as ModuleTreeViewItem;
 					FindModuleInTree(TreeRootItem, SelectedModule, true);
 				});
 			}
 		}
 
-		public RelayCommand ConfigureSearchOrderCommand
+		public RelayCommand ShowAllDependenciesCommand
 		{
 			get
 			{
 				return new RelayCommand((param) =>
 				{
-#if TODO
-                    ModuleSearchOrder modalWindow = new ModuleSearchOrder(ProcessedModulesCache);
-                    modalWindow.ShowDialog();
-#endif
-				});
+                    DisplayModuleInfo SelectedModule = (param as DisplayModuleInfo);
+
+                    if (SelectedModule != null && !string.IsNullOrEmpty(SelectedModule.Filepath))
+                    {
+                        DependenciesListPage.OpenInNewWindow(this.XamlRoot, this.Pe, this.CustomSearchFolders, this.SxsEntriesCache, this.WorkingDirectory, SelectedModule.Filepath);
+                    }
+                });
 			}
 		}
 		#endregion // Commands 
