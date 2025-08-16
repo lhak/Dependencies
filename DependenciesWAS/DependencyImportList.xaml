@@ -46,7 +46,11 @@
 		</Style>
 	</local:DataGridSort.Resources>
 
-
+	<local:DataGridSort.ContextFlyout>
+		<MenuFlyout >
+			<MenuFlyoutItem Command="{StaticResource FilterCommand}"/>
+		</MenuFlyout>
+	</local:DataGridSort.ContextFlyout>
 
 	<local:DataGridSort.Columns>
 		<toolkit:DataGridTemplateColumn Width="40" Header="PI" Tag="Type">

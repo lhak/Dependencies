@@ -46,6 +46,13 @@
 			<Setter Property="toolkit:DataGridRow.ContextFlyout" Value="{StaticResource ItemContextMenu}"/>
 		</Style>
 	</toolkit:DataGrid.Resources>
+	
+	<local:DataGridSort.ContextFlyout>
+		<MenuFlyout >
+			<MenuFlyoutItem Command="{StaticResource FilterCommand}"/>
+		</MenuFlyout>
+	</local:DataGridSort.ContextFlyout>
+	
 	<local:DataGridSort.Columns>
 		<toolkit:DataGridTemplateColumn Header="" Width="50">
 			<toolkit:DataGridTemplateColumn.CellTemplate>
