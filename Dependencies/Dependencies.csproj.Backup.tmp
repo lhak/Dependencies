@@ -2,20 +2,23 @@
 	<PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{24F9E0C0-CA6E-4565-A9E2-88602DD9F18A}</ProjectGuid>
+    <ProjectGuid>{5565A612-B250-4FE0-98DD-07C56916C194}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>demangler_test</RootNamespace>
-    <AssemblyName>demangler-test</AssemblyName>
-	<TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>Dependencies</RootNamespace>
+    <AssemblyName>Dependencies</AssemblyName>
+	<TargetFramework>net8.0-windows</TargetFramework>
 	<EnableDefaultItems>false</EnableDefaultItems>
 	<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 	<FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
 	<Platforms>x86;x64</Platforms>
 	</PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>Dependencies.Program</StartupObject>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>$(SolutionDir)bin\$(Configuration)$(Platform)\tests</OutputPath>
+    <OutputPath>$(SolutionDir)bin\$(Configuration)$(Platform)</OutputPath>
     <IntermediateOutputPath>$(SolutionDir)obj\$(ProjectName)\$(Configuration)$(Platform)</IntermediateOutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
@@ -24,7 +27,7 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
-    <OutputPath>$(SolutionDir)bin\$(Configuration)$(Platform)\tests</OutputPath>
+    <OutputPath>$(SolutionDir)bin\$(Configuration)$(Platform)</OutputPath>
     <IntermediateOutputPath>$(SolutionDir)obj\$(ProjectName)\$(Configuration)$(Platform)</IntermediateOutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
@@ -36,7 +39,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>$(SolutionDir)bin\$(Configuration)$(Platform)\tests</OutputPath>
+    <OutputPath>$(SolutionDir)bin\$(Configuration)$(Platform)</OutputPath>
     <IntermediateOutputPath>$(SolutionDir)obj\$(ProjectName)\$(Configuration)$(Platform)</IntermediateOutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
@@ -45,7 +48,7 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>$(SolutionDir)bin\$(Configuration)$(Platform)\tests</OutputPath>
+    <OutputPath>$(SolutionDir)bin\$(Configuration)$(Platform)</OutputPath>
     <IntermediateOutputPath>$(SolutionDir)obj\$(ProjectName)\$(Configuration)$(Platform)</IntermediateOutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
@@ -56,7 +59,7 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Appx|x86'">
-    <OutputPath>$(SolutionDir)bin\$(Configuration)$(Platform)\tests</OutputPath>
+    <OutputPath>$(SolutionDir)bin\$(Configuration)$(Platform)</OutputPath>
     <IntermediateOutputPath>$(SolutionDir)obj\$(ProjectName)\$(Configuration)$(Platform)</IntermediateOutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
@@ -67,7 +70,7 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Appx|x64'">
-    <OutputPath>$(SolutionDir)bin\$(Configuration)$(Platform)\tests</OutputPath>
+    <OutputPath>$(SolutionDir)bin\$(Configuration)$(Platform)</OutputPath>
     <IntermediateOutputPath>$(SolutionDir)obj\$(ProjectName)\$(Configuration)$(Platform)</IntermediateOutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
@@ -77,24 +80,32 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject>Dependencies.Test.Program</StartupObject>
-  </PropertyGroup>
   <ItemGroup>
-	<PackageReference Include="NDesk.Options" Version="0.2.1" />
+	  <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+	  <PackageReference Include="NDesk.Options" Version="0.2.1" />
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\ClrPhlib\ClrPhlib.vcxproj">
+    <ProjectReference Include="..\ClrPhlib\ClrPhlib.vcxproj">
       <Project>{fc5ffcaf-982f-4a95-8fa6-2a95b1f7cdc8}</Project>
       <Name>ClrPhlib</Name>
     </ProjectReference>
+    <ProjectReference Include="..\DependenciesLib\DependenciesLib.csproj">
+      <Project>{4a459493-14fc-4c87-9254-60e0959535da}</Project>
+      <Name>DependenciesLib</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
 </Project>
