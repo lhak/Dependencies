@@ -1,0 +1,96 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Packaged" />
+    <BuildType Name="Release" />
+    <Platform Name="arm64" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/tests/">
+    <Project Path="test/binarycache-test/binarycache-test.csproj">
+      <BuildType Solution="Packaged|*" Project="Release" />
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|x86" Project="x86" />
+      <Platform Solution="Debug|arm64" Project="x64" />
+      <Platform Solution="Packaged|arm64" Project="x86" />
+      <Platform Solution="Release|arm64" Project="x64" />
+    </Project>
+    <Project Path="test/demangler-test/demangler-test.csproj">
+      <BuildType Solution="Packaged|*" Project="Release" />
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|x86" Project="x86" />
+      <Platform Solution="Debug|arm64" Project="x64" />
+      <Platform Solution="Packaged|arm64" Project="x86" />
+      <Platform Solution="Release|arm64" Project="x64" />
+    </Project>
+  </Folder>
+  <Folder Name="/third_party/">
+    <Project Path="third_party/demumble/demumble.vcxproj" Id="be4a9759-a412-44cb-887d-fefbef1abbf1">
+      <BuildType Solution="Packaged|*" Project="Release" />
+      <Platform Solution="Debug|arm64" Project="x64" />
+      <Platform Solution="Packaged|arm64" Project="Win32" />
+      <Platform Solution="Release|arm64" Project="x64" />
+    </Project>
+    <Project Path="third_party/Dragablz/Dragablz/Dragablz.net45.csproj" Id="7b11011c-7fd7-4ab0-a1ad-04e940b026de">
+      <BuildType Solution="Packaged|*" Project="Release" />
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|x86" Project="x86" />
+      <Platform Solution="Debug|arm64" Project="x64" />
+      <Platform Solution="Packaged|arm64" Project="x86" />
+      <Platform Solution="Release|arm64" Project="x64" />
+    </Project>
+    <Project Path="third_party/llvm-demangle/llvm-demangle.vcxproj" Id="fc532fff-ebb1-4601-b903-c09efb79eced">
+      <BuildType Solution="Packaged|*" Project="Release" />
+      <Platform Solution="Debug|arm64" Project="x64" />
+      <Platform Solution="Packaged|arm64" Project="Win32" />
+      <Platform Solution="Release|arm64" Project="x64" />
+    </Project>
+    <Project Path="third_party/phlib/phlib.vcxproj" Id="477d0215-f252-41a1-874b-f27e3ea1ed17">
+      <BuildType Solution="Packaged|*" Project="Release" />
+      <Platform Solution="Debug|arm64" Project="x64" />
+      <Platform Solution="Packaged|arm64" Project="Win32" />
+      <Platform Solution="Release|arm64" Project="x64" />
+    </Project>
+  </Folder>
+  <Project Path="ClrPhlib/ClrPhlib.vcxproj" Id="fc5ffcaf-982f-4a95-8fa6-2a95b1f7cdc8">
+    <BuildDependency Project="third_party/demumble/demumble.vcxproj" />
+    <BuildDependency Project="third_party/llvm-demangle/llvm-demangle.vcxproj" />
+    <BuildDependency Project="third_party/phlib/phlib.vcxproj" />
+    <BuildType Solution="Packaged|*" Project="Release" />
+    <Platform Solution="Debug|arm64" Project="x64" />
+    <Platform Solution="Packaged|arm64" Project="Win32" />
+    <Platform Solution="Release|arm64" Project="x64" />
+  </Project>
+  <Project Path="Dependencies/Dependencies.csproj">
+    <BuildDependency Project="DependenciesLib/DependenciesLib.csproj" />
+    <BuildType Solution="Packaged|*" Project="Release" />
+    <Platform Solution="*|arm64" Project="x86" />
+    <Platform Solution="*|x64" Project="x64" />
+    <Platform Solution="*|x86" Project="x86" />
+  </Project>
+  <Project Path="DependenciesGui/DependenciesGui.csproj">
+    <BuildDependency Project="DependenciesLib/DependenciesLib.csproj" />
+    <BuildType Solution="Packaged|*" Project="Release" />
+    <Platform Solution="*|arm64" Project="x86" />
+    <Platform Solution="*|x64" Project="x64" />
+    <Platform Solution="*|x86" Project="x86" />
+  </Project>
+  <Project Path="DependenciesLib/DependenciesLib.csproj">
+    <BuildDependency Project="ClrPhlib/ClrPhlib.vcxproj" />
+    <BuildType Solution="Packaged|*" Project="Release" />
+    <Platform Solution="*|x64" Project="x64" />
+    <Platform Solution="*|x86" Project="x86" />
+    <Platform Solution="Debug|arm64" Project="x86" />
+    <Platform Solution="Packaged|arm64" Project="x86" />
+    <Platform Solution="Release|arm64" Project="x64" />
+  </Project>
+  <Project Path="DependenciesWAS/DependenciesWAS.csproj">
+    <Platform Solution="*|x64" Project="x64" />
+    <Platform Solution="*|x86" Project="x86" />
+    <Platform Solution="Debug|arm64" Project="arm64" />
+    <Platform Solution="Packaged|arm64" Project="x86" />
+    <Platform Solution="Release|arm64" Project="arm64" />
+    <Deploy />
+  </Project>
+</Solution>
