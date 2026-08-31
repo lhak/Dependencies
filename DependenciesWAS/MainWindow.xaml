@@ -13,10 +13,11 @@
 			<RowDefinition Height="Auto"/>
 			<RowDefinition Height="*"/>
 		</Grid.RowDefinitions>
-		<StackPanel x:Name="TitleBar" Height="28" Padding="16,4,0,0" Orientation="Horizontal" VerticalAlignment="Top">
-			<Image Source="ms-appx:///Assets/Square44x44Logo.png" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-			<TextBlock x:Name="TitleBarText" Text="Dependencies" Margin="12,4,0,0" FontSize="12" VerticalAlignment="Top"/>
-		</StackPanel>
+		<TitleBar x:Name="TitleBar" Title="Dependencies">
+            <TitleBar.IconSource>
+                <ImageIconSource ImageSource="ms-appx:///Assets/Square44x44Logo.png"/>
+            </TitleBar.IconSource>
+		</TitleBar>
 		<local:MainPage x:Name="RootPage" Grid.Row="1"/>
 	</Grid>
 </Window>

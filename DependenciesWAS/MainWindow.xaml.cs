@@ -58,7 +58,7 @@ namespace Dependencies
 		public void SetWindowTitle(string title)
 		{
 			this.Title = title;
-			TitleBarText.Text = title;
+			TitleBar.Title = title;
 		}
 
 		public void OpenNewTab(string filepath)
